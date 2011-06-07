@@ -55,7 +55,7 @@
 #include "s5pc110_battery.h"
 #include <linux/mfd/max8998.h>
 
-#define POLLING_INTERVAL	1000
+#define POLLING_INTERVAL	30000
 #define ADC_TOTAL_COUNT		10
 #define ADC_DATA_ARR_SIZE	6
 

@@ -1117,6 +1117,57 @@ static inline int _loop(unsigned dry_run, u8 buf[],
 	return off;
 }
 
+/* Returns bytes consumed and updates bursts */
+static inline int _loop_ring(unsigned dry_run, u8 buf[],
+		unsigned long *bursts, const struct _xfer_spec *pxs, int ev)
+{
+	int cyc, off;
+	unsigned lcnt0, lcnt1, ljmp0, ljmp1, ljmpfe;
+	struct _arg_LPEND lpend;
+
+	off = 0;
+	ljmpfe = off;
+	int i, j;
+	lcnt1 = 256;
+	cyc = 1;
+
+	/* DMAMOV SAR, x->src_addr */
+	off += _emit_MOV(dry_run, &buf[off], SAR, pxs->x->src_addr);
+	/* DMAMOV DAR, x->dst_addr */
+	off += _emit_MOV(dry_run, &buf[off], DAR, pxs->x->dst_addr);
+
+	off += _emit_LP(dry_run, &buf[off], 0,  pxs->r->autoload);
+	ljmp0 = off;
+
+	for (i = 0; i < *bursts/256; i++) {
+		off += _emit_LP(dry_run, &buf[off], 1, lcnt1);
+		ljmp1 = off;
+
+		off += _bursts(dry_run, &buf[off], pxs, cyc);
+
+		lpend.cond = ALWAYS;
+		lpend.forever = false;
+		lpend.loop = 1;
+		lpend.bjump = off - ljmp1;
+		off += _emit_LPEND(dry_run, &buf[off], &lpend);
+	}
+	off +=_emit_SEV(dry_run, &buf[off], ev);
+
+	lpend.cond = ALWAYS;
+	lpend.forever = false;
+	lpend.loop = 0;
+	lpend.bjump = off - ljmp0;
+	off += _emit_LPEND(dry_run, &buf[off], &lpend);
+
+	lpend.cond = ALWAYS;
+	lpend.forever = true;
+	lpend.loop = 1;
+	lpend.bjump = off - ljmpfe;
+	off +=  _emit_LPEND(dry_run, &buf[off], &lpend);
+
+	return off;
+}
+
 static inline int _setup_loops(unsigned dry_run, u8 buf[],
 		const struct _xfer_spec *pxs)
 {
@@ -1151,6 +1202,22 @@ static inline int _setup_xfer(unsigned dry_run, u8 buf[],
 	return off;
 }
 
+static inline int _setup_xfer_ring(unsigned dry_run, u8 buf[],
+		const struct _xfer_spec *pxs, int ev)
+{
+	struct pl330_xfer *x = pxs->x;
+	u32 ccr = pxs->ccr;
+	unsigned long c, bursts = BYTE_TO_BURST(x->bytes, ccr);
+	int off = 0;
+
+	/* Setup Loop(s) */
+	c = bursts;
+
+	off += _loop_ring(dry_run, &buf[off], &c, pxs, ev);
+
+	return off;
+}
+
 /*
  * A req is a sequence of one or more xfer units.
  * Returns the number of bytes taken to setup the MC for the req.
@@ -1169,6 +1236,8 @@ static int _setup_req(unsigned dry_run, struct pl330_thread *thrd,
 	off += _emit_MOV(dry_run, &buf[off], CCR, pxs->ccr);
 
 	x = pxs->r->x;
+
+	if(!pxs->r->autoload) {
 	do {
 		/* Error if xfer length is not aligned at burst size */
 		if (x->bytes % (BRST_SIZE(pxs->ccr) * BRST_LEN(pxs->ccr)))
@@ -1184,7 +1253,15 @@ static int _setup_req(unsigned dry_run, struct pl330_thread *thrd,
 	off += _emit_SEV(dry_run, &buf[off], thrd->ev);
 	/* DMAEND */
 	off += _emit_END(dry_run, &buf[off]);
+	} else {
 
+		/* Error if xfer length is not aligned at burst size */
+		if (x->bytes % (BRST_SIZE(pxs->ccr) * BRST_LEN(pxs->ccr)))
+			return -EINVAL;
+
+		pxs->x = x;
+		off += _setup_xfer_ring(dry_run, &buf[off], pxs, thrd->ev);
+	}
 	return off;
 }
 
@@ -1469,10 +1546,13 @@ int pl330_update(const struct pl330_info *pi)
 			active -= 1;
 
 			rqdone = &thrd->req[active];
-			MARK_FREE(rqdone);
 
-			/* Get going again ASAP */
-			_start(thrd);
+			if(!rqdone->r->autoload) {
+				MARK_FREE(rqdone);
+
+				/* Get going again ASAP */
+				_start(thrd);
+			}
 
 			/* For now, just make a list of callbacks to be done */
 			list_add_tail(&rqdone->rqd, &pl330->req_done);
@@ -1483,6 +1563,7 @@ int pl330_update(const struct pl330_info *pi)
 	while (!list_empty(&pl330->req_done)) {
 		rqdone = container_of(pl330->req_done.next,
 					struct _pl330_req, rqd);
+
 
 		list_del_init(&rqdone->rqd);
 
@@ -1814,6 +1895,7 @@ static int dmac_alloc_resources(struct pl330_dmac *pl330)
 	 * Alloc MicroCode buffer for 'chans' Channel threads.
 	 * A channel's buffer offset is (Channel_Id * MCODE_BUFF_PERCHAN)
 	 */
+
 	pl330->mcode_cpu = dma_alloc_coherent(pi->dev,
 				chans * pi->mcbufsz,
 				&pl330->mcode_bus, GFP_KERNEL);

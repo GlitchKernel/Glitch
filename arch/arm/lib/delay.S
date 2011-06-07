@@ -1,5 +1,5 @@
 /*
- *  linux/arch/arm/lib/delay.S
+ *  Originally from linux/arch/arm/lib/delay.S
  *
  *  Copyright (C) 1995, 1996 Russell King
  *
@@ -7,59 +7,56 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
-#include <linux/linkage.h>
-#include <asm/assembler.h>
-#include <asm/param.h>
-		.text
-
-.LC0:		.word	loops_per_jiffy
-.LC1:		.word	(2199023*HZ)>>11
+#include <linux/module.h>
+#include <linux/delay.h>
 
 /*
- * r0  <= 2000
- * lpj <= 0x01ffffff (max. 3355 bogomips)
- * HZ  <= 1000
- */
-
-ENTRY(__udelay)
-		ldr	r2, .LC1
-		mul	r0, r2, r0
-ENTRY(__const_udelay)				@ 0 <= r0 <= 0x7fffff06
-		ldr	r2, .LC0
-		ldr	r2, [r2]		@ max = 0x01ffffff
-		mov	r0, r0, lsr #14		@ max = 0x0001ffff
-		mov	r2, r2, lsr #10		@ max = 0x00007fff
-		mul	r0, r2, r0		@ max = 2^32-1
-		movs	r0, r0, lsr #6
-		moveq	pc, lr
-
-/*
- * loops = r0 * HZ * loops_per_jiffy / 1000000
+ * loops = usecs * HZ * loops_per_jiffy / 1000000
  *
  * Oh, if only we had a cycle counter...
  */
+void __delay(unsigned long loops)
+{
+	asm volatile(
+	"1:	subs %0, %0, #1 \n"
+	"	bhi 1b		\n"
+	: /* No output */
+	: "r" (loops)
+	);
+}
+EXPORT_SYMBOL(__delay);
 
-@ Delay routine
-ENTRY(__delay)
-		subs	r0, r0, #1
-#if 0
-		movls	pc, lr
-		subs	r0, r0, #1
-		movls	pc, lr
-		subs	r0, r0, #1
-		movls	pc, lr
-		subs	r0, r0, #1
-		movls	pc, lr
-		subs	r0, r0, #1
-		movls	pc, lr
-		subs	r0, r0, #1
-		movls	pc, lr
-		subs	r0, r0, #1
-		movls	pc, lr
-		subs	r0, r0, #1
-#endif
-		bhi	__delay
-		mov	pc, lr
-ENDPROC(__udelay)
-ENDPROC(__const_udelay)
-ENDPROC(__delay)
+/*
+ * 0 <= xloops <= 0x7fffff06
+ * loops_per_jiffy <= 0x01ffffff (max. 3355 bogomips)
+ */
+void __const_udelay(unsigned long xloops)
+{
+	unsigned long mask = ULONG_MAX;
+	unsigned long lpj = loops_per_jiffy;
+	unsigned long loops;
+
+	xloops += mask >> (32 - 14);
+	xloops >>= 14;			/* max = 0x01ffffff */
+
+	lpj += mask >> (32 - 10);
+	lpj >>= 10;			/* max = 0x0001ffff */
+
+	loops = lpj * xloops;		/* max = 0x00007fff */
+	loops += mask >> (32 - 6);
+	loops >>= 6;			/* max = 2^32-1 */
+
+	if (likely(loops))
+		__delay(loops);
+}
+EXPORT_SYMBOL(__const_udelay);
+
+/*
+ * usecs  <= 2000
+ * HZ  <= 1000
+ */
+void __udelay(unsigned long usecs)
+{
+	__const_udelay(usecs * ((2199023UL*HZ)>>11));
+}
+EXPORT_SYMBOL(__udelay);

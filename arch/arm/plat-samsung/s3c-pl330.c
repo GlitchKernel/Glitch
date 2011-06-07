@@ -469,6 +469,7 @@ static inline int s3c_pl330_submit(struct s3c_pl330_chan *ch,
 
 		r->x = NULL;
 
+
 		/* If both of the PL330 ping-pong buffers filled */
 		if (ret == -EAGAIN) {
 			dev_err(ch->dmac->pi->dev, "%s:%d!\n",
@@ -496,9 +497,11 @@ static void s3c_pl330_rq(struct s3c_pl330_chan *ch,
 
 	spin_lock_irqsave(&res_lock, flags);
 
-	r->x = NULL;
+	if(!r->autoload) {
+		r->x = NULL;
 
-	s3c_pl330_submit(ch, r);
+		s3c_pl330_submit(ch, r);
+	}
 
 	spin_unlock_irqrestore(&res_lock, flags);
 
@@ -511,12 +514,20 @@ static void s3c_pl330_rq(struct s3c_pl330_chan *ch,
 		res = S3C2410_RES_ERR;
 
 	/* If last request had some xfer */
-	if (xl) {
-		xfer = container_of(xl, struct s3c_pl330_xfer, px);
-		_finish_off(xfer, res, 0);
+	if(!r->autoload) {
+		if (xl) {
+			xfer = container_of(xl, struct s3c_pl330_xfer, px);
+			_finish_off(xfer, res, 0);
+		} else {
+			dev_info(ch->dmac->pi->dev, "%s:%d No Xfer?!\n",
+				__func__, __LINE__);
+		}
 	} else {
-		dev_info(ch->dmac->pi->dev, "%s:%d No Xfer?!\n",
-			__func__, __LINE__);
+		/* Do callback */
+
+		xfer = container_of(xl, struct s3c_pl330_xfer, px);
+		if (ch->callback_fn)
+			ch->callback_fn(NULL, xfer->token, xfer->px.bytes, res);
 	}
 }
 
@@ -658,6 +669,80 @@ ctrl_exit:
 }
 EXPORT_SYMBOL(s3c2410_dma_ctrl);
 
+
+
+int s3c2410_dma_enqueue_autoload(enum dma_ch id, void *token,
+			dma_addr_t addr, int size, int numofblock)
+{
+	struct s3c_pl330_chan *ch;
+	struct s3c_pl330_xfer *xfer;
+	unsigned long flags;
+	int idx, ret = 0;
+
+	spin_lock_irqsave(&res_lock, flags);
+
+	ch = id_to_chan(id);
+
+	/* Error if invalid or free channel */
+	if (!ch || chan_free(ch)) {
+		ret = -EINVAL;
+		goto enq_exit;
+	}
+
+	/* Error if size is unaligned */
+	if (ch->rqcfg.brst_size && size % (1 << ch->rqcfg.brst_size)) {
+		ret = -EINVAL;
+		goto enq_exit;
+	}
+
+	xfer = kmem_cache_alloc(ch->dmac->kmcache, GFP_ATOMIC);
+	if (!xfer) {
+		ret = -ENOMEM;
+		goto enq_exit;
+	}
+
+	xfer->token = token;
+	xfer->chan = ch;
+	xfer->px.bytes = size;
+	xfer->px.next = NULL; /* Single request */
+
+	/* For S3C DMA API, direction is always fixed for all xfers */
+	if (ch->req[0].rqtype == MEMTODEV) {
+		xfer->px.src_addr = addr;
+		xfer->px.dst_addr = ch->sdaddr;
+	} else {
+		xfer->px.src_addr = ch->sdaddr;
+		xfer->px.dst_addr = addr;
+	}
+
+	add_to_queue(ch, xfer, 0);
+
+	/* Try submitting on either request */
+	idx = (ch->lrq == &ch->req[0]) ? 1 : 0;
+
+	if (!ch->req[idx].x) {
+		ch->req[idx].autoload = numofblock;
+		s3c_pl330_submit(ch, &ch->req[idx]);
+	}
+	else {
+		ch->req[1 - idx].autoload = numofblock;
+		s3c_pl330_submit(ch, &ch->req[1 - idx]);
+	}
+	spin_unlock_irqrestore(&res_lock, flags);
+
+	if (ch->options & S3C2410_DMAF_AUTOSTART)
+		s3c2410_dma_ctrl(id, S3C2410_DMAOP_START);
+
+	return 0;
+
+enq_exit:
+	spin_unlock_irqrestore(&res_lock, flags);
+
+	return ret;
+}
+
+
+
 int s3c2410_dma_enqueue(enum dma_ch id, void *token,
 			dma_addr_t addr, int size)
 {
@@ -707,10 +792,14 @@ int s3c2410_dma_enqueue(enum dma_ch id, void *token,
 	/* Try submitting on either request */
 	idx = (ch->lrq == &ch->req[0]) ? 1 : 0;
 
-	if (!ch->req[idx].x)
+	if (!ch->req[idx].x) {
+		ch->req[idx].autoload = false;
 		s3c_pl330_submit(ch, &ch->req[idx]);
-	else
+	}
+	else {
+		ch->req[1 - idx].autoload = false;
 		s3c_pl330_submit(ch, &ch->req[1 - idx]);
+	}
 
 	spin_unlock_irqrestore(&res_lock, flags);
 
@@ -736,7 +825,6 @@ int s3c2410_dma_request(enum dma_ch id,
 	int ret = 0;
 
 	spin_lock_irqsave(&res_lock, flags);
-
 	ch = chan_acquire(id);
 	if (!ch) {
 		ret = -EBUSY;

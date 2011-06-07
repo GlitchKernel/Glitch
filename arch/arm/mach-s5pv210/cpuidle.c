@@ -34,8 +34,8 @@ static void s5p_enter_idle(void)
 	unsigned long tmp;
 
 	tmp = __raw_readl(S5P_IDLE_CFG);
-	tmp &= ~((3<<30)|(3<<28)|(1<<0));
-	tmp |= ((2<<30)|(2<<28));
+	tmp &= ~((3U<<30)|(3<<28)|(1<<0));
+	tmp |= ((2U<<30)|(2<<28));
 	__raw_writel(tmp, S5P_IDLE_CFG);
 
 	tmp = __raw_readl(S5P_PWR_CFG);
