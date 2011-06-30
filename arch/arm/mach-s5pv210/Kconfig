@@ -227,6 +227,12 @@ config SAMSUNG_EPIC
 endchoice
 endif
 
+config DISABLE_PRINTK
+       bool "Disable Printk in Kernel"
+       depends on EXPERIMENTAL
+       help
+         Disable printk completely in the kernel to reduce overhead
+
 config S5PV210_SETUP_FB
 	bool
 	depends on FB_S3C

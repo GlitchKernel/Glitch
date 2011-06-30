@@ -223,21 +223,20 @@ bad:
 #endif
 
 /*
- * rw_verify_area doesn't like huge counts. We limit
- * them to something that fits in "int" so that others
- * won't have to do range checks all the time.
+ * We limit huge counts to something that fits in "ssize_t"
  */
-#define MAX_RW_COUNT (INT_MAX & PAGE_CACHE_MASK)
+#define MAX_RW_COUNT ((~(size_t)0) >> 1 & PAGE_CACHE_MASK)
 
-int rw_verify_area(int read_write, struct file *file, loff_t *ppos, size_t count)
+ssize_t rw_verify_area(int read_write, struct file *file, loff_t *ppos,
+		       size_t count)
 {
 	struct inode *inode;
 	loff_t pos;
 	int retval = -EINVAL;
 
 	inode = file->f_path.dentry->d_inode;
-	if (unlikely((ssize_t) count < 0))
-		return retval;
+	if (unlikely(count > MAX_RW_COUNT))
+		count = MAX_RW_COUNT;
 	pos = *ppos;
 	if (unlikely((pos < 0) || (loff_t) (pos + count) < 0))
 		return retval;
@@ -251,9 +250,7 @@ int rw_verify_area(int read_write, struct file *file, loff_t *ppos, size_t count
 	}
 	retval = security_file_permission(file,
 				read_write == READ ? MAY_READ : MAY_WRITE);
-	if (retval)
-		return retval;
-	return count > MAX_RW_COUNT ? MAX_RW_COUNT : count;
+	return retval ? retval : count;
 }
 
 static void wait_on_retry_sync_kiocb(struct kiocb *iocb)

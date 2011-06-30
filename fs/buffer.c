@@ -3341,6 +3341,23 @@ struct buffer_head *alloc_buffer_head(gfp_t gfp_flags)
 }
 EXPORT_SYMBOL(alloc_buffer_head);
 
+/*
+ * NOTE: no new callers of this function should be implemented!
+ * All memory allocations should be failable whenever possible.
+ */
+struct buffer_head *alloc_buffer_head_nofail(gfp_t gfp_flags)
+{
+	struct buffer_head *ret;
+
+	for (;;) {
+		ret = alloc_buffer_head(gfp_flags);
+		if (ret)
+			return ret;
+		WARN_ON_ONCE(get_order(sizeof(struct buffer_head)) >
+						PAGE_ALLOC_COSTLY_ORDER);
+	}
+}
+
 void free_buffer_head(struct buffer_head *bh)
 {
 	BUG_ON(!list_empty(&bh->b_assoc_buffers));

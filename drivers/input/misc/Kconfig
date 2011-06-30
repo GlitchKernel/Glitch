@@ -62,6 +62,13 @@ config INPUT_BMA023
 	tristate "Bosch Sensortec BMA023 Acceleration Sensor"
 	depends on I2C
 
+config INPUT_KR3DH
+        depends on I2C
+        tristate "KR3DH driver for s5pc11x"
+        help
+          This option enables accelerometer sensors using kr3dh driver.
+          It is optimized for s5pc11x.
+
 config INPUT_YAS529
 	tristate "Yamaha YAS529 Geomagnetic Sensor"
 	depends on I2C
@@ -445,6 +452,13 @@ config OPTICAL_GP2A
 	default n
 	help
 	  This option enables proximity & light sensors using gp2a driver.
+
+config OPTICAL_GP2A_FROYO
+	depends on I2C && GENERIC_GPIO
+	tristate "GP2A ambient light and proximity input device"
+	default n
+	help
+	  This option enables proximity & light sensors using gp2a driver. (FroYo version)
 
 
 endif

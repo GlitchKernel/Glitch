@@ -1967,7 +1967,7 @@ void btrfs_add_delayed_iput(struct inode *inode)
 	if (atomic_add_unless(&inode->i_count, -1, 1))
 		return;
 
-	delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
+	delayed = kmalloc_nofail(sizeof(*delayed), GFP_NOFS);
 	delayed->inode = inode;
 
 	spin_lock(&fs_info->delayed_iput_lock);

@@ -254,8 +254,8 @@
 /*
  * Configuration information
  */
-#define INPUT_POOL_WORDS 128
-#define OUTPUT_POOL_WORDS 32
+#define INPUT_POOL_WORDS 512
+#define OUTPUT_POOL_WORDS 128
 #define SEC_XFER_SIZE 512
 #define EXTRACT_SIZE 10
 
@@ -263,14 +263,14 @@
  * The minimum number of bits of entropy before we wake up a read on
  * /dev/random.  Should be enough to do a significant reseed.
  */
-static int random_read_wakeup_thresh = 64;
+static int random_read_wakeup_thresh = 512;
 
 /*
  * If the entropy count falls under this number of bits, then we
  * should wake up processes which are selecting or polling on write
  * access to /dev/random.
  */
-static int random_write_wakeup_thresh = 128;
+static int random_write_wakeup_thresh = 1024;
 
 /*
  * When the input pool goes over trickle_thresh, start dropping most
@@ -293,10 +293,10 @@ static struct poolinfo {
 	int poolwords;
 	int tap1, tap2, tap3, tap4, tap5;
 } poolinfo_table[] = {
-	/* x^128 + x^103 + x^76 + x^51 +x^25 + x + 1 -- 105 */
-	{ 128,	103,	76,	51,	25,	1 },
-	/* x^32 + x^26 + x^20 + x^14 + x^7 + x + 1 -- 15 */
-	{ 32,	26,	20,	14,	7,	1 },
+	/* x^512 + x^411 + x^308 + x^208 +x^104 + x + 1 -- 225 */
+	{ 512,  411,    308,    208,    104,    1 },
+	/* x^128 + x^103 + x^76 + x^51 + x^25 + x + 1 -- 105 */
+	{ 128,  103,    76,     51,     25,     1 },
 #if 0
 	/* x^2048 + x^1638 + x^1231 + x^819 + x^411 + x + 1  -- 115 */
 	{ 2048,	1638,	1231,	819,	411,	1 },
@@ -1392,8 +1392,8 @@ static __u32 twothirdsMD4Transform(__u32 const buf[4], __u32 const in[12])
 #define REKEY_INTERVAL (300 * HZ)
 /*
  * Bit layout of the tcp sequence numbers (before adding current time):
- * bit 24-31: increased after every key exchange
- * bit 0-23: hash(source,dest)
+ * bit 28-31: increased after every key exchange
+ * bit 0-27: hash(source,dest)
  *
  * The implementation is similar to the algorithm described
  * in the Appendix of RFC 1185, except that
@@ -1402,16 +1402,13 @@ static __u32 twothirdsMD4Transform(__u32 const buf[4], __u32 const in[12])
  * 	to a (source,dest) tulple dependent forward jump of the
  * 	clock by 0..2^(HASH_BITS+1)
  *
- * Thus the average ISN wraparound time is 68 minutes instead of
- * 4.55 hours.
- *
  * SMP cleanup and lock avoidance with poor man's RCU.
  * 			Manfred Spraul <manfred@colorfullife.com>
  *
  */
-#define COUNT_BITS 8
+#define COUNT_BITS 4
 #define COUNT_MASK ((1 << COUNT_BITS) - 1)
-#define HASH_BITS 24
+#define HASH_BITS 28
 #define HASH_MASK ((1 << HASH_BITS) - 1)
 
 static struct keydata {

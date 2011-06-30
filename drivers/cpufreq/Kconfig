@@ -119,18 +119,28 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASS
 	 Use the 'smartass' governor as default.
 
 config CPU_FREQ_DEFAULT_GOV_SAVAGEDZEN
-  	bool "SavagedZen"
-  	select CPU_FREQ_GOV_SAVAGEDZEN
-  	help
-    	 Use the CPUFreq governor 'savagedzen' as default.
+	bool "SavagedZen"
+	select CPU_FREQ_GOV_SAVAGEDZEN
+	help
+	  Use the CPUFreq governor 'savagedzen' as default.
 
 config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 	bool "interactive"
 	select CPU_FREQ_GOV_INTERACTIVE
 	help
-	 Use the 'interactive' governor as default. This gets full cpu frequency
-	 scaling for workloads that are latency sensitive, typically interactive
-	 workloads..
+	  Use the CPUFreq governor 'interactive' as default. This allows
+	  you to get a full dynamic cpu frequency capable system by simply
+	  loading your cpufreq low-level hardware driver, using the
+	  'interactive' governor for latency-sensitive workloads.
+
+config CPU_FREQ_DEFAULT_GOV_INTERACTIVEX
+	bool "interactiveX"
+	select CPU_FREQ_GOV_INTERACTIVEX
+	help
+	  Use the CPUFreq governor 'interactiveX' as default. This allows
+	  you to get a full dynamic cpu frequency capable system by simply
+	  loading your cpufreq low-level hardware driver, using the
+	  'interactiveX' governor for latency-sensitive workloads.
 
 endchoice
 
@@ -189,6 +199,17 @@ config CPU_FREQ_GOV_ONDEMAND
 
 	  If in doubt, say N.
 
+config CPU_FREQ_GOV_INTERACTIVE
+	tristate "'interactive' cpufreq policy governor"
+	help
+	  'interactive' - This driver adds a dynamic cpufreq policy governor
+	  designed for latency-sensitive workloads.
+
+config CPU_FREQ_GOV_INTERACTIVEX
+	tristate "'interactiveX' cpufreq policy governor"
+	help
+	  'interactiveX' - Modified version of interactive with sleep+wake code.
+
 config CPU_FREQ_GOV_SMARTASS
 	tristate "'smartass' cpufreq policy governor"
 	help
@@ -197,18 +218,11 @@ config CPU_FREQ_GOV_SMARTASS
 	 frequencies. More adapted to mobile devices.
 
 config CPU_FREQ_GOV_SAVAGEDZEN
-  	tristate "'savagedzen' cpufreq governor"
-  	depends on CPU_FREQ
-  	help
-     	  'Savaged-Zen' - a "smartass" based governor
-     	  If in doubt, say N.
-
-config CPU_FREQ_GOV_INTERACTIVE
-	tristate "'interactive' cpufreq policy governor"
+	tristate "'savagedzen' cpufreq governor"
+	depends on CPU_FREQ
 	help
-	 'interactive' - This driver adds a dynamic cpufreq policy governor.
-	 Designed for low latency burst workloads. Scaling it done when coming
-	 out of idle instead of polling.
+	   'Savaged-Zen' - a "smartass" based governor
+	   If in doubt, say N.
 
 config CPU_FREQ_GOV_CONSERVATIVE
 	tristate "'conservative' cpufreq governor"

@@ -5,15 +5,12 @@ export KBUILD_BUILD_VERSION="1"
 # kernel option changes
 OPTS="CONFIG_NETFILTER_XT_MATCH_MULTIPORT \
 CONFIG_SYN_COOKIES \
-CONFIG_TINY_RCU \
 CONFIG_IP_ADVANCED_ROUTER \
 CONFIG_NLS_UTF8 \
 CONFIG_TIMER_STATS \
 CONFIG_MODVERSIONS
 "
-OPTSOFF="CONFIG_TREE_RCU \
-CONFIG_LOCALVERSION_AUTO \
-PHONET \
+OPTSOFF="PHONET \
 CONFIG_MAGIC_SYSRQ \
 CONFIG_DEBUG_FS \
 CONFIG_DETECT_HUNG_TASK \
@@ -25,7 +22,7 @@ CONFIG_DEBUG_SPINLOCK_SLEEP \
 CONFIG_DEBUG_BUGVERBOSE \
 CONFIG_DEBUG_INFO \
 CONFIG_FTRACE \
-CONFIG_STRACKTRACE \
+CONFIG_STACKTRACE \
 CONFIG_STACKTRACE_SUPPORT
 "
 
@@ -64,7 +61,7 @@ sed -i "s/^${o}=[y|m]$/\# ${o}\ is\ not\ set/" .config
 done
 
 echo "building kernel"
-make -j4
+make -j8
 
 echo "creating boot.img"
 ../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/galaxysmtd/ramdisk.img ../../../out/target/product/galaxysmtd/ramdisk-recovery.img

@@ -940,6 +940,24 @@ int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
 			      NULL, mask);
 }
 
+/*
+ * NOTE: no new callers of this function should be implemented!
+ * All memory allocations should be failable whenever possible.
+ */
+int set_extent_dirty_nofail(struct extent_io_tree *tree, u64 start, u64 end,
+		     gfp_t mask)
+{
+	int ret;
+
+	for (;;) {
+		ret = set_extent_dirty(tree, start, end, mask);
+		if (ret != -ENOMEM)
+			return ret;
+		WARN_ON_ONCE(get_order(sizeof(struct extent_state)) >
+						PAGE_ALLOC_COSTLY_ORDER);
+	}
+}
+
 int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
 		    int bits, gfp_t mask)
 {

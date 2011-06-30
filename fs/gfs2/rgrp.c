@@ -1440,8 +1440,8 @@ static struct gfs2_rgrpd *rgblk_free(struct gfs2_sbd *sdp, u64 bstart,
 		rgrp_blk++;
 
 		if (!bi->bi_clone) {
-			bi->bi_clone = kmalloc(bi->bi_bh->b_size,
-					       GFP_NOFS | __GFP_NOFAIL);
+			bi->bi_clone = kmalloc_nofail(bi->bi_bh->b_size,
+					       GFP_NOFS);
 			memcpy(bi->bi_clone + bi->bi_offset,
 			       bi->bi_bh->b_data + bi->bi_offset,
 			       bi->bi_len);
@@ -1759,9 +1759,6 @@ fail:
  * @block: the block
  *
  * Figure out what RG a block belongs to and add that RG to the list
- *
- * FIXME: Don't use NOFAIL
- *
  */
 
 void gfs2_rlist_add(struct gfs2_sbd *sdp, struct gfs2_rgrp_list *rlist,
@@ -1789,8 +1786,8 @@ void gfs2_rlist_add(struct gfs2_sbd *sdp, struct gfs2_rgrp_list *rlist,
 	if (rlist->rl_rgrps == rlist->rl_space) {
 		new_space = rlist->rl_space + 10;
 
-		tmp = kcalloc(new_space, sizeof(struct gfs2_rgrpd *),
-			      GFP_NOFS | __GFP_NOFAIL);
+		tmp = kcalloc_nofail(new_space, sizeof(struct gfs2_rgrpd *),
+			      GFP_NOFS);
 
 		if (rlist->rl_rgd) {
 			memcpy(tmp, rlist->rl_rgd,
@@ -1811,17 +1808,14 @@ void gfs2_rlist_add(struct gfs2_sbd *sdp, struct gfs2_rgrp_list *rlist,
  * @rlist: the list of resource groups
  * @state: the lock state to acquire the RG lock in
  * @flags: the modifier flags for the holder structures
- *
- * FIXME: Don't use NOFAIL
- *
  */
 
 void gfs2_rlist_alloc(struct gfs2_rgrp_list *rlist, unsigned int state)
 {
 	unsigned int x;
 
-	rlist->rl_ghs = kcalloc(rlist->rl_rgrps, sizeof(struct gfs2_holder),
-				GFP_NOFS | __GFP_NOFAIL);
+	rlist->rl_ghs = kcalloc_nofail(rlist->rl_rgrps,
+				sizeof(struct gfs2_holder), GFP_NOFS);
 	for (x = 0; x < rlist->rl_rgrps; x++)
 		gfs2_holder_init(rlist->rl_rgd[x]->rd_gl,
 				state, 0,

@@ -3328,4 +3328,12 @@ config VMXNET3
          To compile this driver as a module, choose M here: the
          module will be called vmxnet3.
 
+config GAN_ETH
+        tristate "Kineto GAN compatibility"
+        depends on INET
+        default n
+        help
+          A virutual ethernet device that adds/removes IP/UDP headers,
+          as required by Kineto GAN.
+
 endif # NETDEVICES

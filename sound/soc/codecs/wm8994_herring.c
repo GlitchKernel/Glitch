@@ -664,7 +664,32 @@ struct gain_info_t playback_gain_table[PLAYBACK_GAIN_NUM] = {
 		.reg  = WM8994_RIGHT_OPGA_VOLUME,   /* 21h */
 		.mask = WM8994_MIXOUTR_VOL_MASK,
 		.gain = WM8994_MIXOUT_VU | 0x39
-    },
+    }, { /* DOCK */
+                .mode = PLAYBACK_EXTRA_DOCK_SPEAKER,
+                .reg  = WM8994_OUTPUT_MIXER_5,          /* 31h */
+                .mask = WM8994_DACL_MIXOUTL_VOL_MASK,
+                .gain = 0x0 << WM8994_DACL_MIXOUTL_VOL_SHIFT
+        }, {
+                .mode = PLAYBACK_EXTRA_DOCK_SPEAKER,
+                .reg  = WM8994_OUTPUT_MIXER_6,          /* 32h */
+                .mask = WM8994_DACR_MIXOUTR_VOL_MASK,
+                .gain = 0x0 << WM8994_DACR_MIXOUTR_VOL_SHIFT
+        }, {
+                .mode = PLAYBACK_EXTRA_DOCK_SPEAKER,
+                .reg  = WM8994_LEFT_OPGA_VOLUME,        /* 20h */
+                .mask = WM8994_MIXOUTL_VOL_MASK,
+                .gain = WM8994_MIXOUT_VU | 0x39
+        }, {
+                .mode = PLAYBACK_EXTRA_DOCK_SPEAKER,
+                .reg  = WM8994_RIGHT_OPGA_VOLUME,       /* 21h */
+                .mask = WM8994_MIXOUTR_VOL_MASK,
+                .gain = WM8994_MIXOUT_VU | 0x39
+        }, {
+                .mode = PLAYBACK_EXTRA_DOCK_SPEAKER,
+                .reg  = WM8994_LINE_OUTPUTS_VOLUME,     /* 1Eh */
+                .mask = WM8994_LINEOUT2_VOL_MASK,
+                .gain = 0x0 << WM8994_LINEOUT2_VOL_SHIFT
+        },
 };
 
 struct gain_info_t voicecall_gain_table[VOICECALL_GAIN_NUM] = {
@@ -1639,6 +1664,11 @@ void wm8994_record_main_mic(struct snd_soc_codec *codec)
 
 	u16 val;
 
+#if defined(CONFIG_SAMSUNG_VIBRANT)
+    /* DIRTY UGLY HACK */
+    wm8994_disable_rec_path(codec); /* fake a mute, that'll be followed by unmute below */
+#endif
+
 	DEBUG_LOG("Recording through Main Mic\n");
 	audio_ctrl_mic_bias_gpio(wm8994->pdata, 1);
 
@@ -1686,10 +1716,14 @@ void wm8994_record_main_mic(struct snd_soc_codec *codec)
 	val |= (WM8994_AIF1ADC1_VU);
 	wm8994_write(codec, WM8994_AIF1_ADC1_LEFT_VOLUME, val);
 
+#if defined(CONFIG_SAMSUNG_VIBRANT)
+	wm8994_write(codec, WM8994_AIF1_ADC1_FILTERS, 0x3000);
+#else
 	val = wm8994_read(codec, WM8994_AIF1_ADC1_FILTERS);
 	val &= ~(WM8994_AIF1ADC1L_HPF_MASK | WM8994_AIF1ADC1R_HPF_MASK);
 	val |= (WM8994_AIF1ADC1L_HPF | 0x2000);
 	wm8994_write(codec, WM8994_AIF1_ADC1_FILTERS, val);
+#endif
 
 	val = wm8994_read(codec, WM8994_AIF1_MASTER_SLAVE);
 	val |= (WM8994_AIF1_MSTR | WM8994_AIF1_CLK_FRC | WM8994_AIF1_LRCLK_FRC);
@@ -2603,10 +2637,92 @@ static void wm8994_set_gsm_voicecall_common_setting(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x6, 0x0);
 }
 
+void wm8994_set_playback_extra_dock_speaker(struct snd_soc_codec *codec)
+{
+        //struct wm8994_priv *wm8994 = codec->private_data;
+
+        u16 val;
+
+        DEBUG_LOG("");
+
+        //OUTPUT mute
+        val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_3);
+        val &= ~(WM8994_LINEOUT2N_ENA_MASK | WM8994_LINEOUT2P_ENA_MASK);
+        wm8994_write(codec, WM8994_POWER_MANAGEMENT_3, val);
+
+        // For X-talk of VPS's L/R line. It's requested by H/W team.
+        wm8994_write(codec, WM8994_ADDITIONAL_CONTROL, 0x00);
+        wm8994_write(codec, WM8994_ANTIPOP_1, 0x80);
+
+        val = wm8994_read(codec,WM8994_OUTPUT_MIXER_1);
+        val &= ~(WM8994_DAC1L_TO_MIXOUTL_MASK);
+        val |= (WM8994_DAC1L_TO_MIXOUTL);
+        wm8994_write(codec,WM8994_OUTPUT_MIXER_1,val);
+
+        val = wm8994_read(codec,WM8994_OUTPUT_MIXER_2);
+        val &= ~(WM8994_DAC1R_TO_MIXOUTR_MASK);
+        val |= (WM8994_DAC1R_TO_MIXOUTR);
+        wm8994_write(codec,WM8994_OUTPUT_MIXER_2,val);
+
+        /* Unmute DAC1 left */
+        val = wm8994_read(codec, WM8994_DAC1_LEFT_VOLUME);
+        val &= ~(WM8994_DAC1L_MUTE_MASK);
+        wm8994_write(codec, WM8994_DAC1_LEFT_VOLUME, val);
+
+        /* Unmute and volume ctrl RightDAC */
+        val = wm8994_read(codec, WM8994_DAC1_RIGHT_VOLUME);
+        val &= ~(WM8994_DAC1R_MUTE_MASK);
+        wm8994_write(codec, WM8994_DAC1_RIGHT_VOLUME, val);
+
+        val = wm8994_read(codec,WM8994_LINE_MIXER_2);
+        val &= ~(WM8994_MIXOUTR_TO_LINEOUT2N_MASK | WM8994_MIXOUTL_TO_LINEOUT2N_MASK | WM8994_LINEOUT2_MODE_MASK | WM8994_MIXOUTR_TO_LINEOUT2P_MASK);
+        val |= (WM8994_MIXOUTL_TO_LINEOUT2N | WM8994_LINEOUT2_MODE | WM8994_MIXOUTR_TO_LINEOUT2P);
+        wm8994_write(codec,WM8994_LINE_MIXER_2,val);
+
+        val = wm8994_read(codec,WM8994_POWER_MANAGEMENT_5);
+        val &= ~(WM8994_DAC1R_ENA_MASK | WM8994_DAC1L_ENA_MASK | WM8994_AIF1DAC1R_ENA_MASK | WM8994_AIF1DAC1L_ENA_MASK);
+        val |= (WM8994_AIF1DAC1L_ENA | WM8994_AIF1DAC1R_ENA | WM8994_DAC1L_ENA | WM8994_DAC1R_ENA);
+        wm8994_write(codec,WM8994_POWER_MANAGEMENT_5,val);
+
+        val = wm8994_read(codec,WM8994_AIF1_DAC1_FILTERS_1);
+        val &= ~(WM8994_AIF1DAC1_MUTE_MASK |WM8994_AIF1DAC1_MONO_MASK);
+        val |= (WM8994_AIF1DAC1_UNMUTE);
+        wm8994_write(codec,WM8994_AIF1_DAC1_FILTERS_1,val);
+
+        val = wm8994_read(codec,WM8994_LINE_OUTPUTS_VOLUME);
+        val &= ~(WM8994_LINEOUT2N_MUTE_MASK | WM8994_LINEOUT2P_MUTE_MASK);
+        wm8994_write(codec,WM8994_LINE_OUTPUTS_VOLUME,val);
+
+        val = wm8994_read(codec,WM8994_DAC1_LEFT_MIXER_ROUTING);
+        val &= ~(WM8994_AIF1DAC1L_TO_DAC1L_MASK);
+        val |= (WM8994_AIF1DAC1L_TO_DAC1L);
+        wm8994_write(codec,WM8994_DAC1_LEFT_MIXER_ROUTING,val);
+
+        val = wm8994_read(codec,WM8994_DAC1_RIGHT_MIXER_ROUTING);
+        val &= ~(WM8994_AIF1DAC1R_TO_DAC1R_MASK);
+        val |= (WM8994_AIF1DAC1R_TO_DAC1R);
+        wm8994_write(codec,WM8994_DAC1_RIGHT_MIXER_ROUTING,val);
+
+        val = wm8994_read(codec, WM8994_CLOCKING_1);
+        val &= ~(WM8994_DSP_FS1CLK_ENA_MASK | WM8994_DSP_FSINTCLK_ENA_MASK);
+        val |= (WM8994_DSP_FS1CLK_ENA | WM8994_DSP_FSINTCLK_ENA);
+        wm8994_write(codec, WM8994_CLOCKING_1, val);
+
+        val = wm8994_read(codec,WM8994_POWER_MANAGEMENT_3);
+        val &= ~(WM8994_LINEOUT2N_ENA_MASK | WM8994_LINEOUT1P_ENA_MASK | WM8994_MIXOUTLVOL_ENA_MASK | WM8994_MIXOUTRVOL_ENA_MASK | WM8994_MIXOUTL_ENA_MASK | WM8994_MIXOUTR_ENA_MASK);
+        val |= (WM8994_LINEOUT2N_ENA | WM8994_LINEOUT2P_ENA | WM8994_MIXOUTL_ENA | WM8994_MIXOUTR_ENA | WM8994_MIXOUTRVOL_ENA | WM8994_MIXOUTLVOL_ENA);
+        wm8994_write(codec,WM8994_POWER_MANAGEMENT_3,val);
+
+        val = wm8994_read(codec,WM8994_POWER_MANAGEMENT_1 );
+        val &= ~(WM8994_BIAS_ENA_MASK | WM8994_VMID_SEL_MASK | WM8994_HPOUT2_ENA_MASK );
+        val |= (WM8994_BIAS_ENA | WM8994_VMID_SEL_NORMAL );
+        wm8994_write(codec,WM8994_POWER_MANAGEMENT_1,val);
+
+}
 
 void wm8994_set_voicecall_common_setting(struct snd_soc_codec *codec)
 {
-	if (herring_is_cdma_wimax_dev())
+	if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 		wm8994_set_cdma_voicecall_common_setting(codec);
 	else
 		wm8994_set_gsm_voicecall_common_setting(codec);
@@ -2829,7 +2945,7 @@ static void wm8994_set_gsm_voicecall_receiver(struct snd_soc_codec *codec)
 
 void wm8994_set_voicecall_receiver(struct snd_soc_codec *codec)
 {
-	if (herring_is_cdma_wimax_dev())
+	if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 		wm8994_set_cdma_voicecall_receiver(codec);
 	else
 		wm8994_set_gsm_voicecall_receiver(codec);
@@ -2950,7 +3066,7 @@ void wm8994_set_voicecall_headset(struct snd_soc_codec *codec)
 
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_3, 0x0030);
 
-	if (herring_is_cdma_wimax_dev())
+	if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0009);
 	else
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0019);
@@ -3107,7 +3223,7 @@ void wm8994_set_voicecall_headphone(struct snd_soc_codec *codec)
 
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_3, 0x0030);
 
-	if (herring_is_cdma_wimax_dev())
+	if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0009);
 	else
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0019);
@@ -3196,7 +3312,7 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_4,
 			WM8994_AIF2ADCL_ENA | WM8994_ADCL_ENA);
 
-	if (herring_is_cdma_wimax_dev())
+	if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0009);
 	else
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0019);
@@ -3294,7 +3410,7 @@ void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec)
 	wm8994_write(codec, WM8994_DAC2_RIGHT_MIXER_ROUTING,
 		WM8994_AIF2DACR_TO_DAC2R | WM8994_AIF1DAC1R_TO_DAC2R);
 
-	if (herring_is_cdma_wimax_dev())
+	if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0009);
 	else
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0019);
@@ -3429,7 +3545,7 @@ void wm8994_set_voicecall_tty_vco(struct snd_soc_codec *codec)
 
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_3, 0x0030);
 
-	if (herring_is_cdma_wimax_dev())
+	if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0009);
 	else
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0019);
@@ -3595,7 +3711,7 @@ void wm8994_set_voicecall_tty_hco(struct snd_soc_codec *codec)
 		WM8994_MIXOUTLVOL_ENA | WM8994_MIXOUTRVOL_ENA |
 		WM8994_MIXOUTL_ENA | WM8994_MIXOUTR_ENA);
 
-	if (herring_is_cdma_wimax_dev())
+	if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0009);
 	else
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0019);
@@ -3759,7 +3875,7 @@ void wm8994_set_voicecall_tty_full(struct snd_soc_codec *codec)
 
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_3, 0x0030);
 
-	if (herring_is_cdma_wimax_dev())
+	if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0009);
 	else
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0019);
@@ -4725,7 +4841,7 @@ int wm8994_set_codec_gain(struct snd_soc_codec *codec, u16 mode, u16 device)
 
 	if (mode == PLAYBACK_MODE) {
 
-		if (herring_is_cdma_wimax_dev())
+		if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 			default_gain_table_p = cdma_playback_gain_table;
 		else
 			default_gain_table_p = playback_gain_table;
@@ -4761,12 +4877,15 @@ int wm8994_set_codec_gain(struct snd_soc_codec *codec, u16 mode, u16 device)
 		case PLAYBACK_HP_NO_MIC:
 			gain_set_bits |= PLAYBACK_HP_NO_MIC;
 			break;
+		case PLAYBACK_EXTRA_DOCK_SPEAKER:
+			gain_set_bits |= PLAYBACK_EXTRA_DOCK_SPEAKER;
+			break;
 		default:
 			pr_err("playback modo gain flag is wrong\n");
 			break;
 		}
 	} else if (mode == VOICECALL_MODE) {
-		if (herring_is_cdma_wimax_dev())
+		if (herring_is_cdma_wimax_dev() || phone_is_aries_cdma())
 			default_gain_table_p = cdma_voicecall_gain_table;
 		else
 			default_gain_table_p = voicecall_gain_table;

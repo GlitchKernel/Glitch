@@ -20,7 +20,7 @@
 #define APLL_VAL_2000   ((1<<31)|(250<<16)|(3<<8)|(1))
 #define APLL_VAL_1900   ((1<<31)|(475<<16)|(6<<8)|(1))
 #define APLL_VAL_1800   ((1<<31)|(225<<16)|(3<<8)|(1))
-#define APLL_VAL_1700   ((1<<31)|(425<<16)|(6<<8)|(1))
+#define APLL_VAL_1704   ((1<<31)|(213<<16)|(3<<8)|(1))
 #define APLL_VAL_1600   ((1<<31)|(200<<16)|(3<<8)|(1))
 #define APLL_VAL_1540   ((1<<31)|(385<<16)|(6<<8)|(1))
 #define APLL_VAL_1500   ((1<<31)|(375<<16)|(6<<8)|(1))
@@ -37,16 +37,14 @@ enum perf_level {
 	L2,
 	L3,
 	L4,
-<<<<<<< HEAD
 	L5,
 	L6,
 	L7,
 	L8,
 	L9,
-	L10
-=======
-	MAX_PERF_LEVEL = L4,
->>>>>>> upstream/android-samsung-2.6.35
+	L10,
+	L11,
+	MAX_PERF_LEVEL = L11,
 };
 
 #define SLEEP_FREQ      (800 * 1000) /* Use 800MHz when entering sleep */

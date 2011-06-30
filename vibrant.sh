@@ -25,7 +25,7 @@ CONFIG_DEBUG_SPINLOCK_SLEEP \
 CONFIG_DEBUG_BUGVERBOSE \
 CONFIG_DEBUG_INFO \
 CONFIG_FTRACE \
-CONFIG_STRACKTRACE \
+CONFIG_STACKTRACE \
 CONFIG_STACKTRACE_SUPPORT
 "
 
@@ -64,7 +64,7 @@ sed -i "s/^${o}=[y|m]$/\# ${o}\ is\ not\ set/" .config
 done
 
 echo "building kernel"
-make -j4
+make -j8
 
 echo "creating boot.img"
 ../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/vibrantmtd/ramdisk.img ../../../out/target/product/vibrantmtd/ramdisk-recovery.img

@@ -197,6 +197,8 @@ int set_extent_new(struct extent_io_tree *tree, u64 start, u64 end,
 		   gfp_t mask);
 int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
 		     gfp_t mask);
+int set_extent_dirty_nofail(struct extent_io_tree *tree, u64 start, u64 end,
+		     gfp_t mask);
 int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
 		       gfp_t mask);
 int clear_extent_ordered(struct extent_io_tree *tree, u64 start, u64 end,

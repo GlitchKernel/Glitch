@@ -434,8 +434,8 @@ out:
 }
 EXPORT_SYMBOL(add_to_page_cache_locked);
 
-int add_to_page_cache_lru(struct page *page, struct address_space *mapping,
-				pgoff_t offset, gfp_t gfp_mask)
+int __add_to_page_cache_lru(struct page *page, struct address_space *mapping,
+				pgoff_t offset, gfp_t gfp_mask, int tail)
 {
 	int ret;
 
@@ -451,11 +451,17 @@ int add_to_page_cache_lru(struct page *page, struct address_space *mapping,
 	ret = add_to_page_cache(page, mapping, offset, gfp_mask);
 	if (ret == 0) {
 		if (page_is_file_cache(page))
-			lru_cache_add_file(page);
+			lru_cache_add_file_tail(page, tail);
 		else
 			lru_cache_add_anon(page);
 	}
 	return ret;
+}
+
+int add_to_page_cache_lru(struct page *page, struct address_space *mapping,
+				pgoff_t offset, gfp_t gfp_mask)
+{
+	return __add_to_page_cache_lru(page, mapping, offset, gfp_mask, 0);
 }
 EXPORT_SYMBOL_GPL(add_to_page_cache_lru);
 
@@ -956,6 +962,28 @@ static void shrink_readahead_size_eio(struct file *filp,
 	ra->ra_pages /= 4;
 }
 
+static inline int nr_mapped(void)
+{
+	return global_page_state(NR_FILE_MAPPED) +
+		global_page_state(NR_ANON_PAGES);
+}
+
+/*
+ * This examines how large in pages a file size is and returns 1 if it is
+ * more than half the unmapped ram. Avoid doing read_page_state which is
+ * expensive unless we already know it is likely to be large enough.
+ */
+static int large_isize(unsigned long nr_pages)
+{
+	if (nr_pages * 6 > vm_total_pages) {
+		 unsigned long unmapped_ram = vm_total_pages - nr_mapped();
+
+		if (nr_pages * 2 > unmapped_ram)
+			return 1;
+	}
+	return 0;
+}
+
 /**
  * do_generic_file_read - generic file read routine
  * @filp:	the file to read
@@ -980,7 +1008,7 @@ static void do_generic_file_read(struct file *filp, loff_t *ppos,
 	pgoff_t prev_index;
 	unsigned long offset;      /* offset into pagecache page */
 	unsigned int prev_offset;
-	int error;
+	int error, tail = 0;
 
 	index = *ppos >> PAGE_CACHE_SHIFT;
 	prev_index = ra->prev_pos >> PAGE_CACHE_SHIFT;
@@ -991,7 +1019,7 @@ static void do_generic_file_read(struct file *filp, loff_t *ppos,
 	for (;;) {
 		struct page *page;
 		pgoff_t end_index;
-		loff_t isize;
+		loff_t isize = 0;
 		unsigned long nr, ret;
 
 		cond_resched();
@@ -1016,6 +1044,9 @@ find_page:
 				goto page_not_up_to_date;
 			if (!trylock_page(page))
 				goto page_not_up_to_date;
+			/* Did it get truncated before we got the lock? */
+			if (!page->mapping)
+				goto page_not_up_to_date_locked;
 			if (!mapping->a_ops->is_partially_uptodate(page,
 								desc, offset))
 				goto page_not_up_to_date_locked;
@@ -1162,8 +1193,16 @@ no_cached_page:
 			desc->error = -ENOMEM;
 			goto out;
 		}
-		error = add_to_page_cache_lru(page, mapping,
-						index, GFP_KERNEL);
+		/*
+		 * If we know the file is large we add the pages read to the
+		 * end of the lru as we're unlikely to be able to cache the
+		 * whole file in ram so make those pages the first to be
+		 * dropped if not referenced soon.
+		 */
+		if (large_isize(end_index))
+			tail = 1;
+		error = __add_to_page_cache_lru(page, mapping,
+						index, GFP_KERNEL, tail);
 		if (error) {
 			page_cache_release(page);
 			if (error == -EEXIST)
@@ -2203,7 +2242,7 @@ struct page *grab_cache_page_write_begin(struct address_space *mapping,
 		gfp_notmask = __GFP_FS;
 repeat:
 	page = find_lock_page(mapping, index);
-	if (likely(page))
+	if (page)
 		return page;
 
 	page = __page_cache_alloc(mapping_gfp_mask(mapping) & ~gfp_notmask);
@@ -2229,6 +2268,7 @@ static ssize_t generic_perform_write(struct file *file,
 	long status = 0;
 	ssize_t written = 0;
 	unsigned int flags = 0;
+	unsigned int dirty;
 
 	/*
 	 * Copies from kernel address space cannot fail (NFSD is a big user).
@@ -2279,6 +2319,7 @@ again:
 		pagefault_enable();
 		flush_dcache_page(page);
 
+		dirty = PageDirty(page);
 		mark_page_accessed(page);
 		status = a_ops->write_end(file, mapping, pos, bytes, copied,
 						page, fsdata);
@@ -2305,7 +2346,8 @@ again:
 		pos += copied;
 		written += copied;
 
-		balance_dirty_pages_ratelimited(mapping);
+		if (!dirty)
+			balance_dirty_pages_ratelimited(mapping);
 
 	} while (iov_iter_count(i));
 

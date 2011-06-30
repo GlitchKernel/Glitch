@@ -1326,6 +1326,16 @@ static struct ctl_table vm_table[] = {
 		.extra2		= &one,
 	},
 #endif
+	{
+		.procname	= "inactive_file_ratio",
+		.data		= &inactive_file_ratio,
+		.maxlen		= sizeof(inactive_file_ratio),
+		.mode		= 0644,
+		.proc_handler	= &proc_dointvec_minmax,
+		.extra1		= &zero,
+		.extra2		= &one_hundred,
+	},
+
 
 /*
  * NOTE: do not add new entries to this table unless you have read

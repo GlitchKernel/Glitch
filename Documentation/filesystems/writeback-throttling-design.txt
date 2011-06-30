@@ -1,0 +1,210 @@
+writeback throttling design
+---------------------------
+
+introduction to dirty throttling
+--------------------------------
+
+The write(2) is normally buffered write that creates dirty page cache pages
+for holding the data and return immediately. The dirty pages will eventually
+be written to disk, or be dropped by unlink()/truncate().
+
+The delayed writeback of dirty pages enables the kernel to optimize the IO:
+
+- turn IO into async ones, which avoids blocking the tasks
+- submit IO as a batch for better throughput
+- avoid IO at all for temp files
+
+However, there have to be some limits on the number of allowable dirty pages.
+Typically applications are able to dirty pages more quickly than storage
+devices can write them. When approaching the dirty limits, the dirtier tasks
+will be throttled (put to brief sleeps from time to time) by
+balance_dirty_pages() in order to balance the dirty speed and writeback speed.
+
+dirty limits
+------------
+
+The dirty limit defaults to 20% reclaimable memory, and can be tuned via one of
+the following sysctl interfaces:
+
+	/proc/sys/vm/dirty_ratio
+	/proc/sys/vm/dirty_bytes
+
+The ultimate goal of balance_dirty_pages() is to keep the global dirty pages
+under control.
+
+	dirty_limit = dirty_ratio * free_reclaimable_pages
+
+However a global threshold may create deadlock for stacked BDIs (loop, FUSE and
+local NFS mounts). When A writes to B, and A generates enough dirty pages to
+get throttled, B will never start writeback until the dirty pages go away.
+
+Another problem is inter device starvation. When there are concurrent writes to
+a slow device and a fast one, the latter may well be starved due to unnecessary
+throttling on its dirtier tasks, leading to big IO performance drop.
+
+The solution is to split the global dirty limit into per-bdi limits among all
+the backing devices and scale writeback cache per backing device, proportional
+to its writeout speed.
+
+	bdi_dirty_limit = bdi_weight * dirty_limit
+
+where bdi_weight (ranging from 0 to 1) reflects the recent writeout speed of
+the BDI.
+
+We further scale the bdi dirty limit inversly with the task's dirty rate.
+This makes heavy writers have a lower dirty limit than the occasional writer,
+to prevent a heavy dd from slowing down all other light writers in the system.
+
+	task_dirty_limit = bdi_dirty_limit - task_weight * bdi_dirty_limit/16
+
+pause time
+----------
+
+The main task of dirty throttling is to determine when and how long to pause
+the current dirtier task.  Basically we want to
+
+- avoid too small pause time (less than 1 jiffy, which burns CPU power)
+- avoid too large pause time (more than 100ms, which hurts responsiveness)
+- avoid big fluctuations of pause times
+
+To smoothly control the pause time, we do soft throttling in a small region
+under task_dirty_limit, starting from
+
+	task_throttle_thresh = task_dirty_limit - task_dirty_limit/16
+
+In fig.1, when bdi_dirty_pages falls into
+
+    [0, La]:    do nothing
+    [La, A]:    do soft throttling
+    [A, inf]:   do hard throttling
+
+Where hard throttling is to wait until bdi_dirty_pages falls more than
+task_dirtied_pages (the pages dirtied by the task since its last throttle
+time). It's "hard" because it may end up waiting for long time.
+
+Fig.1 dirty throttling regions
+                                              o
+                                                o
+                                                  o
+                                                    o
+                                                      o
+                                                        o
+                                                          o
+                                                            o
+----------------------------------------------+---------------o----------------|
+                                              La              A                T
+                no throttle                     soft throttle   hard throttle
+  T: bdi_dirty_limit
+  A: task_dirty_limit      = T - task_weight * T/16
+  La: task_throttle_thresh = A - A/16
+
+Soft dirty throttling is to pause the dirtier task for J:pause_time jiffies on
+every N:task_dirtied_pages pages it dirtied.  Let's call (N/J) the "throttle
+bandwidth". It is computed by the following formula:
+
+                                     task_dirty_limit - bdi_dirty_pages
+throttle_bandwidth = bdi_bandwidth * ----------------------------------
+                                           task_dirty_limit/16
+
+where bdi_bandwidth is the BDI's estimated write speed.
+
+Given the throttle_bandwidth for a task, we select a suitable N, so that when
+the task dirties so much pages, it enters balance_dirty_pages() to sleep for
+roughly J jiffies. N is adaptive to storage and task write speeds, so that the
+task always get suitable (not too long or small) pause time.
+
+dynamics
+--------
+
+When there is one heavy dirtier, bdi_dirty_pages will keep growing until
+exceeding the low threshold of the task's soft throttling region [La, A].
+At which point (La) the task will be controlled under speed
+throttle_bandwidth=bdi_bandwidth (fig.2) and remain stable there.
+
+Fig.2 one heavy dirtier
+
+    throttle_bandwidth ~= bdi_bandwidth  =>   o
+                                              | o
+                                              |   o
+                                              |     o
+                                              |       o
+                                              |         o
+                                              |           o
+                                            La|             o
+----------------------------------------------+---------------o----------------|
+                                              R               A                T
+  R: bdi_dirty_pages ~= La
+
+When there comes a new dd task B, task_weight_B will gradually grow from 0 to
+50% while task_weight_A will decrease from 100% to 50%.  When task_weight_B is
+still small, B is considered a light dirtier and is allowed to dirty pages much
+faster than the bdi write bandwidth. In fact initially it won't be throttled at
+all when R < Lb where Lb = B - B/16 and B ~= T.
+
+Fig.3 an old dd (A) + a newly started dd (B)
+
+                      throttle bandwidth  =>    *
+                                                | *
+                                                |   *
+                                                |     *
+                                                |       *
+                                                |         *
+                                                |           *
+                                                |             *
+                      throttle bandwidth  =>    o               *
+                                                | o               *
+                                                |   o               *
+                                                |     o               *
+                                                |       o               *
+                                                |         o               *
+                                                |           o               *
+------------------------------------------------+-------------o---------------*|
+                                                R             A               BT
+
+So R:bdi_dirty_pages will grow large. As task_weight_A and task_weight_B
+converge to 50%, the points A, B will go towards each other (fig.4) and
+eventually coincide with each other. R will stabilize around A-A/32 where
+A=B=T-0.5*T/16.  throttle_bandwidth will stabilize around bdi_bandwidth/2.
+
+Note that the application "think+dirty time" is ignored for simplicity in the
+above discussions. With non-zero user space think time, the balance point will
+slightly drift and not a big deal otherwise.
+
+Fig.4 the two dd's converging to the same bandwidth
+
+                                                         |
+                                 throttle bandwidth  =>  *
+                                                         | *
+                                 throttle bandwidth  =>  o   *
+                                                         | o   *
+                                                         |   o   *
+                                                         |     o   *
+                                                         |       o   *
+                                                         |         o   *
+---------------------------------------------------------+-----------o---*-----|
+                                                         R           A   B     T
+
+There won't be big oscillations between A and B, because as soon as A coincides
+with B, their throttle_bandwidth and hence dirty speed will be equal, A's
+weight will stop decreasing and B's weight will stop growing, so the two points
+won't keep moving and cross each other.
+
+Sure there are always oscillations of bdi_dirty_pages as long as the dirtier
+task alternatively do dirty and pause. But it will be bounded. When there is 1
+heavy dirtier, the error bound will be (pause_time * bdi_bandwidth). When there
+are 2 heavy dirtiers, the max error is 2 * (pause_time * bdi_bandwidth/2),
+which remains the same as 1 dirtier case (given the same pause time). In fact
+the more dirtier tasks, the less errors will be, since the dirtier tasks are
+not likely going to sleep at the same time.
+
+References
+----------
+
+Smarter write throttling
+http://lwn.net/Articles/245600/
+
+Flushing out pdflush
+http://lwn.net/Articles/326552/
+
+Dirty throttling slides
+http://www.kernel.org/pub/linux/kernel/people/wfg/writeback/dirty-throttling.pdf

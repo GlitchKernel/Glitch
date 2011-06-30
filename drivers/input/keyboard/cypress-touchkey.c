@@ -42,7 +42,7 @@
 #define OLD_BACKLIGHT_ON	0x1
 #define OLD_BACKLIGHT_OFF	0x2
 
-#define BACKLIGHT_TIMEOUT	1600
+#define BACKLIGHT_TIMEOUT	500
 
 #define DEVICE_NAME "cypress-touchkey"
 

@@ -98,14 +98,9 @@ static int start_this_handle(journal_t *journal, handle_t *handle)
 	}
 
 alloc_transaction:
-	if (!journal->j_running_transaction) {
-		new_transaction = kzalloc(sizeof(*new_transaction),
-						GFP_NOFS|__GFP_NOFAIL);
-		if (!new_transaction) {
-			ret = -ENOMEM;
-			goto out;
-		}
-	}
+	if (!journal->j_running_transaction)
+		new_transaction = kzalloc_nofail(sizeof(*new_transaction),
+						GFP_NOFS);
 
 	jbd_debug(3, "New handle %p going live.\n", handle);
 

@@ -207,4 +207,10 @@ config BT_ATH3K
 	  Say Y here to compile support for "Atheros firmware download driver"
 	  into the kernel or say M to compile it as module (ath3k).
 
+config BT_HID
+	tristate "Bluetooth HID (Human interface device) driver"
+	default m
+	help
+	  say M to compile it as module.
+	  
 endmenu

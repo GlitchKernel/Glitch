@@ -5,7 +5,7 @@
 
 struct fs_struct {
 	int users;
-	rwlock_t lock;
+	spinlock_t lock;
 	int umask;
 	int in_exec;
 	struct path root, pwd;

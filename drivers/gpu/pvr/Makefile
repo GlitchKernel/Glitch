@@ -76,10 +76,10 @@ pvrsrvkm-y := \
 	mutils.o \
 	mmap.o \
 	module.o \
-	pdump.o \
+//	pdump.o \
 	proc.o \
 	pvr_bridge_k.o \
-	pvr_debug.o \
+//	pvr_debug.o \
 	mm.o \
 	mutex.o \
 	event.o \
@@ -96,7 +96,7 @@ pvrsrvkm-y := \
 	resman.o \
 	power.o \
 	mem.o \
-	pdump_common.o \
+//	pdump_common.o \
 	bridged_support.o \
 	bridged_pvr_bridge.o \
 	perproc.o \

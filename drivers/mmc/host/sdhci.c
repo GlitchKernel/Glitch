@@ -1403,8 +1403,7 @@ static void sdhci_tasklet_finish(unsigned long param)
 		sdhci_reset(host, SDHCI_RESET_DATA);
 	}
 out:
-	if((readl(host->ioaddr + SDHCI_PRESENT_STATE) & SDHCI_DATA_INHIBIT) ||
-			(host->quirks & SDHCI_QUIRK_MUST_MAINTAIN_CLOCK))
+	if(readl(host->ioaddr + SDHCI_PRESENT_STATE) & SDHCI_DATA_INHIBIT)
 		mod_timer(&host->busy_check_timer, jiffies + msecs_to_jiffies(10));
 	else
 		sdhci_disable_clock_card(host);
@@ -1463,8 +1462,7 @@ static void sdhci_busy_check_timer(unsigned long data)
 
 	spin_lock_irqsave(&host->lock, flags);
 
-	if((readl(host->ioaddr + SDHCI_PRESENT_STATE) & (SDHCI_CMD_INHIBIT | SDHCI_DATA_INHIBIT)) ||
-			(host->quirks & SDHCI_QUIRK_MUST_MAINTAIN_CLOCK))
+	if(readl(host->ioaddr + SDHCI_PRESENT_STATE) & (SDHCI_CMD_INHIBIT | SDHCI_DATA_INHIBIT))
 		mod_timer(&host->busy_check_timer, jiffies + msecs_to_jiffies(10));
 	else
 		sdhci_disable_clock_card(host);
