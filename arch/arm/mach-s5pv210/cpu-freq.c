@@ -54,7 +54,7 @@ static DEFINE_MUTEX(set_freq_lock);
 /* frequency */
 
 static struct cpufreq_frequency_table freq_table[] = {
-	{L0, 1704*1000},
+	{L0, 1700*1000},
 	{L1, 1600*1000},
 	{L2, 1500*1000},
 	{L3, 1440*1000},
@@ -72,7 +72,7 @@ static struct cpufreq_frequency_table freq_table[] = {
 extern int exp_UV_mV[12]; //Needed for uv
 unsigned int freq_uv_table[12][3] = {
 	//freq, 	stock, current
-	{1704000,	1500,	1500},
+	{1700000,	1500,	1500},
 	{1600000,	1500,	1500},
 	{1500000,	1500,	1500},
 	{1440000,	1475,	1475},
@@ -89,8 +89,8 @@ unsigned int freq_uv_table[12][3] = {
 unsigned int gpu[12][2] = {
 	//stock  current
 
-	//1704
-	{244, 244},
+	//1700
+	{243, 243},
 
 	//1600
 	{229, 229},
@@ -149,7 +149,7 @@ const unsigned long int_volt_max = 1300000;
 static struct s5pv210_dvs_conf dvs_conf[] = {
 	[L0] = {
 		.arm_volt   = 1500000,
-		.int_volt   = 1250000,
+		.int_volt   = 1225000,
 		},
 	[L1] = {
 		.arm_volt   = 1500000,
@@ -157,23 +157,23 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 	},
 	[L2] = {
 		.arm_volt   = 1500000,
-		.int_volt   = 1200000,
+		.int_volt   = 1225000,
 	},
 	[L3] = {
 		.arm_volt   = 1475000,
-		.int_volt   = 1175000,
+		.int_volt   = 1200000,
 	},
 	[L4] = { 
 		.arm_volt   = 1450000,
-		.int_volt   = 1150000,
+		.int_volt   = 1175000,
 	},
 	[L5] = {
 		.arm_volt   = 1400000,
-		.int_volt   = 1125000,
+		.int_volt   = 1150000,
 	},
 	[L6] = {
 		.arm_volt   = 1350000,
-		.int_volt   = 1100000,
+		.int_volt   = 1125000,
 	},
 	[L7] = {
 		.arm_volt   = 1250000,
@@ -232,8 +232,8 @@ static u32 clkdiv_val[12][11] = {
 //And even more clocks
 static struct s3c_freq clk_info[] = {
 	[L0] = {
-		.fclk       = 1704000,
-		.armclk     = 1704000,
+		.fclk       = 1700000,
+		.armclk     = 1700000,
 		.hclk_tns   = 0,
 		.hclk	    = 133000,
 		.pclk       = 66000,
@@ -471,7 +471,7 @@ static void s5pv210_cpufreq_clksrcs_MPLL2APLL(unsigned int index,
 
 //Fixed up the 1200mhz overclock (Thanks netarchy!)
 	if (index == L0)
-		__raw_writel(PLL45XX_APLL_VAL_1704, S5P_APLL_CON);
+		__raw_writel(PLL45XX_APLL_VAL_1700, S5P_APLL_CON);
 	else if (index == L1)
 		__raw_writel(PLL45XX_APLL_VAL_1600, S5P_APLL_CON);
 	else if (index == L2)

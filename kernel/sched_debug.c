@@ -87,6 +87,20 @@ static void print_cfs_group_stats(struct seq_file *m, int cpu,
 }
 #endif
 
+#if defined(CONFIG_CGROUP_SCHED) && \
+	(defined(CONFIG_FAIR_GROUP_SCHED) || defined(CONFIG_RT_GROUP_SCHED))
+static void task_group_path(struct task_group *tg, char *buf, int buflen)
+{
+	/* may be NULL if the underlying cgroup isn't fully-created yet */
+	if (!tg->css.cgroup) {
+		if (!autogroup_path(tg, buf, buflen))
+			buf[0] = '\0';
+		return;
+	}
+	cgroup_path(tg->css.cgroup, buf, buflen);
+}
+#endif
+
 static void
 print_task(struct seq_file *m, struct rq *rq, struct task_struct *p)
 {
@@ -115,7 +129,7 @@ print_task(struct seq_file *m, struct rq *rq, struct task_struct *p)
 		char path[64];
 
 		rcu_read_lock();
-		cgroup_path(task_group(p)->css.cgroup, path, sizeof(path));
+		task_group_path(task_group(p), path, sizeof(path));
 		rcu_read_unlock();
 		SEQ_printf(m, " %s", path);
 	}
@@ -146,19 +160,6 @@ static void print_rq(struct seq_file *m, struct rq *rq, int rq_cpu)
 
 	read_unlock_irqrestore(&tasklist_lock, flags);
 }
-
-#if defined(CONFIG_CGROUP_SCHED) && \
-	(defined(CONFIG_FAIR_GROUP_SCHED) || defined(CONFIG_RT_GROUP_SCHED))
-static void task_group_path(struct task_group *tg, char *buf, int buflen)
-{
-	/* may be NULL if the underlying cgroup isn't fully-created yet */
-	if (!tg->css.cgroup) {
-		buf[0] = '\0';
-		return;
-	}
-	cgroup_path(tg->css.cgroup, buf, buflen);
-}
-#endif
 
 void print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq)
 {
