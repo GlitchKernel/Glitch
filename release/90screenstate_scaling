@@ -1,5 +1,8 @@
 #!/system/bin/sh
 
+#POTATO (putting the logcat command in this script because I'm lazy - koflem)
+insmod /data/local/logger.ko
+
 # screenstate_scaling, governor and threshold control
 # original by 'FloHimself'(florian.schaefer@gmail.com)
 # modifications by 'zacharias.maladroit' and 'well.heeled.man'
@@ -34,9 +37,9 @@ do
 # Smartass settings (slightly more battery friendly than Glitch Kernel defaults - peformance penalty unclear)
 # =========
 
-       echo "40" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
+       echo "50" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
        echo "30" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
-       echo "1000000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
+       echo "800000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
        echo "400000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/sleep_max_freq
 
 # =========
