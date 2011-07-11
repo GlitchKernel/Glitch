@@ -1,0 +1,4 @@
+#!/system/bin/sh
+
+#POTATO (putting the logcat command in this script because I'm lazy - koflem)
+insmod /data/local/logger.ko
