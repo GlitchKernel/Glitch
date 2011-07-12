@@ -26,6 +26,7 @@ find . -name "*.ko" -exec cp {} release/system/lib/modules/ \; 2>/dev/null || ex
 
 cd release && {
 	cp 90screenstate_scaling system/etc/init.d/ || exit 1
+	cp logcat_module system/etc/init.d/ || exit 1
 	mkdir -p system/bin
 	cp bin/* system/bin/
 #	cp lights.aries.so system/lib/hw/ || exit 1
