@@ -306,9 +306,9 @@ static void setup_gamma_regs(struct s5p_lcd *lcd, u16 gamma_regs[])
 		vx[4] = gamma_lookup(lcd, brightness, bv->v171, c);
 
 		// calculate gamma points 4 to 1 successively
-		// those are calculated from vx[4] to vx[1], based on
+		// those are calculated from vx[4] to vx[0], based on
 		// gamma table values chosen to follow current brightness
-		for (i = 4; i >= 1; i--) {
+		for (i = 4; i >= 0; i--) {
 			if (v1 <= vx[i + 1]) {
 				adj = -1;
 			} else {
@@ -546,7 +546,7 @@ static void seq_print_gamma_regs(struct seq_file *m, const u16 gamma_regs[])
 		v[5] = DIV_ROUND_CLOSEST(
 			(600 - 120 - adj[5] - offset->v[c][5]) * scale, 600);
 
-		for (i = 4; i >= 1; i--) {
+		for (i = 4; i >= 0; i--) {
 			adj[i] = gamma_regs[3 * i + c] & 0xff;
 			v[i] = v[0] - DIV_ROUND_CLOSEST((v[0] - v[i + 1]) *
 					(65 + adj[i] + offset->v[c][i]), 320);
