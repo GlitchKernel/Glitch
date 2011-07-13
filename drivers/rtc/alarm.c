@@ -584,6 +584,11 @@ static void  __exit alarm_exit(void)
 	platform_driver_unregister(&alarm_driver);
 }
 
+EXPORT_SYMBOL(alarm_init);
+EXPORT_SYMBOL(alarm_cancel);
+EXPORT_SYMBOL(alarm_start_range);
+EXPORT_SYMBOL(alarm_get_elapsed_realtime);
+
 late_initcall(alarm_late_init);
 module_init(alarm_driver_init);
 module_exit(alarm_exit);
