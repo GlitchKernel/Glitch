@@ -1208,7 +1208,6 @@ CONFIG_INPUT_GPIO=y
 CONFIG_OPTICAL_GP2A=y
 # CONFIG_OPTICAL_GP2A_FROYO is not set
 
-
 #
 # Hardware I/O ports
 #
