@@ -1,3 +1,4 @@
+#!/system/bin/sh
 su -c "cp /system/lib/modules/logger.ko /data/local/logger.ko"
 echo
 echo

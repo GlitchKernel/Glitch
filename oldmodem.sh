@@ -40,7 +40,7 @@ if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/sam
 	
 	echo "Building done. Reswitching..."
 
-	cd ~/android/system/kernel/samsung/glitch {
+	cd ~/android/system/kernel/samsung/glitch && {
 		mv Makefile Makefile_backup
 		mv Makefile_opti Makefile
 	}
