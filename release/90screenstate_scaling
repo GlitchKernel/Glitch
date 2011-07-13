@@ -15,7 +15,7 @@
 # One governor to rule them all
 # =========
 
-AWAKE_GOVERNOR="smartass"
+AWAKE_GOVERNOR="ondemand"
 SLEEP_GOVERNOR="conservative"
 
 ##
@@ -34,10 +34,10 @@ do
 # Smartass settings (slightly more battery friendly than Glitch Kernel defaults - peformance penalty unclear)
 # =========
 
-       echo "50" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
-       echo "30" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
-       echo "800000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
-       echo "400000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/sleep_max_freq
+#       echo "50" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
+#       echo "30" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
+#       echo "800000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
+#       echo "400000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/sleep_max_freq
 
 # =========
 # Ondemand settings [more aggressive power savings vs. standard ondemand]

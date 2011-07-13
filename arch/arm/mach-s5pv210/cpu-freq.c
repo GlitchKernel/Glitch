@@ -147,6 +147,8 @@ const unsigned long int_volt_max = 1300000;
 
 // added more voltage levels for the added frequencies
 static struct s5pv210_dvs_conf dvs_conf[] = {
+
+#ifdef CONFIG_SOC_HIGH_LEAKAGE
 	[L0] = {
 		.arm_volt   = 1500000,
 		.int_volt   = 1225000,
@@ -195,6 +197,107 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 		.arm_volt   = 950000,
 		.int_volt   = 1000000,
 	},
+#endif
+#ifdef CONFIG_SOC_MEDIUM_LEAKAGE
+	[L0] = {
+		.arm_volt   = 1500000,
+		.int_volt   = 1225000,
+		},
+	[L1] = {
+		.arm_volt   = 1500000,
+		.int_volt   = 1225000,
+	},
+	[L2] = {
+		.arm_volt   = 1500000,
+		.int_volt   = 1200000,
+	},
+	[L3] = {
+		.arm_volt   = 1475000,
+		.int_volt   = 1175000,
+	},
+	[L4] = { 
+		.arm_volt   = 1450000,
+		.int_volt   = 1150000,
+	},
+	[L5] = {
+		.arm_volt   = 1400000,
+		.int_volt   = 1125000,
+	},
+	[L6] = {
+		.arm_volt   = 1350000,
+		.int_volt   = 1100000,
+	},
+	[L7] = {
+		.arm_volt   = 1250000,
+		.int_volt   = 1100000,
+	},
+	[L8] = {
+		.arm_volt   = 1200000,
+		.int_volt   = 1100000,
+	},
+	[L9] = {
+		.arm_volt   = 1050000,
+		.int_volt   = 1100000,
+	},
+	[L10] = {
+		.arm_volt   = 950000,
+		.int_volt   = 1100000,
+	},
+	[L11] = {
+		.arm_volt   = 950000,
+		.int_volt   = 1000000,
+	},
+#endif
+#ifdef CONFIG_SOC_LOW_LEAKAGE
+	[L0] = {
+		.arm_volt   = 1500000,
+		.int_volt   = 1200000,
+		},
+	[L1] = {
+		.arm_volt   = 1500000,
+		.int_volt   = 1200000,
+	},
+	[L2] = {
+		.arm_volt   = 1500000,
+		.int_volt   = 1175000,
+	},
+	[L3] = {
+		.arm_volt   = 1475000,
+		.int_volt   = 1150000,
+	},
+	[L4] = { 
+		.arm_volt   = 1450000,
+		.int_volt   = 1125000,
+	},
+	[L5] = {
+		.arm_volt   = 1400000,
+		.int_volt   = 1100000,
+	},
+	[L6] = {
+		.arm_volt   = 1350000,
+		.int_volt   = 1100000,
+	},
+	[L7] = {
+		.arm_volt   = 1250000,
+		.int_volt   = 1100000,
+	},
+	[L8] = {
+		.arm_volt   = 1200000,
+		.int_volt   = 1100000,
+	},
+	[L9] = {
+		.arm_volt   = 1050000,
+		.int_volt   = 1100000,
+	},
+	[L10] = {
+		.arm_volt   = 950000,
+		.int_volt   = 1100000,
+	},
+	[L11] = {
+		.arm_volt   = 950000,
+		.int_volt   = 1000000,
+	},
+#endif
 };
 
 //more clocks 
