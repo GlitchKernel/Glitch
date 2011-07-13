@@ -25,8 +25,9 @@ done
 	mkdir  -p system/lib/modules || exit 1
 	mkdir  -p system/etc/init.d || exit 1
 	cp logger.module system/lib/modules/logger.ko
-	find . -name "*.ko" -exec cp {} system/lib/modules/ \; 2>/dev/null || exit 1
-
+	cd ../
+		find . -name "*.ko" -exec cp {} release/system/lib/modules/ \; 2>/dev/null || exit 1
+	cd release
 	cp 90screenstate_scaling system/etc/init.d/ || exit 1
 	cp logcat_module system/etc/init.d/ || exit 1
 	mkdir -p system/bin
