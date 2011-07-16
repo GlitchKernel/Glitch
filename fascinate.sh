@@ -68,4 +68,4 @@ echo "creating boot.img"
 ../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/fascinatemtd/ramdisk.img ../../../out/target/product/fascinatemtd/ramdisk-recovery.img
 
 echo "launching packaging script"
-./release/doit.sh
+./release/doit_fascinate.sh
