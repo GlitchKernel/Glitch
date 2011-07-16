@@ -424,23 +424,23 @@ static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 	}, {
 		.freq	= 1440000,
 		.varm	= 1475000,
-		.vint	= 1200000,
+		.vint	= 1225000,
 	}, {
 		.freq	= 1400000,
 		.varm	= 1450000,
-		.vint	= 1175000,
+		.vint	= 1200000,
 	}, {
 		.freq	= 1300000,
 		.varm	= 1400000,
-		.vint	= 1150000,
+		.vint	= 1175000,
 	}, {
 		.freq	= 1200000,
 		.varm	= 1350000,
-		.vint	= 1125000,
+		.vint	= 1150000,
 	}, {
 		.freq	= 1000000,
 		.varm	= 1250000,
-		.vint	= 1100000,
+		.vint	= 1125000,
 	}, {
 		.freq	=  800000,
 		.varm	= 1200000,
@@ -514,7 +514,7 @@ static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 	{
 		.freq	= 1700000,
 		.varm	= 1500000,
-		.vint	= 1200000,
+		.vint	= 1225000,
 	}, {
 		.freq	= 1600000,
 		.varm	= 1500000,
@@ -843,13 +843,13 @@ static struct regulator_init_data aries_buck2_data = {
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
 #ifdef CONFIG_SOC_HIGH_LEAKAGE
-			.uV	= 1125000,
+			.uV	= 1150000,
 #endif
 #ifdef CONFIG_SOC_MEDIUM_LEAKAGE
 			.uV	= 1125000,
 #endif
 #ifdef CONFIG_SOC_LOW_LEAKAGE
-			.uV	= 1150000,
+			.uV	= 1100000,
 #endif
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,

@@ -163,23 +163,23 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 	},
 	[L3] = {
 		.arm_volt   = 1475000,
-		.int_volt   = 1200000,
+		.int_volt   = 1225000,
 	},
 	[L4] = { 
 		.arm_volt   = 1450000,
-		.int_volt   = 1175000,
+		.int_volt   = 1200000,
 	},
 	[L5] = {
 		.arm_volt   = 1400000,
-		.int_volt   = 1150000,
+		.int_volt   = 1175000,
 	},
 	[L6] = {
 		.arm_volt   = 1350000,
-		.int_volt   = 1125000,
+		.int_volt   = 1150000,
 	},
 	[L7] = {
 		.arm_volt   = 1250000,
-		.int_volt   = 1100000,
+		.int_volt   = 1125000,
 	},
 	[L8] = {
 		.arm_volt   = 1200000,
@@ -251,7 +251,7 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 #ifdef CONFIG_SOC_LOW_LEAKAGE
 	[L0] = {
 		.arm_volt   = 1500000,
-		.int_volt   = 1200000,
+		.int_volt   = 1225000,
 		},
 	[L1] = {
 		.arm_volt   = 1500000,
@@ -829,7 +829,7 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 	/* Yeah, this is hacky as fuck. So what? */
 
 	switch(s3c_freqs.old.armclk) {
-		case 1704000:
+		case 1700000:
 			s3c_freqs.old.hclk_msys = gpu[0][1];
 			break;
 		case 1600000:
