@@ -251,9 +251,6 @@ static void cypress_touchkey_early_resume(struct early_suspend *h)
 }
 #endif
 
-#ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_USE_BLN
-/* bln start */
-
 static void touchkey_power_on(void){
 	blndevdata->pdata->touchkey_onoff(TOUCHKEY_ON);
 	mdelay(50);
@@ -263,6 +260,9 @@ static void touchkey_power_off(void){
 	blndevdata->pdata->touchkey_onoff(TOUCHKEY_OFF);
 	mdelay(30);
 }
+
+#ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_USE_BLN
+/* bln start */
 
 static void enable_touchkey_backlights(void){
 	i2c_touchkey_write_byte(blndevdata, blndevdata->backlight_on);
