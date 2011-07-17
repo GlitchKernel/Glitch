@@ -2,7 +2,6 @@ mount("yaffs2", "MTD", "system", "/system");
 show_progress(0.200000, 0);
 ui_print(" 						  ");
 ui_print("Cleaning scripts, OC settings and old modules...");
-ui_print(" 						  ");
 delete("/system/etc/init.d/04modules");
 delete("/system/etc/init.d/91logger");
 delete("/system/etc/init.d/logcat_module");
