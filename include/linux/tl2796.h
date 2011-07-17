@@ -58,7 +58,7 @@ struct s5p_panel_data {
 
 enum {
 	BV_0   =          0,
-	BV_1   =     0x552D,
+	BV_1   =   0xD8722A,
 	BV_19  =   0xD8722A,
 	BV_43  =  0x51955E1,
 	BV_87  = 0x18083FB0,
