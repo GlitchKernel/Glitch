@@ -2646,6 +2646,11 @@ static int register_interrupt_handler(void)
 		return -1;
 	}
 
+#ifdef CONFIG_SAMSUNG_FASCINATE
+	enable_irq_wake(dpram_irq);
+	enable_irq_wake(phone_active_irq);
+#endif
+
 	return 0;
 }
 
