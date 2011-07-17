@@ -46,7 +46,6 @@
 #include <mach/param.h>
 #include <mach/system.h>
 #include <mach/sec_switch.h>
-#include <mach/voltages.h>
 
 #include <linux/usb/gadget.h>
 #include <linux/fsa9480.h>
@@ -98,6 +97,7 @@
 #include <linux/max17040_battery.h>
 #include <linux/mfd/max8998.h>
 #include <linux/switch.h>
+#include <mach/voltages.h>
 
 #ifdef CONFIG_KERNEL_DEBUG_SEC
 #include <linux/kernel_sec_common.h>
@@ -458,7 +458,6 @@ static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 		.vint	= DVSINT9,
 	},
 };
-
 static struct s5pv210_cpufreq_data smdkc110_cpufreq_plat = {
 	.volt	= smdkc110_cpufreq_volt,
 	.size	= ARRAY_SIZE(smdkc110_cpufreq_volt),
@@ -574,8 +573,8 @@ static struct regulator_init_data aries_ldo4_data = {
 			.disabled = 1,
 		},
 	},
-	.num_consumer_supplies  = ARRAY_SIZE(ldo4_consumer),
-	.consumer_supplies      = ldo4_consumer,
+        .num_consumer_supplies  = ARRAY_SIZE(ldo4_consumer),
+        .consumer_supplies      = ldo4_consumer,
 };
 
 static struct regulator_init_data aries_ldo7_data = {
@@ -773,15 +772,15 @@ static struct regulator_init_data aries_buck3_data = {
 		.boot_on        = 1,
 		.always_on	= 1,
 		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-                      		  REGULATOR_CHANGE_STATUS,
+		                  REGULATOR_CHANGE_STATUS,
 		.state_mem      = {
-                	.uV     = 1800000,
+                        .uV     = 1800000,
 			.mode   = REGULATOR_MODE_NORMAL,
 			.disabled = 1,
                 },
 	},
-	.num_consumer_supplies  = ARRAY_SIZE(buck3_consumer),
-	.consumer_supplies      = buck3_consumer,
+        .num_consumer_supplies  = ARRAY_SIZE(buck3_consumer),
+        .consumer_supplies      = buck3_consumer,
 };
 
 static struct regulator_init_data aries_buck4_data = {
@@ -1251,18 +1250,18 @@ static void touch_keypad_onoff(int onoff)
 
 static void touch_keypad_gpio_sleep(int onoff){
 	if(onoff == TOUCHKEY_ON){
-	/*
-	 * reconfigure gpio to activate touchkey controller vdd in sleep mode
-	 */
-	s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT1);
-	//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
+		/*
+		 * reconfigure gpio to activate touchkey controller vdd in sleep mode
+		 */
+		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT1);
+		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
 	} else {
-	/*
-	 * reconfigure gpio to deactivate touchkey vdd in sleep mode,
-	 * this is the default
-	 */
-	s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT0);
-	//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
+		/*
+		 * reconfigure gpio to deactivate touchkey vdd in sleep mode,
+		 * this is the default
+		 */
+		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT0);
+		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
 	}
 
 }
@@ -3582,11 +3581,19 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.drv	= S3C_GPIO_DRVSTR_1X,
 #endif
 	}, {
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+		.num	= S5PV210_GPH3(7), // GPIO_CP_RST	
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= S3C_GPIO_SETPIN_NONE,
+		.pud	= S3C_GPIO_PULL_DOWN,
+		.drv	= S3C_GPIO_DRVSTR_1X,
+#else
 		.num	= S5PV210_GPH3(7), // GPIO_CP_RST	
 		.cfg	= S3C_GPIO_OUTPUT,
 		.val	= S3C_GPIO_SETPIN_ZERO,
 		.pud	= S3C_GPIO_PULL_NONE,
 		.drv	= S3C_GPIO_DRVSTR_1X,
+#endif
 	},
 
 	// GPI ----------------------------
