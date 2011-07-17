@@ -26,6 +26,7 @@
 
 #include <mach/map.h>
 #include <mach/cpu-freq-v210.h>
+#include <mach/voltages.h>
 #include <mach/regs-clock.h>
 #include <mach/regs-gpio.h>
 
@@ -75,10 +76,10 @@ unsigned int freq_uv_table[12][3] = {
 	{1700000,	1500,	1500},
 	{1600000,	1500,	1500},
 	{1500000,	1500,	1500},
-	{1440000,	1475,	1475},
-	{1400000,	1450,	1450},
-	{1300000,	1400,	1400},
-	{1200000,	1350,	1350},
+	{1440000,	1500,	1475},
+	{1400000,	1450,	1425},
+	{1300000,	1400,	1375},
+	{1200000,	1350,	1325},
 	{1000000,	1250,	1250},
 	{800000,	1200,	1200},
 	{400000,	1050,	1050},
@@ -90,10 +91,10 @@ unsigned int gpu[12][2] = {
 	//stock  current
 
 	//1700
-	{243, 243},
+	{227, 227},
 
 	//1600
-	{229, 229},
+	{220, 220},
 
 	//1500
 	{250, 250},
@@ -136,168 +137,65 @@ struct s5pv210_dvs_conf {
 
 #ifdef CONFIG_DVFS_LIMIT
 static unsigned int g_dvfs_high_lock_token = 0;
-static unsigned int g_dvfs_high_lock_limit = 4;
+static unsigned int g_dvfs_high_lock_limit = 8;
 static unsigned int g_dvfslockval[DVFS_LOCK_TOKEN_NUM];
 //static DEFINE_MUTEX(dvfs_high_lock);
 #endif
 
 
-const unsigned long arm_volt_max = 1550000;
-const unsigned long int_volt_max = 1300000;
+const unsigned long arm_volt_max = ARMVOLT;
+const unsigned long int_volt_max = INTVOLT;
 
 // added more voltage levels for the added frequencies
 static struct s5pv210_dvs_conf dvs_conf[] = {
-
-#ifdef CONFIG_SOC_HIGH_LEAKAGE
 	[L0] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1225000,
+		.arm_volt   = DVSARM1,
+		.int_volt   = DVSINT1,
 		},
 	[L1] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1225000,
+		.arm_volt   = DVSARM1,
+		.int_volt   = DVSINT1,
 	},
 	[L2] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1225000,
+		.arm_volt   = DVSARM1,
+		.int_volt   = DVSINT2,
 	},
 	[L3] = {
-		.arm_volt   = 1475000,
-		.int_volt   = 1225000,
+		.arm_volt   = DVSARM1,
+		.int_volt   = DVSINT3,
 	},
 	[L4] = { 
-		.arm_volt   = 1450000,
-		.int_volt   = 1200000,
+		.arm_volt   = DVSARM2,
+		.int_volt   = DVSINT4,
 	},
 	[L5] = {
-		.arm_volt   = 1400000,
-		.int_volt   = 1175000,
+		.arm_volt   = DVSARM3,
+		.int_volt   = DVSINT5,
 	},
 	[L6] = {
-		.arm_volt   = 1350000,
-		.int_volt   = 1150000,
+		.arm_volt   = DVSARM4,
+		.int_volt   = DVSINT6,
 	},
 	[L7] = {
-		.arm_volt   = 1250000,
-		.int_volt   = 1125000,
+		.arm_volt   = DVSARM5,
+		.int_volt   = DVSINT7,
 	},
 	[L8] = {
-		.arm_volt   = 1200000,
-		.int_volt   = 1100000,
+		.arm_volt   = DVSARM6,
+		.int_volt   = DVSINT8,
 	},
 	[L9] = {
-		.arm_volt   = 1050000,
-		.int_volt   = 1100000,
+		.arm_volt   = DVSARM7,
+		.int_volt   = DVSINT8,
 	},
 	[L10] = {
-		.arm_volt   = 950000,
-		.int_volt   = 1100000,
+		.arm_volt   = DVSARM8,
+		.int_volt   = DVSINT8,
 	},
 	[L11] = {
-		.arm_volt   = 950000,
-		.int_volt   = 1000000,
+		.arm_volt   = DVSARM8,
+		.int_volt   = DVSINT9,
 	},
-#endif
-#ifdef CONFIG_SOC_MEDIUM_LEAKAGE
-	[L0] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1225000,
-		},
-	[L1] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1225000,
-	},
-	[L2] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1200000,
-	},
-	[L3] = {
-		.arm_volt   = 1475000,
-		.int_volt   = 1175000,
-	},
-	[L4] = { 
-		.arm_volt   = 1450000,
-		.int_volt   = 1150000,
-	},
-	[L5] = {
-		.arm_volt   = 1400000,
-		.int_volt   = 1125000,
-	},
-	[L6] = {
-		.arm_volt   = 1350000,
-		.int_volt   = 1100000,
-	},
-	[L7] = {
-		.arm_volt   = 1250000,
-		.int_volt   = 1100000,
-	},
-	[L8] = {
-		.arm_volt   = 1200000,
-		.int_volt   = 1100000,
-	},
-	[L9] = {
-		.arm_volt   = 1050000,
-		.int_volt   = 1100000,
-	},
-	[L10] = {
-		.arm_volt   = 950000,
-		.int_volt   = 1100000,
-	},
-	[L11] = {
-		.arm_volt   = 950000,
-		.int_volt   = 1000000,
-	},
-#endif
-#ifdef CONFIG_SOC_LOW_LEAKAGE
-	[L0] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1225000,
-		},
-	[L1] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1200000,
-	},
-	[L2] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1175000,
-	},
-	[L3] = {
-		.arm_volt   = 1475000,
-		.int_volt   = 1150000,
-	},
-	[L4] = { 
-		.arm_volt   = 1450000,
-		.int_volt   = 1125000,
-	},
-	[L5] = {
-		.arm_volt   = 1400000,
-		.int_volt   = 1100000,
-	},
-	[L6] = {
-		.arm_volt   = 1350000,
-		.int_volt   = 1100000,
-	},
-	[L7] = {
-		.arm_volt   = 1250000,
-		.int_volt   = 1100000,
-	},
-	[L8] = {
-		.arm_volt   = 1200000,
-		.int_volt   = 1100000,
-	},
-	[L9] = {
-		.arm_volt   = 1050000,
-		.int_volt   = 1100000,
-	},
-	[L10] = {
-		.arm_volt   = 950000,
-		.int_volt   = 1100000,
-	},
-	[L11] = {
-		.arm_volt   = 950000,
-		.int_volt   = 1000000,
-	},
-#endif
 };
 
 //more clocks 
@@ -307,9 +205,9 @@ static u32 clkdiv_val[12][11] = {
 	 * MFC, G3D }
 	 */
 	//L0:1700
-	{0, 6, 6, 1, 3, 1, 4, 1, 3, 0, 0},
+	{0, 6.5, 6.5, 1, 3, 1, 4, 1, 3, 0, 0},
 	//L1:1600
-	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
+	{0, 6.3, 6.3, 1, 3, 1, 4, 1, 3, 0, 0},
 	//L2: 1500
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
 	//L3: 1440

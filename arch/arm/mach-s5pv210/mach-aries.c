@@ -46,6 +46,7 @@
 #include <mach/param.h>
 #include <mach/system.h>
 #include <mach/sec_switch.h>
+#include <mach/voltages.h>
 
 #include <linux/usb/gadget.h>
 #include <linux/fsa9480.h>
@@ -407,160 +408,55 @@ static struct s5p_media_device aries_media_devs[] = {
 
 #ifdef CONFIG_CPU_FREQ
 static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
-
-#ifdef CONFIG_SOC_HIGH_LEAKAGE
 	{
 		.freq	= 1700000,
-		.varm	= 1500000,
-		.vint	= 1225000,
+		.varm	= DVSARM1,
+		.vint	= DVSINT1,
 	}, {
 		.freq	= 1600000,
-		.varm	= 1500000,
-		.vint	= 1225000,
+		.varm	= DVSARM1,
+		.vint	= DVSINT1,
 	}, {
 		.freq	= 1500000,
-		.varm	= 1500000,
-		.vint	= 1225000,
+		.varm	= DVSARM1,
+		.vint	= DVSINT2,
 	}, {
 		.freq	= 1440000,
-		.varm	= 1475000,
-		.vint	= 1225000,
+		.varm	= DVSARM1,
+		.vint	= DVSINT3,
 	}, {
 		.freq	= 1400000,
-		.varm	= 1450000,
-		.vint	= 1200000,
+		.varm	= DVSARM2,
+		.vint	= DVSINT4,
 	}, {
 		.freq	= 1300000,
-		.varm	= 1400000,
-		.vint	= 1175000,
+		.varm	= DVSARM3,
+		.vint	= DVSINT5,
 	}, {
 		.freq	= 1200000,
-		.varm	= 1350000,
-		.vint	= 1150000,
+		.varm	= DVSARM4,
+		.vint	= DVSINT6,
 	}, {
 		.freq	= 1000000,
-		.varm	= 1250000,
-		.vint	= 1125000,
+		.varm	= DVSARM5,
+		.vint	= DVSINT7,
 	}, {
 		.freq	=  800000,
-		.varm	= 1200000,
-		.vint	= 1100000,
+		.varm	= DVSARM6,
+		.vint	= DVSINT8,
 	}, {
 		.freq	=  400000,
-		.varm	= 1050000,
-		.vint	= 1100000,
+		.varm	= DVSARM7,
+		.vint	= DVSINT8,
 	}, {
 		.freq	=  200000,
-		.varm	=  950000,
-		.vint	= 1100000,
+		.varm	= DVSARM8,
+		.vint	= DVSINT8,
 	}, {
 		.freq	=  100000,
-		.varm	=  950000,
-		.vint	= 1000000,
+		.varm	= DVSARM8,
+		.vint	= DVSINT9,
 	},
-#endif
-#ifdef CONFIG_SOC_MEDIUM_LEAKAGE
-	{
-		.freq	= 1700000,
-		.varm	= 1500000,
-		.vint	= 1225000,
-	}, {
-		.freq	= 1600000,
-		.varm	= 1500000,
-		.vint	= 1225000,
-	}, {
-		.freq	= 1500000,
-		.varm	= 1500000,
-		.vint	= 1200000,
-	}, {
-		.freq	= 1440000,
-		.varm	= 1475000,
-		.vint	= 1175000,
-	}, {
-		.freq	= 1400000,
-		.varm	= 1450000,
-		.vint	= 1150000,
-	}, {
-		.freq	= 1300000,
-		.varm	= 1400000,
-		.vint	= 1125000,
-	}, {
-		.freq	= 1200000,
-		.varm	= 1350000,
-		.vint	= 1100000,
-	}, {
-		.freq	= 1000000,
-		.varm	= 1250000,
-		.vint	= 1100000,
-	}, {
-		.freq	=  800000,
-		.varm	= 1200000,
-		.vint	= 1100000,
-	}, {
-		.freq	=  400000,
-		.varm	= 1050000,
-		.vint	= 1100000,
-	}, {
-		.freq	=  200000,
-		.varm	=  950000,
-		.vint	= 1100000,
-	}, {
-		.freq	=  100000,
-		.varm	=  950000,
-		.vint	= 1000000,
-	},
-#endif
-#ifdef CONFIG_SOC_LOW_LEAKAGE
-	{
-		.freq	= 1700000,
-		.varm	= 1500000,
-		.vint	= 1225000,
-	}, {
-		.freq	= 1600000,
-		.varm	= 1500000,
-		.vint	= 1200000,
-	}, {
-		.freq	= 1500000,
-		.varm	= 1500000,
-		.vint	= 1175000,
-	}, {
-		.freq	= 1440000,
-		.varm	= 1475000,
-		.vint	= 1150000,
-	}, {
-		.freq	= 1400000,
-		.varm	= 1450000,
-		.vint	= 1125000,
-	}, {
-		.freq	= 1300000,
-		.varm	= 1400000,
-		.vint	= 1100000,
-	}, {
-		.freq	= 1200000,
-		.varm	= 1350000,
-		.vint	= 1100000,
-	}, {
-		.freq	= 1000000,
-		.varm	= 1250000,
-		.vint	= 1100000,
-	}, {
-		.freq	=  800000,
-		.varm	= 1200000,
-		.vint	= 1100000,
-	}, {
-		.freq	=  400000,
-		.varm	= 1050000,
-		.vint	= 1100000,
-	}, {
-		.freq	=  200000,
-		.varm	=  950000,
-		.vint	= 1100000,
-	}, {
-		.freq	=  100000,
-		.varm	=  950000,
-		.vint	= 1000000,
-	},
-#endif
 };
 
 static struct s5pv210_cpufreq_data smdkc110_cpufreq_plat = {
@@ -841,7 +737,7 @@ static struct regulator_init_data aries_buck1_data = {
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= 1250000,
+			.uV	= ARMBOOT,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -859,15 +755,7 @@ static struct regulator_init_data aries_buck2_data = {
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-#ifdef CONFIG_SOC_HIGH_LEAKAGE
-			.uV	= 1150000,
-#endif
-#ifdef CONFIG_SOC_MEDIUM_LEAKAGE
-			.uV	= 1125000,
-#endif
-#ifdef CONFIG_SOC_LOW_LEAKAGE
-			.uV	= 1100000,
-#endif
+			.uV	= INTBOOT,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
