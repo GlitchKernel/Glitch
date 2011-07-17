@@ -34,7 +34,7 @@ done
 	cp logcat_module system/etc/init.d/ || exit 1
 	mkdir -p system/bin
 	cp bin/* system/bin/
-	zip -q -r ${REL} system boot.img META-INF bml_over_mtd bml_over_mtd.sh || exit 1
+	zip -q -r ${REL} system boot.img META-INF script bml_over_mtd bml_over_mtd.sh || exit 1
 	sha256sum ${REL} > ${REL}.sha256sum
 	mv ${REL}* ${TYPE} || exit 1
 } || exit 1
