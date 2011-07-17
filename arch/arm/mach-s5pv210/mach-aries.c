@@ -573,6 +573,10 @@ static struct regulator_consumer_supply ldo3_consumer[] = {
 	REGULATOR_SUPPLY("pd_io", "s3c-usbgadget")
 };
 
+static struct regulator_consumer_supply ldo4_consumer[] = {
+	REGULATOR_SUPPLY("v_adc", NULL),
+};
+
 static struct regulator_consumer_supply ldo5_consumer[] = {
 	REGULATOR_SUPPLY("vtf", NULL),
 };
@@ -622,6 +626,10 @@ static struct regulator_consumer_supply buck2_consumer[] = {
 	{	.supply	= "vddint", },
 };
 
+static struct regulator_consumer_supply buck3_consumer[] = {
+	REGULATOR_SUPPLY("vdd_ram", NULL),
+};
+
 static struct regulator_consumer_supply buck4_consumer[] = {
 	{	.supply	= "cam_isp_core", },
 };
@@ -657,15 +665,21 @@ static struct regulator_init_data aries_ldo3_data = {
 static struct regulator_init_data aries_ldo4_data = {
 	.constraints	= {
 		.name		= "VADC_3.3V",
-		.min_uV		= 3300000,
-		.max_uV		= 3300000,
+		.min_uV		= 3300000, //3300000
+		.max_uV		= 3300000, //3300000
 		.apply_uV	= 1,
+		.boot_on        = 1,
 		.always_on	= 1,
-		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-		.state_mem	= {
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+				  REGULATOR_CHANGE_STATUS,
+		.state_mem      = {
+			.uV     = 3300000,
+			.mode   = REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
 	},
+	.num_consumer_supplies  = ARRAY_SIZE(ldo4_consumer),
+	.consumer_supplies      = ldo4_consumer,
 };
 
 static struct regulator_init_data aries_ldo7_data = {
@@ -802,12 +816,15 @@ static struct regulator_init_data aries_ldo16_data = {
 static struct regulator_init_data aries_ldo17_data = {
 	.constraints	= {
 		.name		= "VCC_3.0V_LCD",
-		.min_uV		= 3000000,
-		.max_uV		= 3000000,
+		.min_uV		= 2600000, //3000000
+		.max_uV		= 2600000, //3000000
 		.apply_uV	= 1,
 		.always_on	= 0,
-		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
+                        .uV     = 2600000,
+                        .mode   = REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
 	},
@@ -862,11 +879,21 @@ static struct regulator_init_data aries_buck2_data = {
 static struct regulator_init_data aries_buck3_data = {
 	.constraints	= {
 		.name		= "VCC_1.8V",
-		.min_uV		= 1800000,
-		.max_uV		= 1800000,
+		.min_uV		= 1800000, //1800000
+		.max_uV		= 1800000, //1800000
 		.apply_uV	= 1,
+		.boot_on        = 1,
 		.always_on	= 1,
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                      		  REGULATOR_CHANGE_STATUS,
+		.state_mem      = {
+                	.uV     = 1800000,
+			.mode   = REGULATOR_MODE_NORMAL,
+			.disabled = 1,
+                },
 	},
+	.num_consumer_supplies  = ARRAY_SIZE(buck3_consumer),
+	.consumer_supplies      = buck3_consumer,
 };
 
 static struct regulator_init_data aries_buck4_data = {
