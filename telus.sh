@@ -31,7 +31,7 @@ OPTNEWVAL=""
 RELVER=$(($(cat .relver)+1))
 
 echo "copying config for TELUS FASCINATE"
-cp arch/arm/configs/aries_galaxysmtd_defconfig .config
+cp arch/arm/configs/aries_telusfascinate_defconfig .config
 
 echo "Enabling extra config options..."
 for o in $OPTS; do
