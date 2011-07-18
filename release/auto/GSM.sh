@@ -95,7 +95,7 @@ cd release && {
 
 mkdir -p ${TYPE}_OLDMODEM || exit 1
 
-REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M_r)-OLDMODEM.zip
+REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M)-OLDMODEM.zip
 
 	rm -r system 2> /dev/null
 	mkdir  -p system/lib/modules || exit 1

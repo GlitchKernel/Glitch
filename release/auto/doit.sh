@@ -10,16 +10,11 @@ echo "packaging it up"
 TYPE=$1
 [[ "$TYPE" == '' ]] && TYPE=i9k
 
-declare -i RELVER=0
-
 cd release && {
 
 mkdir -p ${TYPE} || exit 1
 
-until test ! -s ${TYPE}/${REL}; do
-REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M_r)${RELVER}.zip
-RELVER+=1
-done
+REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 
 	rm -r system 2> /dev/null
 	mkdir  -p system/lib/modules || exit 1
