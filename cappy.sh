@@ -62,6 +62,16 @@ echo "- ${o}"
 sed -i "s/^${o}=[y|m]$/\# ${o}\ is\ not\ set/" .config
 done
 
+if [ -f arch/arm/mach-s5pv210/mach-aries.c_backup ]
+then
+mv arch/arm/mach-s5pv210/mach-aries.c arch/arm/mach-s5pv210/mach-aries.c_telus
+mv arch/arm/mach-s5pv210/mach-aries.c_backup arch/arm/mach-s5pv210/mach-aries.c
+echo " "
+echo "Found mach-aries.c_backup from failed Telus building"
+echo "Switching files for clean build"
+echo " "
+fi
+
 echo "building kernel"
 make -j8
 
@@ -69,4 +79,4 @@ echo "creating boot.img"
 ../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/captivatemtd/ramdisk.img ../../../out/target/product/captivatemtd/ramdisk-recovery.img
 
 echo "launching packaging script"
-./release/doit_cappy.sh
+./release/auto/doit_cappy.sh

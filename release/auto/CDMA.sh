@@ -1,6 +1,8 @@
 #!/bin/bash
 
-export KBUILD_BUILD_VERSION="1"
+# Default CDMA Kernel building (using fascinatemtd)
+
+	export KBUILD_BUILD_VERSION="1"
 
 # kernel option changes
 OPTS="CONFIG_NETFILTER_XT_MATCH_MULTIPORT \
@@ -27,12 +29,11 @@ CONFIG_FTRACE \
 CONFIG_STACKTRACE \
 CONFIG_STACKTRACE_SUPPORT
 "
-
 OPTNEWVAL=""
 RELVER=$(($(cat .relver)+1))
 
-echo "copying config for SGS"
-cp arch/arm/configs/aries_vibrantmtd_defconfig .config
+echo "copying config for FASCINATE-OLDMODEM"
+cp arch/arm/configs/aries_galaxysmtd_defconfig .config
 
 echo "Enabling extra config options..."
 for o in $OPTS; do
@@ -76,7 +77,46 @@ echo "building kernel"
 make -j8
 
 echo "creating boot.img"
-../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/vibrantmtd/ramdisk.img ../../../out/target/product/vibrantmtd/ramdisk-recovery.img
+../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/galaxysmtd/ramdisk.img ../../../out/target/product/galaxysmtd/ramdisk-recovery.img
 
-echo "launching packaging script"
-./release/auto/doit_vibrant.sh
+# DOIT
+
+[[ -d release ]] || {
+	echo "must be in kernel root dir"
+	exit 1;
+}
+
+echo "packaging it up"
+
+TYPE=$1
+[[ "$TYPE" == '' ]] && TYPE=CDMA
+
+cd release && {
+
+mkdir -p ${TYPE}_OLDMODEM || exit 1
+
+REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d%_H%M_r)-OLDMODEM.zip
+
+	rm -r system 2> /dev/null
+	mkdir  -p system/lib/modules || exit 1
+	mkdir  -p system/lib/hw || exit 1
+	mkdir  -p system/etc/init.d || exit 1
+	cp logger.module system/lib/modules/logger.ko
+	cd ../
+		find . -name "*.ko" -exec cp {} release/system/lib/modules/ \; 2>/dev/null || exit 1
+	cd release
+	cp 90screenstate_scaling system/etc/init.d/ || exit 1
+	cp lights.aries.so system/lib/hw/ || exit 1
+	cp logcat_module system/etc/init.d/ || exit 1
+	mkdir -p system/bin
+	cp bin/* system/bin/
+	zip -q -r ${REL} system boot.img META-INF script bml_over_mtd bml_over_mtd.sh || exit 1
+	sha256sum ${REL} > ${REL}.sha256sum
+	mv ${REL}* ${TYPE} || exit 1
+} || exit 1
+
+rm system/lib/modules/*
+rm system/lib/hw/*
+rm system/etc/init.d/*
+echo ${REL}
+exit 0

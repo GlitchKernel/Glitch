@@ -27,12 +27,11 @@ CONFIG_FTRACE \
 CONFIG_STACKTRACE \
 CONFIG_STACKTRACE_SUPPORT
 "
-
 OPTNEWVAL=""
 RELVER=$(($(cat .relver)+1))
 
-echo "copying config for SGS"
-cp arch/arm/configs/aries_vibrantmtd_defconfig .config
+echo "copying config for TELUS FASCINATE"
+cp arch/arm/configs/aries_galaxysmtd_defconfig .config
 
 echo "Enabling extra config options..."
 for o in $OPTS; do
@@ -72,11 +71,33 @@ echo "Switching files for clean build"
 echo " "
 fi
 
+echo "Switching mach-aries.c file for Telus Fascinate keypad mapping"
+echo " "
+if [ -f arch/arm/mach-s5pv210/mach-aries.c_telus ]
+then
+mv arch/arm/mach-s5pv210/mach-aries.c arch/arm/mach-s5pv210/mach-aries.c_backup
+mv arch/arm/mach-s5pv210/mach-aries.c_telus arch/arm/mach-s5pv210/mach-aries.c
+else
+echo "File or permission is missing"
+exit 1
+fi
+
 echo "building kernel"
 make -j8
 
+echo "Reverting to default mach-aries.c file for other devices"
+echo " "
+if [ -f arch/arm/mach-s5pv210/mach-aries.c_backup ]
+then
+mv arch/arm/mach-s5pv210/mach-aries.c arch/arm/mach-s5pv210/mach-aries.c_telus
+mv arch/arm/mach-s5pv210/mach-aries.c_backup arch/arm/mach-s5pv210/mach-aries.c
+else
+echo "File or permission is missing"
+exit 1
+fi
+
 echo "creating boot.img"
-../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/vibrantmtd/ramdisk.img ../../../out/target/product/vibrantmtd/ramdisk-recovery.img
+../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/galaxysmtd/ramdisk.img ../../../out/target/product/galaxysmtd/ramdisk-recovery.img
 
 echo "launching packaging script"
-./release/auto/doit_vibrant.sh
+./release/auto/doit_telus.sh
