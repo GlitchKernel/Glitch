@@ -13,27 +13,9 @@ if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/sam
 		mv drivers/misc/samsung_modemctl drivers/misc/samsung_modemctl_opti
 		mv drivers/misc/samsung_modemctl_backup drivers/misc/samsung_modemctl
 
-	echo "Switching done. Building..." && {
+	echo "Switching done. Building..."
 	
 	. release/auto/GSM.sh
-
-	}
-
-	# Keep the created old-toolchain kernel for potential use - deleting sha256sum
-	
-	cd release/GSM_OLDMODEM && {
-	declare -i RELVER=0
-
-	until test ! -s ${REL}; do
-		REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M_r)${RELVER}-OLDMODEM.zip
-		RELVER+=1
-		REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M_r)${RELVER}-OLDMODEM.zip
-	done
-	
-	rm ${REL_}.sha256sum
-	cd ../../
-	}
-	#Deleted	
 	
 	echo "Building done. Reswitching..." && {
 

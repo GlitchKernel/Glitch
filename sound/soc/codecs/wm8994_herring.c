@@ -764,7 +764,7 @@ struct gain_info_t voicecall_gain_table[VOICECALL_GAIN_NUM] = {
 		.mask = WM8994_IN1L_MIXINL_VOL_MASK | WM8994_MIXOUTL_MIXINL_VOL_MASK,
 #ifdef CONFIG_SAMSUNG_FASCINATE
 		.gain = 0x12     /* Mic +?dB */
-else
+#else
 		.gain = 0x10     /* Mic +7.5dB */
 #endif
 	}, {
@@ -773,7 +773,7 @@ else
 		.mask = WM8994_IN1L_VOL_MASK,
 #ifdef CONFIG_SAMSUNG_FASCINATE
 		.gain = WM8994_IN1L_VU | 0x16   /* Mic +?dB */
-else
+#else
 		.gain = WM8994_IN1L_VU | 0x12   /* Mic +30dB */
 #endif
 	}, {
