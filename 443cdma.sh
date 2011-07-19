@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# To use with Fascinate (non-Telus) or other potentially supported CDMA device
+
 make mrproper
 
 if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/samsung_modemctl_backup; then
@@ -15,7 +17,7 @@ if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/sam
 
 	echo "Switching done. Building..."
 	
-	. release/auto/GSM.sh
+	. release/auto/CDMA.sh	
 	
 	echo "Building done. Reswitching..." && {
 
@@ -25,8 +27,8 @@ if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/sam
 		mv arch/arm/Makefile arch/arm/Makefile_backup
 		mv arch/arm/Makefile_opti arch/arm/Makefile
 
-		mv drivers/misc/samsung_modemctl/built-in.o drivers/misc/samsung_modemctl_opti/built-in.443stock_samsung_modemctl
-		mv drivers/misc/samsung_modemctl/modemctl/built-in.o drivers/misc/samsung_modemctl_opti/modemctl/built-in.443stock_modemctl
+		mv drivers/misc/samsung_modemctl/built-in.o drivers/misc/samsung_modemctl_opti/built-in.443cdma_samsung_modemctl
+		mv drivers/misc/samsung_modemctl/modemctl/built-in.o drivers/misc/samsung_modemctl_opti/modemctl/built-in.443cdma_modemctl
 
 		mv drivers/misc/samsung_modemctl drivers/misc/samsung_modemctl_backup
 		mv drivers/misc/samsung_modemctl_opti drivers/misc/samsung_modemctl
@@ -34,12 +36,12 @@ if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/sam
 
 	echo "Done! now preparing for next build..." && {
 
-	./prepare.sh
+	./prepcdma.sh
 	}
 
 else
 
-	echo "There's a backup missing, if needed, reverting changes to prepare rebuild.. "
+	echo "There's a backup missing, if needed, reverting changes to prepare rebuild "
 
 fi
 
@@ -55,7 +57,7 @@ if test -s Makefile_opti -a -s arch/arm/Makefile_opti -a -d drivers/misc/samsung
 		mv drivers/misc/samsung_modemctl_opti drivers/misc/samsung_modemctl
 
 	echo "Let's restart the process"
-	./oldgsm.sh
+	./443cdma.sh
 
 fi
 
