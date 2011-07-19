@@ -28,7 +28,6 @@ CONFIG_STACKTRACE \
 CONFIG_STACKTRACE_SUPPORT
 "
 OPTNEWVAL=""
-RELVER=$(($(cat .relver)+1))
 
 echo "copying config for TELUS FASCINATE"
 cp arch/arm/configs/aries_telusfascinate_defconfig .config

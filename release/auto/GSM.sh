@@ -6,6 +6,8 @@
 
 # kernel option changes
 OPTS="CONFIG_SOC_HIGH_LEAKAGE \
+CONFIG_SOC_MEDIUM_LEAKAGE \
+CONFIG_SOC_LOW_LEAKAGE \
 CONFIG_NETFILTER_XT_MATCH_MULTIPORT \
 CONFIG_SYN_COOKIES \
 CONFIG_IP_ADVANCED_ROUTER \
@@ -33,7 +35,6 @@ CONFIG_STACKTRACE \
 CONFIG_STACKTRACE_SUPPORT
 "
 OPTNEWVAL=""
-RELVER=$(($(cat .relver)+1))
 
 echo "copying config for SGS-OLDMODEM"
 cp arch/arm/configs/aries_galaxysmtd_defconfig .config

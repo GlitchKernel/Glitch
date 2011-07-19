@@ -29,7 +29,6 @@ CONFIG_STACKTRACE_SUPPORT
 "
 
 OPTNEWVAL=""
-RELVER=$(($(cat .relver)+1))
 
 echo "copying config for SGS"
 cp arch/arm/configs/aries_vibrantmtd_defconfig .config
