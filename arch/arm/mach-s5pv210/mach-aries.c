@@ -1249,21 +1249,10 @@ static void touch_keypad_onoff(int onoff)
 }
 
 static void touch_keypad_gpio_sleep(int onoff){
-	if(onoff == TOUCHKEY_ON){
-		/*
-		 * reconfigure gpio to activate touchkey controller vdd in sleep mode
-		 */
+	if(onoff == TOUCHKEY_ON)
 		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT1);
-		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
-	} else {
-		/*
-		 * reconfigure gpio to deactivate touchkey vdd in sleep mode,
-		 * this is the default
-		 */
+	else
 		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT0);
-		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
-	}
-
 }
 
 static const int touch_keypad_code[] = {

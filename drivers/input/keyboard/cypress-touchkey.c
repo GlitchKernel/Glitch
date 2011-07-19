@@ -28,6 +28,7 @@
 #include <linux/input.h>
 #include <linux/earlysuspend.h>
 #include <linux/input/cypress-touchkey.h>
+#include <linux/miscdevice.h>
 
 #define SCANCODE_MASK		0x07
 #define UPDOWN_EVENT_MASK	0x08
@@ -41,15 +42,6 @@
 
 #define DEVICE_NAME "cypress-touchkey"
 
-#ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_USE_BLN
-#include <linux/miscdevice.h>
-#define BACKLIGHTNOTIFICATION_VERSION 8
-
-bool bln_enabled = false; // indicates if BLN function is enabled/allowed (default: false, app enables it on boot)
-bool BacklightNotification_ongoing= false; // indicates ongoing LED Notification
-bool bln_blink_enabled = false;	// indicates blink is set
-struct cypress_touchkey_devdata *blndevdata; // keep a reference to the devdata
-#endif
 
 struct cypress_touchkey_devdata {
 	struct i2c_client *client;
@@ -62,6 +54,14 @@ struct cypress_touchkey_devdata {
 	bool is_powering_on;
 	bool has_legacy_keycode;
 };
+
+#ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_USE_BLN
+bool bln_enabled = false; // indicates if BLN function is enabled/allowed (default: false, app enables it on boot)
+bool BacklightNotification_ongoing= false; // indicates ongoing LED Notification
+bool bln_blink_enabled = false;	// indicates blink is set
+#define BACKLIGHTNOTIFICATION_VERSION 8
+struct cypress_touchkey_devdata *blndevdata; // keep a reference to the devdata
+#endif
 
 static int i2c_touchkey_read_byte(struct cypress_touchkey_devdata *devdata,
 					u8 *val)
