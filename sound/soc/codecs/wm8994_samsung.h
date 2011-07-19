@@ -75,7 +75,7 @@ Codec Output Path BIT
 #define PLAYBACK_RING_SPK	(0x01 << 6)
 #define PLAYBACK_RING_HP	(0x01 << 7)
 #define PLAYBACK_RING_SPK_HP	(0x01 << 8)
-#define PLAYBACK_HP_NO_MIC  (0x01 << 9)
+#define PLAYBACK_HP_NO_MIC  	(0x01 << 9)
 #define PLAYBACK_EXTRA_DOCK_SPEAKER (0x01 << 10)
 
 #define VOICECALL_RCV		(0x01 << 1)
