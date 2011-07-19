@@ -51,6 +51,8 @@ static unsigned int backup_freq_level;
 static unsigned int mpll_freq; /* in MHz */
 static unsigned int apll_freq_max; /* in MHz */
 static DEFINE_MUTEX(set_freq_lock);
+#define GPU_OC 0
+#define SMOOTH_STEPS 1
 
 /* frequency */
 
@@ -87,48 +89,47 @@ unsigned int freq_uv_table[12][3] = {
 	{100000,	950,	950}
 };
 
+#if defined(GPU_OC)
 unsigned int gpu[12][2] = {
 	//stock  current
 
 	//1700
-	{227, 227},
+	{ 227, 227 },
 
 	//1600
-	{220, 220},
+	{ 220, 220 },
 
 	//1500
-	{250, 250},
+	{ 250, 250 },
 
 	//1440
-	{240, 240},
+	{ 240, 240 },
 
 	//1400
-	{233, 233},
+	{ 233, 233 },
 
 	//1300
-	{217, 217},
+	{ 217, 217 },
 
 	//1200
-	{200, 200},
+	{ 200, 200 },
 
 	//1000
-	{200, 200},
+	{ 200, 200 },
 
 	//800
-	{200, 200},
+	{ 200, 200 },
 
 	//400
-	{200, 200},
+	{ 200, 200 },
 
 	//200
-	{200, 200},
+	{ 200, 200 },
 
 	//100
-	{100, 100}
+	{ 100, 100 }
 };
-
-extern int enabled_freqs[12];
-//extern int update_states = 0;
+#endif
 
 struct s5pv210_dvs_conf {
 	unsigned long       arm_volt;   /* uV */
@@ -198,7 +199,7 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 	},
 };
 
-//more clocks 
+//Dividers for more lulz
 static u32 clkdiv_val[12][11] = {
 	/*{ APLL, A2M, HCLK_MSYS, PCLK_MSYS,
 	 * HCLK_DSYS, PCLK_DSYS, HCLK_PSYS, PCLK_PSYS, ONEDRAM,
@@ -668,7 +669,6 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 	if (s3c_freqs.freqs.new == s3c_freqs.freqs.old && !first_run)
 		goto out;
 
-#define SMOOTH_STEPS 1 /* So what ;-) */
 #ifdef SMOOTH_STEPS
   if (cpufreq_frequency_table_target(policy, freq_table,
   s3c_freqs.freqs.old, relation, &old_index)) {
@@ -724,9 +724,9 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 	}
 	cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_PRECHANGE);
 
-	/* Yeah, this is hacky as fuck. So what? */
-
-	switch(s3c_freqs.old.armclk) {
+/* This is currently broken, will fix at somepoint.  */
+#if defined(GPU_OC) 
+switch(s3c_freqs.old.armclk) {
 		case 1700000:
 			s3c_freqs.old.hclk_msys = gpu[0][1];
 			break;
@@ -769,6 +769,7 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 	
 	s3c_freqs.old.hclk_msys *= 1000;
 	s3c_freqs.new.hclk_msys = gpu[index][1]*1000;
+#endif
 
 	if (s3c_freqs.new.fclk != s3c_freqs.old.fclk || first_run)
 		pll_changing = 1;
@@ -814,8 +815,12 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 		 * that should be fixed before.
 		 */
 		reg = backup_dmc1_reg * s3c_freqs.new.hclk_msys;
+#ifdef GPU_OC
+		/* gpu[freq][1] is the actual hclk_msys. We want to use this in place of the static clk_info. */
+		reg /= gpu[backup_freq_level][1];
+#else
 		reg /= clk_info[backup_freq_level].hclk_msys;
-
+#endif
 		/*
 		 * When ARM_CLK is absed on APLL->MPLL,
 		 * hclk_msys becomes hclk_msys *= MPLL/APLL;
@@ -915,8 +920,13 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 	 * then, the refresh rate should decrease
 	 * (by original refresh count * n) (n : clock rate)
 	 */
+#ifdef GPU_OC
+	reg = backup_dmc1_reg * gpu[index][1];
+	reg /= gpu[backup_freq_level][1];
+#else
 	reg = backup_dmc1_reg * clk_info[index].hclk_msys;
 	reg /= clk_info[backup_freq_level].hclk_msys;
+#endif
 	__raw_writel(reg & 0xFFFF, S5P_VA_DMC1 + 0x30);
 	cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_POSTCHANGE);
 
