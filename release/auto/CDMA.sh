@@ -33,10 +33,9 @@ CONFIG_STACKTRACE \
 CONFIG_STACKTRACE_SUPPORT
 "
 OPTNEWVAL=""
-RELVER=$(($(cat .relver)+1))
 
 echo "copying config for FASCINATE-OLDMODEM"
-cp arch/arm/configs/aries_galaxysmtd_defconfig .config
+cp arch/arm/configs/aries_fascinatemtd_defconfig .config
 
 echo "Enabling extra config options..."
 for o in $OPTS; do
@@ -80,7 +79,7 @@ echo "building kernel"
 make -j8
 
 echo "creating boot.img"
-../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/galaxysmtd/ramdisk.img ../../../out/target/product/galaxysmtd/ramdisk-recovery.img
+../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/fascinatemtd/ramdisk.img ../../../out/target/product/fascinatemtd/ramdisk-recovery.img
 
 echo "launching packaging script"
 ./release/auto/doit_CDMA.sh

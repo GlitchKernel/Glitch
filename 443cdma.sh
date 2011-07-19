@@ -28,7 +28,7 @@ if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/sam
 		mv arch/arm/Makefile_opti arch/arm/Makefile
 
 		mv drivers/misc/samsung_modemctl/built-in.o drivers/misc/samsung_modemctl_opti/built-in.443cdma_samsung_modemctl
-		mv drivers/misc/samsung_modemctl/modemctl/built-in.o drivers/misc/samsung_modemctl_opti/modemctl/built-in.443cdma_modemctl
+		#mv drivers/misc/samsung_modemctl/modemctl/built-in.o drivers/misc/samsung_modemctl_opti/modemctl/built-in.443cdma_modemctl
 
 		mv drivers/misc/samsung_modemctl drivers/misc/samsung_modemctl_backup
 		mv drivers/misc/samsung_modemctl_opti drivers/misc/samsung_modemctl
