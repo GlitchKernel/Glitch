@@ -1723,6 +1723,8 @@ int sdhci_suspend_host(struct sdhci_host *host, pm_message_t state)
 
 	if (host->irq)
 		disable_irq(host->irq);
+	if (host->vmmc)
+		ret = regulator_disable(host->vmmc);
 
 	return ret;
 }
