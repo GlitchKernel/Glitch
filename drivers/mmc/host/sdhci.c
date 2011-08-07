@@ -1720,6 +1720,10 @@ int sdhci_suspend_host(struct sdhci_host *host, pm_message_t state)
 
 	sdhci_mask_irqs(host, SDHCI_INT_ALL_MASK);
 
+	del_timer(&host->busy_check_timer);
+
+	if (host->irq)
+		disable_irq(host->irq);
 	if (host->vmmc)
 		ret = regulator_disable(host->vmmc);
 
