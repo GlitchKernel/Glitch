@@ -4,85 +4,142 @@
 # original by 'FloHimself'(florian.schaefer@gmail.com)
 # modifications by 'zacharias.maladroit' and 'well.heeled.man'
 
-#AWAKE_GOVERNOR="interactive"
-#AWAKE_GOVERNOR="smartass"
-#AWAKE_GOVERNOR="ondemand"
-#AWAKE_GOVERNOR="conservative"
-#SLEEP_GOVERNOR="conservative"
-#SLEEP_GOVERNOR="powersave"
+# Further modifications by Efpophis (billcrossley@gmail.com)
+# soon: an app to control my extra options
 
-# =========
-# One governor to rule them all
-# =========
+# as it turns out, I get better battery life without this running
+# at all. Maybe the thing polling constantly is draining
+# the battery faster than if it was just left alone...
 
-AWAKE_GOVERNOR="ondemand"
-SLEEP_GOVERNOR="conservative"
+# see if we have a config directory
+if [ ! -d /sdcard/Glitch_config ]
+then
+	mkdir -p /sdcard/Glitch_config
+	# use conservative for asleep
+	echo "conservative" > /sdcard/Glitch_config/sleep_gov
 
-##
-## Only uncomment two sections, one for each screen state.
-##
+	# screenstate scaling active. set to anything but active
+	# to disable. to re-activate, set to active and reboot
+	echo "inactive" > /sdcard/Glitch_config/screenstate_scaling
+
+	# perhaps more options to come ?
+fi
+
+if [ -r /sdcard/Glitch_config/screenstate_scaling ]
+then
+	SCREENSTATE_SCALING_ACTIVE=`cat /sdcard/Glitch_config/screenstate_scaling`
+else
+	SCREENSTATE_SCALING_ACTIVE="inactive"
+fi
+
+
+# use the one voltage control has specified, maybe?
+# assumes 1. we're awake at start, and 2. that VC has set the governor according to user wishes.
+AWAKE_GOVERNOR=`cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`
+
+
+if [ -r /sdcard/Glitch_config/sleep_gov ]
+then
+	SLEEP_GOVERNOR=`cat /sdcard/Glitch_config/sleep_gov`
+else
+	SLEEP_GOVERNOR="conservative"
+fi
 
 # Polling for AWAKE_GOVERNOR state.
 
-(while [ 1 ]
+(while [ $SCREENSTATE_SCALING_ACTIVE = "active" ]
 do
+    # the "cat" call blocks on these files if the device is not in the state being checked for
+    # meaning execution will wait here until the phone wakes up. Neat.
     AWAKE=`cat /sys/power/wait_for_fb_wake`
+    
     if [ $AWAKE = "awake" ]; then
-        echo $AWAKE_GOVERNOR > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-		
-# =========
-# Smartass settings (slightly more battery friendly than Glitch Kernel defaults - peformance penalty unclear)
-# =========
+	echo $AWAKE_GOVERNOR > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 
-#       echo "50" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
-#       echo "30" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
-#       echo "800000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
-#       echo "400000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/sleep_max_freq
+	# adjust some stuff based on what gov we're using
+	case "$AWAKE_GOVERNOR" in
 
-# =========
-# Ondemand settings [more aggressive power savings vs. standard ondemand]
-# =========
+	# =========
+	# Smartass settings (slightly more battery friendly than Glitch Kernel defaults - peformance penalty unclear)
+	# =========
+	'smartass')
+		echo "50" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
+		echo "30" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
+		echo "800000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
+		echo "400000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/sleep_max_freq
+	;;
 
-#       echo "98" > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold       
-#		echo "300000" > /sys/devices/system/cpu/cpu0/cpufreq/conservative/sampling_rate
+	# =========
+	# Ondemand settings [more aggressive power savings vs. standard ondemand]
+	# =========
+	'ondemand')
+		echo "98" > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+		echo "300000" > /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate
+	;;
 
-# =========
-# Ondemand settings [experimental] (max frequency at 800 MHz, more aggressive up and down sampling, while staying longer at higher frequencies during load)
-# =========
+	# =========
+	# Conservative settings [SavagedZen governor-like] (conservative AWAKE_GOVERNOR)
+	# =========
+	'conservative')
 
-#       echo "100" > /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor
-#       echo "200" > /sys/devices/system/cpu/cpufreq/ondemand/powersave_bias
-#       echo "100000" > /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
-		
-# =========
-# Conservative settings [SavagedZen governor-like] (conservative AWAKE_GOVERNOR)
-# =========
+		echo "75" > /sys/devices/system/cpu/cpufreq/conservative/up_threshold
+		echo "30" > /sys/devices/system/cpu/cpufreq/conservative/down_threshold
+		echo "50" > /sys/devices/system/cpu/cpufreq/conservative/freq_step
+		echo "80000" > /sys/devices/system/cpu/cpu0/cpufreq/conservative/sampling_rate
+	;;
+	esac
 
-#       echo "75" > /sys/devices/system/cpu/cpufreq/conservative/up_threshold
-#       echo "30" > /sys/devices/system/cpu/cpufreq/conservative/down_threshold
-#       echo "50" > /sys/devices/system/cpu/cpufreq/conservative/freq_step
-#       echo "80000" > /sys/devices/system/cpu/cpu0/cpufreq/conservative/sampling_rate
-
-# Polling for SLEEP_GOVERNOR state.
-
-	AWAKE=
+AWAKE=
     fi
 
+    # the "cat" call blocks on these files if the device is not in the state being checked for
+    # meaning execution will wait here until the phone goes to sleep. Neat.
     SLEEPING=`cat /sys/power/wait_for_fb_sleep`
+    
     if [ $SLEEPING = "sleeping" ]; then
+    
+	# save the current awake gov for restoration later - someone may have changed it
+	# we can do this since coming into this if statement is edge-sensitive, i/e: it
+	# only happens when the state initially transitions to "sleeping"
+	AWAKE_GOVERNOR=`cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`
+
         echo $SLEEP_GOVERNOR > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 
-# =========
-# Conservative settings [very conservative](conservative SLEEP_GOVERNOR)
-# =========
+	case "$SLEEP_GOVERNOR" in
 
-        echo "90" > /sys/devices/system/cpu/cpufreq/conservative/up_threshold
-        echo "50" > /sys/devices/system/cpu/cpufreq/conservative/down_threshold
-        echo "10" > /sys/devices/system/cpu/cpufreq/conservative/freq_step
-        echo "500000" > /sys/devices/system/cpu/cpu0/cpufreq/conservative/sampling_rate
+		# =========
+		# Conservative settings [very conservative](conservative SLEEP_GOVERNOR)
+		# =========
+		'conservative')
 
-# Finishing.		
-		
+			echo "90" > /sys/devices/system/cpu/cpufreq/conservative/up_threshold
+	        	echo "50" > /sys/devices/system/cpu/cpufreq/conservative/down_threshold
+			echo "10" > /sys/devices/system/cpu/cpufreq/conservative/freq_step
+			echo "500000" > /sys/devices/system/cpu/cpu0/cpufreq/conservative/sampling_rate
+		;;
+
+		#==========
+		# Powersave settings - nothing here is relevant since powersave sticks to
+		# the lowest allowable freq. Note that this gov will
+		# probably be WORSE on power than conservative.
+		#==========
+		'powersave')
+			# nothing to do here - placeholder in case someone else wants to get fancy
+		;;
+
+	esac
+
+	# Finishing.
+
 	SLEEPING=
-    fi    
+    fi
+    
+    # they can deactivate by removing or setting to something other than "active"
+    if [ -r /sdcard/Glitch_config/screenstate_scaling ]
+    then
+	SCREENSTATE_SCALING_ACTIVE=`cat /sdcard/Glitch_config/screenstate_scaling`
+    else
+	SCREENSTATE_SCALING_ACTIVE="inactive"
+    fi
+
 done &)
