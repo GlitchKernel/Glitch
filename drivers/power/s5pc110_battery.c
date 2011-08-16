@@ -835,7 +835,7 @@ static __devinit int max8998_charger_probe(struct platform_device *pdev)
 	chg->polling_interval = POLLING_INTERVAL;
 	chg->bat_info.batt_health = POWER_SUPPLY_HEALTH_GOOD;
 	chg->bat_info.batt_is_full = false;
-    chg->bat_info.batt_max_soc = 100;
+	chg->bat_info.batt_max_soc = 0;
 	chg->set_charge_timeout = false;
 
 	chg->cable_status = CABLE_TYPE_NONE;
