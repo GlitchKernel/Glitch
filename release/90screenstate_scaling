@@ -11,21 +11,27 @@
 # at all. Maybe the thing polling constantly is draining
 # the battery faster than if it was just left alone...
 
+GLITCH_DIR=/system/etc/glitch-config
 
-# set this to "active" to use this stuff
-SCREENSTATE_SCALING_ACTIVE="inactive"
+# if our config directory is not there, create it and populate it with
+# reasonable defaults. Otherwise, we'll pay attn to what the user has there
+if [ ! -d $GLITCH_DIR ]
+then
+    # oops! default to off because this means the kernel probably didn't flash right?!?
+    SCREENSTATE_SCALING_ACTIVE="inactive"
+else
 
+    # set this to "active" to use this stuff
+    SCREENSTATE_SCALING_ACTIVE=`cat ${GLITCH_DIR}/screenstate_scaling`
+    # use the one configured
+    SLEEP_GOVERNOR=`cat ${GLITCH_DIR}/sleep_governor`
+fi
 
 # use the one voltage control has specified
 # assumes 1. we're awake at start, and 2. that VC has set the governor according to user wishes.
 # EDIT: after some testing, it turns out these assumptions are correct, so this works.
 AWAKE_GOVERNOR=`cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`
 
-# modify this to use a different gov for sleeping
-SLEEP_GOVERNOR="conservative"
-
-
-# Polling for AWAKE_GOVERNOR state.
 
 (while [ $SCREENSTATE_SCALING_ACTIVE = "active" ]
 do
@@ -113,5 +119,7 @@ AWAKE=
 
 	SLEEPING=
     fi
+
+    SCREENSTATE_SCALING_ACTIVE=`cat ${GLITCH_DIR}/screenstate_scaling`
     
 done &)
