@@ -46,31 +46,47 @@ do
 	case "$AWAKE_GOVERNOR" in
 
 	# =========
-	# Smartass settings (slightly more battery friendly than Glitch Kernel defaults - peformance penalty unclear)
+	# Smartass settings (restore defaults while awake)
 	# =========
 	'smartass')
-		echo "50" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
-		echo "30" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
+		# default = 70
+		echo "70" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
+		
+		# default = 35
+		echo "35" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
+		
+		
+		# these are the defaults
 		echo "800000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
 		echo "400000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/sleep_max_freq
 	;;
 
 	# =========
-	# Ondemand settings [more aggressive power savings vs. standard ondemand]
+	# Ondemand settings [restore defaults while awake]
 	# =========
 	'ondemand')
-		echo "98" > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
-		echo "300000" > /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate
+	
+		# default value = 55
+		echo "55" > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+		
+		# default value = 40000
+		echo "40000" > /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate
 	;;
 
 	# =========
-	# Conservative settings [SavagedZen governor-like] (conservative AWAKE_GOVERNOR)
+	# Conservative settings [SavagedZen (which is smartass-like) governor-like] (conservative AWAKE_GOVERNOR)
 	# =========
 	'conservative')
-
+		# default = 80
 		echo "75" > /sys/devices/system/cpu/cpufreq/conservative/up_threshold
+		
+		# default = 20
 		echo "30" > /sys/devices/system/cpu/cpufreq/conservative/down_threshold
+		
+		# default = 5
 		echo "50" > /sys/devices/system/cpu/cpufreq/conservative/freq_step
+		
+		# default = 78124
 		echo "80000" > /sys/devices/system/cpu/cpu0/cpufreq/conservative/sampling_rate
 	;;
 	esac
@@ -97,11 +113,48 @@ AWAKE=
 		# Conservative settings [very conservative](conservative SLEEP_GOVERNOR)
 		# =========
 		'conservative')
-
+			# default = 80
 			echo "90" > /sys/devices/system/cpu/cpufreq/conservative/up_threshold
+			
+			# default = 20
 	        	echo "50" > /sys/devices/system/cpu/cpufreq/conservative/down_threshold
+			
+			# default = 5
 			echo "10" > /sys/devices/system/cpu/cpufreq/conservative/freq_step
+			
+			# default = 78124
 			echo "500000" > /sys/devices/system/cpu/cpu0/cpufreq/conservative/sampling_rate
+		;;
+
+
+		# =========
+		# Smartass settings (slightly more battery friendly than Glitch Kernel defaults - peformance penalty unclear)
+		# =========
+		'smartass')
+			# default = 70
+			echo "50" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
+		
+			# default = 35
+			echo "30" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
+		
+		
+			# these are the defaults
+			echo "800000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
+			echo "400000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/sleep_max_freq
+		;;
+
+		# =========
+		# Ondemand settings [more aggressive power savings vs. standard ondemand]
+		# also less responsive, but we don't need responsiveness when the screen is
+		# off.
+		# =========
+		'ondemand')
+	
+			# default value = 55
+			echo "98" > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+		
+			# default value = 40000
+			echo "300000" > /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate
 		;;
 
 		#==========
@@ -110,7 +163,7 @@ AWAKE=
 		# probably be WORSE on power than conservative.
 		#==========
 		'powersave')
-			# nothing to do here - placeholder in case someone else wants to get fancy
+			# nothing to do here
 		;;
 
 	esac
