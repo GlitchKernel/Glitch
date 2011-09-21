@@ -20,6 +20,9 @@ REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 	mkdir  -p system/lib/modules || exit 1
 	mkdir  -p system/lib/hw || exit 1
 	mkdir  -p system/etc/init.d || exit 1
+	mkdir  -p system/etc/glitch-config || exit 1
+	echo "active" > system/etc/glitch-config/screenstate_scaling || exit 1
+	echo "conservative" > system/etc/glitch-config/sleep_governor || exit 1
 	cp logger.module system/lib/modules/logger.ko
 	cd ../
 		find . -name "*.ko" -exec cp {} release/system/lib/modules/ \; 2>/dev/null || exit 1
