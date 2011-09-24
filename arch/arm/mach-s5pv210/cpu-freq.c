@@ -78,10 +78,10 @@ unsigned int freq_uv_table[12][3] = {
 	{1700000,	1500,	1500},
 	{1600000,	1500,	1500},
 	{1500000,	1500,	1500},
-	{1440000,	1500,	1500},
-	{1400000,	1450,	1450},
-	{1300000,	1400,	1400},
-	{1200000,	1350,	1350},
+	{1440000,	1500,	1475},
+	{1400000,	1450,	1425},
+	{1300000,	1400,	1375},
+	{1200000,	1350,	1325},
 	{1000000,	1250,	1250},
 	{800000,	1200,	1200},
 	{400000,	1050,	1050},
@@ -94,13 +94,13 @@ unsigned int gpu[12][2] = {
 	//stock  current
 
 	//1700
-	{ 233, 233 },
+	{ 227, 227 },
 
 	//1600
-	{ 229, 229 },
+	{ 220, 220 },
 
 	//1500
-	{ 247, 247 },
+	{ 250, 250 },
 
 	//1440
 	{ 240, 240 },
@@ -138,7 +138,7 @@ struct s5pv210_dvs_conf {
 
 #ifdef CONFIG_DVFS_LIMIT
 static unsigned int g_dvfs_high_lock_token = 0;
-static unsigned int g_dvfs_high_lock_limit = 9;
+static unsigned int g_dvfs_high_lock_limit = 8;
 static unsigned int g_dvfslockval[DVFS_LOCK_TOKEN_NUM];
 //static DEFINE_MUTEX(dvfs_high_lock);
 #endif
@@ -155,47 +155,47 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 		},
 	[L1] = {
 		.arm_volt   = DVSARM1,
-		.int_volt   = DVSINT2,
+		.int_volt   = DVSINT1,
 	},
 	[L2] = {
 		.arm_volt   = DVSARM1,
-		.int_volt   = DVSINT3,
+		.int_volt   = DVSINT2,
 	},
 	[L3] = {
+		.arm_volt   = DVSARM1,
+		.int_volt   = DVSINT3,
+	},
+	[L4] = { 
 		.arm_volt   = DVSARM2,
 		.int_volt   = DVSINT4,
 	},
-	[L4] = { 
+	[L5] = {
 		.arm_volt   = DVSARM3,
 		.int_volt   = DVSINT5,
 	},
-	[L5] = {
+	[L6] = {
 		.arm_volt   = DVSARM4,
 		.int_volt   = DVSINT6,
 	},
-	[L6] = {
+	[L7] = {
 		.arm_volt   = DVSARM5,
 		.int_volt   = DVSINT7,
 	},
-	[L7] = {
+	[L8] = {
 		.arm_volt   = DVSARM6,
 		.int_volt   = DVSINT8,
 	},
-	[L8] = {
-		.arm_volt   = DVSARM7,
-		.int_volt   = DVSINT9,
-	},
 	[L9] = {
-		.arm_volt   = DVSARM8,
-		.int_volt   = DVSINT9,
+		.arm_volt   = DVSARM7,
+		.int_volt   = DVSINT8,
 	},
 	[L10] = {
-		.arm_volt   = DVSARM9,
-		.int_volt   = DVSINT9,
+		.arm_volt   = DVSARM8,
+		.int_volt   = DVSINT8,
 	},
 	[L11] = {
-		.arm_volt   = DVSARM9,
-		.int_volt   = DVSINT10,
+		.arm_volt   = DVSARM8,
+		.int_volt   = DVSINT9,
 	},
 };
 
@@ -206,9 +206,9 @@ static u32 clkdiv_val[12][11] = {
 	 * MFC, G3D }
 	 */
 	//L0:1700
-	{0, 6.3, 6.3, 1.3, 3, 1, 4, 1, 3, 0.15, 0.15},
+	{0, 6.5, 6.5, 1, 3, 1, 4, 1, 3, 0, 0},
 	//L1:1600
-	{0, 6, 6, 1, 3, 1, 4, 1, 3, 0, 0},
+	{0, 6.3, 6.3, 1, 3, 1, 4, 1, 3, 0, 0},
 	//L2: 1500
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
 	//L3: 1440
@@ -239,7 +239,7 @@ static struct s3c_freq clk_info[] = {
 		.hclk_tns   = 0,
 		.hclk	    = 133000,
 		.pclk       = 66000,
-                .hclk_msys  = 232876,
+                .hclk_msys  = 200000,
                 .pclk_msys  = 100000,
                 .hclk_dsys  = 166750,
                 .pclk_dsys  = 83375,
@@ -250,7 +250,7 @@ static struct s3c_freq clk_info[] = {
                 .hclk_tns   = 0,
                 .hclk       = 133000,
                 .pclk       = 66000,
-                .hclk_msys  = 228571,
+                .hclk_msys  = 200000,
                 .pclk_msys  = 100000,
                 .hclk_dsys  = 166750,
                 .pclk_dsys  = 83375,
@@ -261,7 +261,7 @@ static struct s3c_freq clk_info[] = {
                 .hclk_tns   = 0,
                 .hclk       = 133000,
                 .pclk       = 66000,
-                .hclk_msys  = 246667,
+                .hclk_msys  = 200000,
                 .pclk_msys  = 100000,
                 .hclk_dsys  = 166750,
                 .pclk_dsys  = 83375
@@ -272,7 +272,7 @@ static struct s3c_freq clk_info[] = {
                 .hclk_tns   = 0,
                 .hclk       = 133000,
                 .pclk       = 66000,
-                .hclk_msys  = 240000,
+                .hclk_msys  = 200000,
                 .pclk_msys  = 100000,
                 .hclk_dsys  = 166750,
                 .pclk_dsys  = 83375,
@@ -283,7 +283,7 @@ static struct s3c_freq clk_info[] = {
 		.hclk_tns   = 0,
 		.hclk       = 133000,
 		.pclk       = 66000,
-		.hclk_msys  = 233333,
+		.hclk_msys  = 200000,
 		.pclk_msys  = 100000,
 		.hclk_dsys  = 166750,
 		.pclk_dsys  = 83375,
@@ -294,7 +294,7 @@ static struct s3c_freq clk_info[] = {
 		.hclk_tns   = 0,
 		.hclk       = 133000,
 		.pclk       = 66000,
-		.hclk_msys  = 216667,
+		.hclk_msys  = 200000,
 		.pclk_msys  = 100000,
 		.hclk_dsys  = 166750,
 		.pclk_dsys  = 83375,
