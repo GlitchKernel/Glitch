@@ -1943,8 +1943,8 @@ static int fimc_qbuf_output_dma_auto(struct fimc_control *ctrl,
 		/* set window path & owner */
 		win->path = DATA_PATH_DMA;
 		win->owner = DMA_MEM_OTHER;
-		win->other_mem_addr = ctx->dst[1].base[FIMC_ADDR_Y];
-		win->other_mem_size = ctx->dst[1].length[FIMC_ADDR_Y];
+		win->other_mem_addr = ctx->dst[FIMC_OUTBUFS-1].base[FIMC_ADDR_Y];
+		win->other_mem_size = ctx->dst[FIMC_OUTBUFS-1].length[FIMC_ADDR_Y];
 
 		var.activate = FB_ACTIVATE_FORCE;
 		ret = fb_set_var(fbinfo, &var);
