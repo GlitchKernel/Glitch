@@ -135,12 +135,12 @@ struct gain_info_t cdma_playback_gain_table[PLAYBACK_GAIN_NUM] = {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_AIF1_DAC1_LEFT_VOLUME,	/* 402h */
 		.mask = WM8994_AIF1DAC1L_VOL_MASK,
-		.gain = WM8994_AIF1DAC1_VU | 0xB8           /* -2.625dB */
+		.gain = WM8994_AIF1DAC1_VU | 0xC0           /* 0dB (max) */
 	}, {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_AIF1_DAC1_RIGHT_VOLUME,	/* 403h */
 		.mask = WM8994_AIF1DAC1R_VOL_MASK,
-		.gain = WM8994_AIF1DAC1_VU | 0xB8           /* -2.625dB */
+		.gain = WM8994_AIF1DAC1_VU | 0xC0           /* 0db (max) */
 	}, { /* HP */
 		.mode = PLAYBACK_HP,
 		.reg  = WM8994_LEFT_OUTPUT_VOLUME,	/* 1Ch */
@@ -556,12 +556,12 @@ struct gain_info_t playback_gain_table[PLAYBACK_GAIN_NUM] = {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_AIF1_DAC1_LEFT_VOLUME,	/* 402h */
 		.mask = WM8994_AIF1DAC1L_VOL_MASK,
-		.gain = WM8994_AIF1DAC1_VU | 0xB8           /* -2.625dB */
+		.gain = WM8994_AIF1DAC1_VU | 0xC0           /* 0db (max) */
 	}, {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_AIF1_DAC1_RIGHT_VOLUME,	/* 403h */
 		.mask = WM8994_AIF1DAC1R_VOL_MASK,
-		.gain = WM8994_AIF1DAC1_VU | 0xB8           /* -2.625dB */
+		.gain = WM8994_AIF1DAC1_VU | 0xC0           /* 0db (max) */
 	}, { /* HP */
 		.mode = PLAYBACK_HP,
 		.reg  = WM8994_LEFT_OUTPUT_VOLUME,	/* 1Ch */
