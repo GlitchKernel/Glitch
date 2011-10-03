@@ -3332,6 +3332,9 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 
 	wm8994_set_voicecall_common_setting(codec);
 
+	/* bc - attempt to reduce feedback while on speakerphone? */
+	wm8994_write(codec, WM8994_ANTIPOP_2, 0x006C);
+
 	wm8994_write(codec, 0x601, 0x0005);
 	wm8994_write(codec, 0x602, 0x0005);
 	wm8994_write(codec, 0x603, 0x000C);
