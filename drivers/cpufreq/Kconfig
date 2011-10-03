@@ -237,30 +237,12 @@ config CPU_FREQ_GOV_SMARTASS
 	 Designed like 'interactive', but spend more time in the lower
 	 frequencies. More adapted to mobile devices.
 
-<<<<<<< HEAD
-=======
-config CPU_FREQ_GOV_SMOOTHASS
-	tristate "'smoothass' cpufreq governor"
-	depends on CPU_FREQ
-	help
-	smoothass' - a "slightly more agressive smartass" governor!
- 	
-	If in doubt, say N.
-
 config CPU_FREQ_GOV_SMARTASS2
 	tristate "'smartassV2' cpufreq governor"
 	depends on CPU_FREQ
 	help
 		'smartassV2' - a "smart" governor
 		If in doubt, say N.
-
->>>>>>> dbcf585... add the smartass2
-config CPU_FREQ_GOV_SAVAGEDZEN
-	tristate "'savagedzen' cpufreq governor"
-	depends on CPU_FREQ
-	help
-	   'Savaged-Zen' - a "smartass" based governor
-	   If in doubt, say N.
 
 config CPU_FREQ_GOV_CONSERVATIVE
 	tristate "'conservative' cpufreq governor"
