@@ -17,6 +17,7 @@ mkdir -p ${TYPE} || exit 1
 REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 
 	rm -r system 2> /dev/null
+	mkdir  -p release/system/lib/hw || exit 1
 	mkdir  -p system/lib/modules || exit 1
 	mkdir  -p system/etc/init.d || exit 1
 	mkdir  -p system/etc/glitch-config || exit 1
