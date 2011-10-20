@@ -17,6 +17,7 @@ mkdir -p ${TYPE} || exit 1
 REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 
 	rm -r system 2> /dev/null
+	mkdir  -p system/lib/hw || exit 1
 	mkdir  -p system/lib/modules || exit 1
 	mkdir  -p system/etc/init.d || exit 1
 	mkdir  -p system/etc/glitch-config || exit 1
@@ -27,6 +28,7 @@ REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 		find . -name "*.ko" -exec cp {} release/system/lib/modules/ \; 2>/dev/null || exit 1
 	cd release
 	cp 90screenstate_scaling system/etc/init.d/ || exit 1	
+	cp lights.aries.so.BLN system/lib/hw/lights.aries.so || exit 1
 	cp logcat_module system/etc/init.d/ || exit 1
 	mkdir -p system/bin
 	cp bin/* system/bin/

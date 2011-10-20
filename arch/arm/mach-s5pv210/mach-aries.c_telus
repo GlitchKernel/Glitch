@@ -86,9 +86,7 @@
 #include <plat/clock.h>
 #include <plat/regs-otg.h>
 
-#ifndef CONFIG_SAMSUNG_FASCINATE
 #include <linux/gp2a.h>
-#endif
 
 #include <linux/yas529.h>
 #include <../../../drivers/video/samsung/s3cfb.h>
@@ -312,8 +310,8 @@ static struct s3cfb_lcd s6e63m0 = {
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (11264 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (5000 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (11264 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (36864 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (36864 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (32768 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (32768 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (S5PV210_LCD_WIDTH * \
 					     S5PV210_LCD_HEIGHT * 4 * \
 					     CONFIG_FB_S3C_NR_BUFFERS)
@@ -473,7 +471,7 @@ static struct regulator_consumer_supply ldo4_consumer[] = {
 };
 
 static struct regulator_consumer_supply ldo5_consumer[] = {
-	REGULATOR_SUPPLY("vtf", NULL),
+	REGULATOR_SUPPLY("vmmc", NULL),
 };
 
 static struct regulator_consumer_supply ldo7_consumer[] = {
@@ -576,6 +574,22 @@ static struct regulator_init_data aries_ldo4_data = {
         .num_consumer_supplies  = ARRAY_SIZE(ldo4_consumer),
         .consumer_supplies      = ldo4_consumer,
 };
+
+static struct regulator_init_data aries_ldo5_data = {
+	.constraints	= {
+		.name		= "VTF_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+		.state_mem	= {
+			.disabled = 1,
+		},
+	},
+	.num_consumer_supplies	= ARRAY_SIZE(ldo5_consumer),
+	.consumer_supplies	= ldo5_consumer,
+};
+
 
 static struct regulator_init_data aries_ldo7_data = {
 	.constraints	= {
@@ -711,14 +725,14 @@ static struct regulator_init_data aries_ldo16_data = {
 static struct regulator_init_data aries_ldo17_data = {
 	.constraints	= {
 		.name		= "VCC_3.0V_LCD",
-		.min_uV		= 2600000, //3000000
-		.max_uV		= 2600000, //3000000
+		.min_uV		= 3000000, //3000000
+		.max_uV		= 3000000, //3000000
 		.apply_uV	= 1,
 		.always_on	= 0,
 		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-                        .uV     = 2600000,
+                        .uV     = 3000000,
                         .mode   = REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -802,6 +816,7 @@ static struct max8998_regulator_data aries_regulators[] = {
 	{ MAX8998_LDO2,  &aries_ldo2_data },
 	{ MAX8998_LDO3,  &aries_ldo3_data },
 	{ MAX8998_LDO4,  &aries_ldo4_data },
+	{ MAX8998_LDO5,  &aries_ldo5_data },
 	{ MAX8998_LDO7,  &aries_ldo7_data },
 	{ MAX8998_LDO8,  &aries_ldo8_data },
 	{ MAX8998_LDO9,  &aries_ldo9_data },
@@ -1249,21 +1264,10 @@ static void touch_keypad_onoff(int onoff)
 }
 
 static void touch_keypad_gpio_sleep(int onoff){
-	if(onoff == TOUCHKEY_ON){
-		/*
-		 * reconfigure gpio to activate touchkey controller vdd in sleep mode
-		 */
+	if(onoff == TOUCHKEY_ON)
 		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT1);
-		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
-	} else {
-		/*
-		 * reconfigure gpio to deactivate touchkey vdd in sleep mode,
-		 * this is the default
-		 */
+	else
 		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT0);
-		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
-	}
-
 }
 
 static const int touch_keypad_code[] = {
@@ -2538,14 +2542,6 @@ static struct i2c_board_info i2c_devs9[] __initdata = {
 	},
 };
 
-#ifndef CONFIG_SAMSUNG_FASCINATE
-static void gp2a_gpio_init(void)
-{
-	int ret = gpio_request(GPIO_PS_ON, "gp2a_power_supply_on");
-	if (ret)
-		printk(KERN_ERR "Failed to request gpio gp2a power supply.\n");
-}
-
 static int gp2a_power(bool on)
 {
 	/* this controls the power supply rail to the gp2a IC */
@@ -2563,25 +2559,34 @@ static struct gp2a_platform_data gp2a_pdata = {
 	.p_out = GPIO_PS_VOUT,
 	.light_adc_value = gp2a_light_adc_value
 };
+
+static void gp2a_gpio_init(void)
+{
+	int ret = gpio_request(GPIO_PS_ON, "gp2a_power_supply_on");
+	if (ret)
+		printk(KERN_ERR "Failed to request gpio gp2a power supply.\n");
+
+#ifdef CONFIG_SAMSUNG_FASCINATE
+        s3c_gpio_cfgpin(GPIO_PS_VOUT, S3C_GPIO_SFN(GPIO_PS_VOUT_AF));
+        s3c_gpio_setpull(GPIO_PS_VOUT, S3C_GPIO_PULL_NONE);
+        set_irq_type(IRQ_EINT1, IRQ_TYPE_EDGE_BOTH);
+        gp2a_pdata.p_irq = gpio_to_irq(GPIO_PS_VOUT);
+        gp2a_pdata.p_out = GPIO_PS_VOUT;
 #endif
+}
 
 static struct i2c_board_info i2c_devs11[] __initdata = {
-#ifdef CONFIG_SAMSUNG_FASCINATE
-	{
-		I2C_BOARD_INFO("gp2a", (0x88 >> 1)),
-	},
-#else
 	{
 		I2C_BOARD_INFO("gp2a", (0x88 >> 1)),
 		.platform_data = &gp2a_pdata,
 	},
-#endif
 };
 
 static struct yas529_platform_data yas529_pdata = {
 	.reset_line = GPIO_MSENSE_nRST,
 	.reset_asserted = GPIO_LEVEL_LOW,
 };
+
 static struct i2c_board_info i2c_devs12[] __initdata = {
 	{
 		I2C_BOARD_INFO("yas529", 0x2e),
@@ -2676,13 +2681,6 @@ struct platform_device sec_device_battery = {
 	.name	= "sec-battery",
 	.id	= -1,
 };
-
-#if defined(CONFIG_SAMSUNG_FASCINATE)
-static struct platform_device opt_gp2a = {
-	.name = "gp2a-opt",
-	.id = -1,
-};
-#endif
 
 static struct platform_device sec_device_rfkill = {
 	.name	= "bt_rfkill",
@@ -5011,9 +5009,6 @@ static struct platform_device *aries_devices[] __initdata = {
 	&ram_console_device,
 	&sec_device_wifi,
 
-#ifdef CONFIG_SAMSUNG_FASCINATE
-	&opt_gp2a,
-#endif
 };
 
 static void __init aries_map_io(void)
@@ -5275,9 +5270,7 @@ static void __init aries_machine_init(void)
 	i2c_register_board_info(9, i2c_devs9, ARRAY_SIZE(i2c_devs9));
 
 	/* optical sensor */
-#ifndef CONFIG_SAMSUNG_FASCINATE
 	gp2a_gpio_init();
-#endif
 	i2c_register_board_info(11, i2c_devs11, ARRAY_SIZE(i2c_devs11));
 	
 	/* yamaha magnetic sensor */

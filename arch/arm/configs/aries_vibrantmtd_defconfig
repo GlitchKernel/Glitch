@@ -55,7 +55,7 @@ CONFIG_SYSVIPC_SYSCTL=y
 # CONFIG_BSD_PROCESS_ACCT is not set
 # CONFIG_TASKSTATS is not set
 # CONFIG_AUDIT is not set
-CONFIG_CPU_DIDLE=y
+# CONFIG_CPU_DIDLE is not set
 
 #
 # RCU Subsystem
