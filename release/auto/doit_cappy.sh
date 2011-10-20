@@ -17,8 +17,8 @@ mkdir -p ${TYPE} || exit 1
 REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 
 	rm -r system 2> /dev/null
+	mkdir  -p release/system/lib/hw || exit 1
 	mkdir  -p system/lib/modules || exit 1
-	mkdir  -p system/lib/hw || exit 1
 	mkdir  -p system/etc/init.d || exit 1
 	mkdir  -p system/etc/glitch-config || exit 1
 	echo "active" > system/etc/glitch-config/screenstate_scaling || exit 1
@@ -32,9 +32,6 @@ REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 	mkdir -p system/bin
 	cp bin/* system/bin/
 
-	cp lights.default.so system/lib/hw
-	cp sensors.default.so system/lib/hw
-	
 	# optional folders to go into system
 	if [ -d app ]; then
 		cp -r app system || exit 1

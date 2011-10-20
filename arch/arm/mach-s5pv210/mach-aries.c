@@ -725,14 +725,14 @@ static struct regulator_init_data aries_ldo16_data = {
 static struct regulator_init_data aries_ldo17_data = {
 	.constraints	= {
 		.name		= "VCC_3.0V_LCD",
-		.min_uV		= 2600000, //3000000
-		.max_uV		= 2600000, //3000000
+		.min_uV		= 3000000, //3000000
+		.max_uV		= 3000000, //3000000
 		.apply_uV	= 1,
 		.always_on	= 0,
 		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-                        .uV     = 2600000,
+                        .uV     = 3000000,
                         .mode   = REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -1263,6 +1263,12 @@ static void touch_keypad_onoff(int onoff)
 		msleep(25);
 }
 
+static void touch_keypad_gpio_sleep(int onoff){
+	if(onoff == TOUCHKEY_ON)
+		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT1);
+	else
+		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT0);
+}
 
 static const int touch_keypad_code[] = {
 #if defined (CONFIG_SAMSUNG_GALAXYS) || defined (CONFIG_SAMSUNG_GALAXYSB)
@@ -1282,6 +1288,7 @@ static struct touchkey_platform_data touchkey_data = {
 	.keycode_cnt = ARRAY_SIZE(touch_keypad_code),
 	.keycode = touch_keypad_code,
 	.touchkey_onoff = touch_keypad_onoff,
+	.touchkey_sleep_onoff = touch_keypad_gpio_sleep,
 	.fw_name = "cypress-touchkey.bin",
 	.scl_pin = _3_TOUCH_SCL_28V,
 	.sda_pin = _3_TOUCH_SDA_28V,
@@ -4496,7 +4503,7 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 	// GPJ3 ---------------------------------------------------
 	{ S5PV210_GPJ3(0), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//_3_TOUCH_SDA_28V
 	{ S5PV210_GPJ3(1), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//_3_TOUCH_SCL_28V
-	{ S5PV210_GPJ3(2), S3C_GPIO_SLP_PREV,   S3C_GPIO_PULL_NONE},	//_3_GPIO_TOUCH_EN
+	{ S5PV210_GPJ3(2), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//_3_GPIO_TOUCH_EN
 #if defined (CONFIG_SAMSUNG_CAPTIVATE)
   	{ S5PV210_GPJ3(3), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_GPJ33
 #else

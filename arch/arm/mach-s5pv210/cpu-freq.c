@@ -82,7 +82,7 @@ unsigned int freq_uv_table[12][3] = {
 	{1400000,	1450,	1450},
 	{1300000,	1400,	1400},
 	{1200000,	1350,	1350},
-	{1000000,	1250,	1250},
+	{1000000,	1275,	1275},
 	{800000,	1200,	1200},
 	{400000,	1050,	1050},
 	{200000,	950,	950},
@@ -138,7 +138,7 @@ struct s5pv210_dvs_conf {
 
 #ifdef CONFIG_DVFS_LIMIT
 static unsigned int g_dvfs_high_lock_token = 0;
-static unsigned int g_dvfs_high_lock_limit = 9;
+static unsigned int g_dvfs_high_lock_limit = 12;
 static unsigned int g_dvfslockval[DVFS_LOCK_TOKEN_NUM];
 //static DEFINE_MUTEX(dvfs_high_lock);
 #endif
