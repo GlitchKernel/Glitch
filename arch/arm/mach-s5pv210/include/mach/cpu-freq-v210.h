@@ -55,7 +55,7 @@ enum perf_level {
 struct s5pv210_cpufreq_voltage {
 	unsigned int	freq;	/* kHz */
 	unsigned long	varm;	/* uV */
-	unsigned long	vint;	/* uV */
+	unsigned long	vint[3];	/* uV */
 };
 
 struct s5pv210_cpufreq_data {

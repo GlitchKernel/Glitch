@@ -89,6 +89,8 @@ unsigned int freq_uv_table[12][3] = {
 	{100000,	950,	950}
 };
 
+extern int leakage;
+
 #if defined(GPU_OC)
 unsigned int gpu[12][2] = {
 	//stock  current
@@ -133,7 +135,7 @@ unsigned int gpu[12][2] = {
 
 struct s5pv210_dvs_conf {
 	unsigned long       arm_volt;   /* uV */
-	unsigned long       int_volt;   /* uV */
+	unsigned long       int_volt[3];   /* uV */
 };
 
 #ifdef CONFIG_DVFS_LIMIT
@@ -151,51 +153,51 @@ const unsigned long int_volt_max = INTVOLT;
 static struct s5pv210_dvs_conf dvs_conf[] = {
 	[L0] = {
 		.arm_volt   = DVSARM1,
-		.int_volt   = DVSINT1,
+		.int_volt   = {DVSINT1_LL, DVSINT1_ML, DVSINT1_HL},
 		},
 	[L1] = {
 		.arm_volt   = DVSARM1,
-		.int_volt   = DVSINT2,
+		.int_volt   = {DVSINT2_LL, DVSINT2_ML, DVSINT2_HL},
 	},
 	[L2] = {
 		.arm_volt   = DVSARM1,
-		.int_volt   = DVSINT3,
+		.int_volt   = {DVSINT3_LL, DVSINT3_ML, DVSINT3_HL},
 	},
 	[L3] = {
 		.arm_volt   = DVSARM2,
-		.int_volt   = DVSINT4,
+		.int_volt   = {DVSINT4_LL, DVSINT4_ML, DVSINT4_HL},
 	},
 	[L4] = { 
 		.arm_volt   = DVSARM3,
-		.int_volt   = DVSINT5,
+		.int_volt   = {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
 	},
 	[L5] = {
 		.arm_volt   = DVSARM4,
-		.int_volt   = DVSINT6,
+		.int_volt   = {DVSINT6_LL, DVSINT6_ML, DVSINT6_HL},
 	},
 	[L6] = {
 		.arm_volt   = DVSARM5,
-		.int_volt   = DVSINT7,
+		.int_volt   = {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
 	},
 	[L7] = {
 		.arm_volt   = DVSARM6,
-		.int_volt   = DVSINT8,
+		.int_volt   = {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
 	},
 	[L8] = {
 		.arm_volt   = DVSARM7,
-		.int_volt   = DVSINT9,
+		.int_volt   = {DVSINT9_LL, DVSINT9_ML, DVSINT9_HL},
 	},
 	[L9] = {
 		.arm_volt   = DVSARM8,
-		.int_volt   = DVSINT9,
+		.int_volt   = {DVSINT9_LL, DVSINT9_ML, DVSINT9_HL},
 	},
 	[L10] = {
 		.arm_volt   = DVSARM9,
-		.int_volt   = DVSINT9,
+		.int_volt   = {DVSINT9_LL, DVSINT9_ML, DVSINT9_HL},
 	},
 	[L11] = {
 		.arm_volt   = DVSARM9,
-		.int_volt   = DVSINT10,
+		.int_volt   = {DVSINT10_LL, DVSINT10_ML, DVSINT10_HL},
 	},
 };
 
@@ -702,7 +704,7 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 		
 	arm_volt = (dvs_conf[index].arm_volt - (exp_UV_mV[index]*1000));
 
-	int_volt = dvs_conf[index].int_volt;
+	int_volt = dvs_conf[index].int_volt[leakage];
 
 	/* New clock information update */
 	memcpy(&s3c_freqs.new, &clk_info[index],
@@ -1147,7 +1149,9 @@ static int __init s5pv210_cpufreq_probe(struct platform_device *pdev)
 			while (freq_table[j].frequency != CPUFREQ_TABLE_END) {
 				if (freq_table[j].frequency == pdata->volt[i].freq) {
 					dvs_conf[j].arm_volt = pdata->volt[i].varm;
-					dvs_conf[j].int_volt = pdata->volt[i].vint;
+					dvs_conf[j].int_volt[0] = pdata->volt[i].vint[0];
+					dvs_conf[j].int_volt[1] = pdata->volt[i].vint[1];
+					dvs_conf[j].int_volt[2] = pdata->volt[i].vint[2];
 					break;
 				}
 				j++;
