@@ -1207,6 +1207,11 @@ static void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 
 	ctrl = sdhci_readb(host, SDHCI_HOST_CONTROL);
 
+	if (ios->bus_width == MMC_BUS_WIDTH_8)
+		ctrl |= SDHCI_CTRL_8BITBUS;
+	else
+		ctrl &= ~SDHCI_CTRL_8BITBUS;
+
 	if (ios->bus_width == MMC_BUS_WIDTH_4)
 		ctrl |= SDHCI_CTRL_4BITBUS;
 	else
@@ -1404,7 +1409,8 @@ static void sdhci_tasklet_finish(unsigned long param)
 		sdhci_reset(host, SDHCI_RESET_DATA);
 	}
 out:
-	if(readl(host->ioaddr + SDHCI_PRESENT_STATE) & SDHCI_DATA_INHIBIT)
+	if((readl(host->ioaddr + SDHCI_PRESENT_STATE) & SDHCI_DATA_INHIBIT) ||
+			(host->quirks & SDHCI_QUIRK_MUST_MAINTAIN_CLOCK))
 		mod_timer(&host->busy_check_timer, jiffies + msecs_to_jiffies(10));
 	else
 		sdhci_disable_clock_card(host);
@@ -1463,7 +1469,8 @@ static void sdhci_busy_check_timer(unsigned long data)
 
 	spin_lock_irqsave(&host->lock, flags);
 
-	if(readl(host->ioaddr + SDHCI_PRESENT_STATE) & (SDHCI_CMD_INHIBIT | SDHCI_DATA_INHIBIT))
+	if((readl(host->ioaddr + SDHCI_PRESENT_STATE) & (SDHCI_CMD_INHIBIT | SDHCI_DATA_INHIBIT)) ||
+			(host->quirks & SDHCI_QUIRK_MUST_MAINTAIN_CLOCK))
 		mod_timer(&host->busy_check_timer, jiffies + msecs_to_jiffies(10));
 	else
 		sdhci_disable_clock_card(host);
@@ -1720,10 +1727,6 @@ int sdhci_suspend_host(struct sdhci_host *host, pm_message_t state)
 
 	sdhci_mask_irqs(host, SDHCI_INT_ALL_MASK);
 
-	del_timer(&host->busy_check_timer);
-
-	if (host->irq)
-		disable_irq(host->irq);
 	if (host->vmmc)
 		ret = regulator_disable(host->vmmc);
 
@@ -1921,7 +1924,7 @@ int sdhci_add_host(struct sdhci_host *host)
 
 	mmc->ops = &sdhci_ops;
 	if (host->quirks & SDHCI_QUIRK_NONSTANDARD_CLOCK &&
-			host->ops->set_clock && host->ops->get_min_clock)
+			host->ops->get_min_clock)
 		mmc->f_min = host->ops->get_min_clock(host);
 	else
 		mmc->f_min = 400000;

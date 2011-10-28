@@ -196,11 +196,6 @@ extern int __cpufreq_driver_getavg(struct cpufreq_policy *policy,
 int cpufreq_register_governor(struct cpufreq_governor *governor);
 void cpufreq_unregister_governor(struct cpufreq_governor *governor);
 
-int lock_policy_rwsem_read(int cpu);
-int lock_policy_rwsem_write(int cpu);
-void unlock_policy_rwsem_read(int cpu);
-void unlock_policy_rwsem_write(int cpu);
-
 
 /*********************************************************************
  *                      CPUFREQ DRIVER INTERFACE                     *
@@ -363,6 +358,12 @@ extern struct cpufreq_governor cpufreq_gov_powersave;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE)
 extern struct cpufreq_governor cpufreq_gov_userspace;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_userspace)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMANDX)
+extern struct cpufreq_governor cpufreq_gov_ondemandx;
+#define CPUFREQ_DEFAULT_GOVERNOR  (&cpufreq_gov_ondemandx)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMANDB)
+extern struct cpufreq_governor cpufreq_gov_ondemandb;
+#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_ondemandb)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND)
 extern struct cpufreq_governor cpufreq_gov_ondemand;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_ondemand)
@@ -382,6 +383,11 @@ extern struct cpufreq_governor cpufreq_gov_smartass;
 extern struct cpufreq_governor cpufreq_gov_smartass2;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_smartass2)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SMOOTHASS)
+extern struct cpufreq_governor cpufreq_gov_smoothass;
+#define CPUFREQ_DEFAULT_GOVERNOR  (&cpufreq_gov_smoothass)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SAVAGEDZEN)
+extern struct cpufreq_governor cpufreq_gov_savagedzen;
+#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_savagedzen)
 #endif
 
 

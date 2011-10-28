@@ -675,6 +675,20 @@ static int mtd_ioctl(struct file *file, u_int cmd, u_long arg)
 		break;
 	}
 
+	case MEMISLOCKED:
+	{
+		struct erase_info_user einfo;
+
+		if (copy_from_user(&einfo, argp, sizeof(einfo)))
+			return -EFAULT;
+
+		if (!mtd->is_locked)
+			ret = -EOPNOTSUPP;
+		else
+			ret = mtd->is_locked(mtd, einfo.start, einfo.length);
+		break;
+	}
+
 	/* Legacy interface */
 	case MEMGETOOBSEL:
 	{

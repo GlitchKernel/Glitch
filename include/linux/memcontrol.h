@@ -130,6 +130,7 @@ void mem_cgroup_update_file_mapped(struct page *page, int val);
 unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
 						gfp_t gfp_mask, int nid,
 						int zid);
+u64 mem_cgroup_get_limit(struct mem_cgroup *mem);
 #else /* CONFIG_CGROUP_MEM_RES_CTLR */
 struct mem_cgroup;
 
@@ -307,6 +308,12 @@ unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
 					    gfp_t gfp_mask, int nid, int zid)
 {
 	return 0;
+}
+
+static inline
+u64 mem_cgroup_get_limit(struct mem_cgroup *mem)
+{
+  return 0;
 }
 
 #endif /* CONFIG_CGROUP_MEM_CONT */

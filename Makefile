@@ -333,11 +333,11 @@ CHECK		= sparse
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 MODFLAGS	= -DMODULE
-CFLAGS_MODULE   = $(MODFLAGS) -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
-AFLAGS_MODULE   = $(MODFLAGS) -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
+CFLAGS_MODULE   = $(MODFLAGS) -march=armv7-a -mtune=cortex-a8 -mfpu=neon -ftree-vectorize -fsingle-precision-constant -fno-gcse -funsafe-math-optimizations -ffinite-math-only -fgcse-las -fgcse-sm -ftree-loop-linear -ftree-loop-im -ftree-loop-ivcanon -fivopts -funroll-loops -fbtr-bb-exclusive --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=6 --param prefetch-latency=400 --param l1-cache-line-size=64 -mvectorize-with-neon-quad -fvect-cost-model
+AFLAGS_MODULE   = $(MODFLAGS) -march=armv7-a -mtune=cortex-a8 -mfpu=neon -ftree-vectorize -fsingle-precision-constant -fno-gcse -funsafe-math-optimizations -ffinite-math-only -fgcse-las -fgcse-sm -ftree-loop-linear -ftree-loop-im -ftree-loop-ivcanon -fivopts -funroll-loops -fbtr-bb-exclusive --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=6 --param prefetch-latency=400 --param l1-cache-line-size=64 -mvectorize-with-neon-quad -fvect-cost-model
 LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
-CFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
-AFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
+CFLAGS_KERNEL	= -march=armv7-a -mtune=cortex-a8 -mfpu=neon -ftree-vectorize -fsingle-precision-constant -fno-gcse -funsafe-math-optimizations -ffinite-math-only -fgcse-las -fgcse-sm -ftree-loop-linear -ftree-loop-im -ftree-loop-ivcanon -fivopts -funroll-loops -fbtr-bb-exclusive --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=6 --param prefetch-latency=400 --param l1-cache-line-size=64 -mvectorize-with-neon-quad -fvect-cost-model
+AFLAGS_KERNEL	= -march=armv7-a -mtune=cortex-a8 -mfpu=neon -ftree-vectorize -fsingle-precision-constant -fno-gcse -funsafe-math-optimizations -ffinite-math-only -fgcse-las -fgcse-sm -ftree-loop-linear -ftree-loop-im -ftree-loop-ivcanon -fivopts -funroll-loops -fbtr-bb-exclusive --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=6 --param prefetch-latency=400 --param l1-cache-line-size=64 -mvectorize-with-neon-quad -fvect-cost-model
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
@@ -353,11 +353,11 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 \
+		   --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=6 --param prefetch-latency=400 --param l1-cache-line-size=64 \
 		   -fsched-spec-load-dangerous -fpredictive-commoning \
-		   -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone \
-		   -mtune=cortex-a8 -mfpu=vfpv3 \
-		   --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32
+		   -fira-coalesce -funswitch-loops -ftree-vectorize -ftree-loop-im -fipa-cp-clone -fsingle-precision-constant -fno-gcse -funsafe-math-optimizations -ffinite-math-only -fgcse-las -fgcse-sm -ftree-loop-linear -ftree-loop-ivcanon -fivopts -funroll-loops -fbtr-bb-exclusive -mvectorize-with-neon-quad \
+		   -mtune=cortex-a8 -mfpu=neon
+
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)

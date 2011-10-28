@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd_common.c,v 1.5.6.8.2.6.6.69.4.25 2011-02-11 21:16:02 Exp $
+ * $Id: dhd_common.c,v 1.5.6.8.2.6.6.69.4.25 2011/02/11 21:16:02 Exp $
  */
 #include <typedefs.h>
 #include <osl.h>
@@ -992,6 +992,9 @@ dhd_pktfilter_offload_enable(dhd_pub_t * dhd, char *arg, int enable, int master_
 	wl_pkt_filter_enable_t	enable_parm;
 	wl_pkt_filter_enable_t	* pkt_filterp;
 
+	if (!arg)
+		return;
+
 	if (!(arg_save = MALLOC(dhd->osh, strlen(arg) + 1))) {
 		DHD_ERROR(("%s: kmalloc failed\n", __FUNCTION__));
 		goto fail;
@@ -1064,6 +1067,9 @@ dhd_pktfilter_offload_set(dhd_pub_t * dhd, char *arg)
 	int					i = 0;
 	char				*arg_save = 0, *arg_org = 0;
 #define BUF_SIZE		2048
+
+	if (!arg)
+		return;
 
 	if (!(arg_save = MALLOC(dhd->osh, strlen(arg) + 1))) {
 		DHD_ERROR(("%s: kmalloc failed\n", __FUNCTION__));
@@ -1366,6 +1372,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	if (dhd->country_code[0] != 0) {
 		if (dhdcdc_set_ioctl(dhd, 0, WLC_SET_COUNTRY,
 			dhd->country_code, sizeof(dhd->country_code)) < 0) {
+
 			DHD_ERROR(("%s: country code setting failed\n", __FUNCTION__));
 		}
 	}
@@ -1986,12 +1993,12 @@ int dhd_pno_enable(dhd_pub_t *dhd, int pfn_enabled)
 	if ((pfn_enabled) && \
 		((ret = dhdcdc_set_ioctl(dhd, 0, WLC_GET_BSSID, \
 				 (char *)&bssid, ETHER_ADDR_LEN)) == BCME_NOTASSOCIATED)) {
-		DHD_TRACE(("%s pno enable called in disassoc mode\n", __FUNCTION__));
+			DHD_TRACE(("%s pno enable called in disassoc mode\n", __FUNCTION__));
 	}
-	else if (pfn_enabled) {
-		DHD_ERROR(("%s pno enable called in assoc mode ret=%d\n", \
-			__FUNCTION__, ret));
-		return ret;
+	else {
+			DHD_ERROR(("%s pno enable called in assoc mode ret=%d\n", \
+										__FUNCTION__, ret));
+			return ret;
 	}
 
 	/* Enable/disable PNO */

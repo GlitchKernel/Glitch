@@ -89,7 +89,9 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 	int tasksize;
 	int i;
 	int min_adj = OOM_ADJUST_MAX + 1;
+	int target_free = 0;
 	int selected_tasksize = 0;
+	int selected_target_offset;
 	int selected_oom_adj;
 	int array_size = ARRAY_SIZE(lowmem_adj);
 	int other_free = global_page_state(NR_FREE_PAGES);
@@ -100,6 +102,17 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 	int other_file = global_page_state(NR_FILE_PAGES) -
 						global_page_state(NR_SHMEM);
 #endif
+
+	/*
+	 * If we already have a death outstanding, then
+	 * bail out right away; indicating to vmscan
+	 * that we have nothing further to offer on
+	 * this pass.
+	 *
+	 */
+	if (lowmem_deathpending &&
+	    time_before_eq(jiffies, lowmem_deathpending_timeout))
+		return 0;
 
 	/*
 	 * If we already have a death outstanding, then
@@ -125,6 +138,7 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 #endif
 		{
 			min_adj = lowmem_adj[i];
+			target_free = lowmem_minfree[i] - (other_free + other_file);
 			break;
 		}
 	}
@@ -157,6 +171,7 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 		struct mm_struct *mm;
 		struct signal_struct *sig;
 		int oom_adj;
+		int target_offset;
 
 		task_lock(p);
 		mm = p->mm;
@@ -174,20 +189,28 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 		task_unlock(p);
 		if (tasksize <= 0)
 			continue;
+		target_offset = abs(target_free - tasksize);
 		if (selected) {
 			if (oom_adj < selected_oom_adj)
 				continue;
 			if (oom_adj == selected_oom_adj &&
-			    tasksize <= selected_tasksize)
+			    target_offset >= selected_target_offset)
 				continue;
 		}
 		selected = p;
 		selected_tasksize = tasksize;
+		selected_target_offset = target_offset;
 		selected_oom_adj = oom_adj;
 		lowmem_print(2, "select %d (%s), adj %d, size %d, to kill\n",
 			     p->pid, p->comm, oom_adj, tasksize);
 	}
 	if (selected) {
+		if (fatal_signal_pending(selected)) {
+			pr_warning("process %d is suffering a slow death\n",
+				   selected->pid);
+			read_unlock(&tasklist_lock);
+			return rem;
+		}
 		lowmem_print(1, "send sigkill to %d (%s), adj %d, size %d\n",
 			     selected->pid, selected->comm,
 			     selected_oom_adj, selected_tasksize);

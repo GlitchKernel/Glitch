@@ -15,7 +15,6 @@
 *.a
 *.s
 *.ko
-*.so
 *.so.dbg
 *.mod.c
 *.i
@@ -78,3 +77,12 @@ GTAGS
 *.orig
 *~
 \#*#
+
+release/i9k/*.zip
+release/Vibrant/*.zip
+release/Captivate/*.zip
+release/TelusFascinate/*.zip
+release/Fascinate/*.zip
+release/GSM-OLDMODEM/*.zip
+release/CDMA-OLDMODEM/*.zip
+release/boot.img

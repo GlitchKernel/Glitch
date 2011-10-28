@@ -623,8 +623,7 @@ static void mxc_nand_command(struct mtd_info *mtd, unsigned command,
 		else
 			host->buf_start = column + mtd->writesize;
 
-		if (mtd->writesize > 512)
-			command = NAND_CMD_READ0; /* only READ0 is valid */
+		command = NAND_CMD_READ0; /* only READ0 is valid */
 
 		send_cmd(host, command, false);
 		mxc_do_addr_cycle(mtd, column, page_addr);
@@ -639,31 +638,11 @@ static void mxc_nand_command(struct mtd_info *mtd, unsigned command,
 		break;
 
 	case NAND_CMD_SEQIN:
-		if (column >= mtd->writesize) {
-			/*
-			 * FIXME: before send SEQIN command for write OOB,
-			 * We must read one page out.
-			 * For K9F1GXX has no READ1 command to set current HW
-			 * pointer to spare area, we must write the whole page
-			 * including OOB together.
-			 */
-			if (mtd->writesize > 512)
-				/* call ourself to read a page */
-				mxc_nand_command(mtd, NAND_CMD_READ0, 0,
-						page_addr);
+		if (column >= mtd->writesize)
+			/* call ourself to read a page */
+			mxc_nand_command(mtd, NAND_CMD_READ0, 0, page_addr);
 
-			host->buf_start = column;
-
-			/* Set program pointer to spare region */
-			if (mtd->writesize == 512)
-				send_cmd(host, NAND_CMD_READOOB, false);
-		} else {
-			host->buf_start = column;
-
-			/* Set program pointer to page start */
-			if (mtd->writesize == 512)
-				send_cmd(host, NAND_CMD_READ0, false);
-		}
+		host->buf_start = column;
 
 		send_cmd(host, command, false);
 		mxc_do_addr_cycle(mtd, column, page_addr);
@@ -892,53 +871,11 @@ static int __devexit mxcnd_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#ifdef CONFIG_PM
-static int mxcnd_suspend(struct platform_device *pdev, pm_message_t state)
-{
-	struct mtd_info *mtd = platform_get_drvdata(pdev);
-	struct nand_chip *nand_chip = mtd->priv;
-	struct mxc_nand_host *host = nand_chip->priv;
-	int ret = 0;
-
-	DEBUG(MTD_DEBUG_LEVEL0, "MXC_ND : NAND suspend\n");
-
-	ret = mtd->suspend(mtd);
-
-	/*
-	 * nand_suspend locks the device for exclusive access, so
-	 * the clock must already be off.
-	 */
-	BUG_ON(!ret && host->clk_act);
-
-	return ret;
-}
-
-static int mxcnd_resume(struct platform_device *pdev)
-{
-	struct mtd_info *mtd = platform_get_drvdata(pdev);
-	struct nand_chip *nand_chip = mtd->priv;
-	struct mxc_nand_host *host = nand_chip->priv;
-	int ret = 0;
-
-	DEBUG(MTD_DEBUG_LEVEL0, "MXC_ND : NAND resume\n");
-
-	mtd->resume(mtd);
-
-	return ret;
-}
-
-#else
-# define mxcnd_suspend   NULL
-# define mxcnd_resume    NULL
-#endif				/* CONFIG_PM */
-
 static struct platform_driver mxcnd_driver = {
 	.driver = {
 		   .name = DRIVER_NAME,
-		   },
+	},
 	.remove = __devexit_p(mxcnd_remove),
-	.suspend = mxcnd_suspend,
-	.resume = mxcnd_resume,
 };
 
 static int __init mxc_nd_init(void)

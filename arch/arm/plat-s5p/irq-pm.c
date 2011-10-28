@@ -67,7 +67,7 @@ int s3c_irq_wake(unsigned int irqno, unsigned int state)
 	case IRQ_HSMMC2:
 		irqbit = 1 << 11;
 		break;
-	case IRQ_MMC3:
+	case IRQ_HSMMC3:
 		irqbit = 1 << 12;
 		break;
 	case IRQ_I2S0:

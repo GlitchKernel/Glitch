@@ -52,7 +52,7 @@
 
 /* VIC1: ARM, Power, Memory, Connectivity, Storage */
 
-#define IRQ_CORTEX0		S5P_IRQ_VIC1(0)
+#define IRQ_PMU			S5P_IRQ_VIC1(0)
 #define IRQ_CORTEX1		S5P_IRQ_VIC1(1)
 #define IRQ_CORTEX2		S5P_IRQ_VIC1(2)
 #define IRQ_CORTEX3		S5P_IRQ_VIC1(3)
@@ -125,7 +125,7 @@
 
 #define IRQ_IPC			S5P_IRQ_VIC3(0)
 #define IRQ_HOSTIF		S5P_IRQ_VIC3(1)
-#define IRQ_MMC3		S5P_IRQ_VIC3(2)
+#define IRQ_HSMMC3		S5P_IRQ_VIC3(2)
 #define IRQ_CEC			S5P_IRQ_VIC3(3)
 #define IRQ_TSI			S5P_IRQ_VIC3(4)
 #define IRQ_MDNIE0		S5P_IRQ_VIC3(5)

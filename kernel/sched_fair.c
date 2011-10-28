@@ -876,8 +876,8 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 		struct sched_entity *se = __pick_next_entity(cfs_rq);
 		s64 delta = curr->vruntime - se->vruntime;
 
-	if (delta < 0)
-		return;
+		if (delta < 0)
+			return;
 
 		if (delta > calc_delta_fair(ideal_runtime, curr))
 			resched_task(rq_of(cfs_rq)->curr);
@@ -3458,6 +3458,98 @@ out:
 	if (likely(update_next_balance))
 		rq->next_balance = next_balance;
 }
+
+#ifdef CONFIG_NO_HZ
+/*
+ * In CONFIG_NO_HZ case, the idle balance kickee will do the
+ * rebalancing for all the cpus for whom scheduler ticks are stopped.
+ */
+static void nohz_idle_balance(int this_cpu, enum cpu_idle_type idle)
+{
+	struct rq *this_rq = cpu_rq(this_cpu);
+	struct rq *rq;
+	int balance_cpu;
+
+	if (idle != CPU_IDLE || !this_rq->nohz_balance_kick)
+		return;
+
+	for_each_cpu(balance_cpu, nohz.idle_cpus_mask) {
+		if (balance_cpu == this_cpu)
+			continue;
+
+		/*
+		 * If this cpu gets work to do, stop the load balancing
+		 * work being done for other cpus. Next load
+		 * balancing owner will pick it up.
+		 */
+		if (need_resched()) {
+			this_rq->nohz_balance_kick = 0;
+			break;
+		}
+
+		raw_spin_lock_irq(&this_rq->lock);
+		update_rq_clock(this_rq);
+		update_cpu_load(this_rq);
+		raw_spin_unlock_irq(&this_rq->lock);
+
+		rebalance_domains(balance_cpu, CPU_IDLE);
+
+		rq = cpu_rq(balance_cpu);
+		if (time_after(this_rq->next_balance, rq->next_balance))
+			this_rq->next_balance = rq->next_balance;
+	}
+	nohz.next_balance = this_rq->next_balance;
+	this_rq->nohz_balance_kick = 0;
+}
+
+/*
+ * Current heuristic for kicking the idle load balancer
+ * - first_pick_cpu is the one of the busy CPUs. It will kick
+ *   idle load balancer when it has more than one process active. This
+ *   eliminates the need for idle load balancing altogether when we have
+ *   only one running process in the system (common case).
+ * - If there are more than one busy CPU, idle load balancer may have
+ *   to run for active_load_balance to happen (i.e., two busy CPUs are
+ *   SMT or core siblings and can run better if they move to different
+ *   physical CPUs). So, second_pick_cpu is the second of the busy CPUs
+ *   which will kick idle load balancer as soon as it has any load.
+ */
+static inline int nohz_kick_needed(struct rq *rq, int cpu)
+{
+	unsigned long now = jiffies;
+	int ret;
+	int first_pick_cpu, second_pick_cpu;
+
+	if (time_before(now, nohz.next_balance))
+		return 0;
+
+	if (rq->idle_at_tick)
+		return 0;
+
+	first_pick_cpu = atomic_read(&nohz.first_pick_cpu);
+	second_pick_cpu = atomic_read(&nohz.second_pick_cpu);
+
+	if (first_pick_cpu < nr_cpu_ids && first_pick_cpu != cpu &&
+	    second_pick_cpu < nr_cpu_ids && second_pick_cpu != cpu)
+		return 0;
+
+	ret = atomic_cmpxchg(&nohz.first_pick_cpu, nr_cpu_ids, cpu);
+	if (ret == nr_cpu_ids || ret == cpu) {
+		atomic_cmpxchg(&nohz.second_pick_cpu, cpu, nr_cpu_ids);
+		if (rq->nr_running > 1)
+			return 1;
+	} else {
+		ret = atomic_cmpxchg(&nohz.second_pick_cpu, nr_cpu_ids, cpu);
+		if (ret == nr_cpu_ids || ret == cpu) {
+			if (rq->nr_running)
+				return 1;
+		}
+	}
+	return 0;
+}
+#else
+static void nohz_idle_balance(int this_cpu, enum cpu_idle_type idle) { }
+#endif
 
 /*
  * run_rebalance_domains is triggered when needed from the scheduler tick.
