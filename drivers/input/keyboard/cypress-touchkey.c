@@ -42,8 +42,6 @@
 #define OLD_BACKLIGHT_ON	0x1
 #define OLD_BACKLIGHT_OFF	0x2
 
-#define BACKLIGHT_TIMEOUT	1600
-
 #define DEVICE_NAME "cypress-touchkey"
 
 int bl_on = 0;
@@ -51,6 +49,9 @@ static DECLARE_MUTEX(enable_sem);
 static DECLARE_MUTEX(i2c_sem);
 
 struct cypress_touchkey_devdata *bl_devdata;
+
+static int bl_timeout = 1600; // This gets overridden by userspace AriesParts
+
 static struct timer_list bl_timer;
 static void bl_off(struct work_struct *bl_off_work);
 static DECLARE_WORK(bl_off_work, bl_off);
@@ -159,6 +160,12 @@ void bl_timer_callback(unsigned long data)
 	schedule_work(&bl_off_work);
 }
 
+static void bl_set_timeout() {
+	if (bl_timeout > 0) {
+		mod_timer(&bl_timer, jiffies + msecs_to_jiffies(bl_timeout));
+	}
+}
+
 static int recovery_routine(struct cypress_touchkey_devdata *devdata)
 {
 	int ret = -1;
@@ -219,33 +226,6 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 		}
 	}
 
-/* glitch's way */
-#if 0
-	if (devdata->has_legacy_keycode) {
-		scancode = (data & SCANCODE_MASK) - 1;
-		if (scancode < 0 || scancode >= devdata->pdata->keycode_cnt) {
-			dev_err(&devdata->client->dev, "%s: scancode is out of "
-				"range\n", __func__);
-			goto err;
-		}
-
-		/* Don't send down event while the touch screen is being pressed
-		 * to prevent accidental touch key hit.
-		 */
-		if ((data & UPDOWN_EVENT_MASK) || !touch_state_val) {
-			input_report_key(devdata->input_dev,
-				devdata->pdata->keycode[scancode],
-				!(data & UPDOWN_EVENT_MASK));
-		}
-	} else {
-		for (i = 0; i < devdata->pdata->keycode_cnt; i++)
-			input_report_key(devdata->input_dev,
-				devdata->pdata->keycode[i],
-				!!(data & (1U << i)));
-	}
-
-	input_sync(devdata->input_dev);
-#endif
 
 /* samsung's way */
 	if (data & UPDOWN_EVENT_MASK) {
@@ -280,7 +260,8 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 		}
 	}
 	
-	mod_timer(&bl_timer, jiffies + msecs_to_jiffies(BACKLIGHT_TIMEOUT));
+	bl_set_timeout();
+	
 err:
 	return IRQ_HANDLED;
 }
@@ -383,6 +364,7 @@ static void cypress_touchkey_early_resume(struct early_suspend *h)
 
 	up(&enable_sem);
 
+
 #ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_BLN
 	/*
 	 * Disallow powering off the touchkey controller
@@ -390,11 +372,11 @@ static void cypress_touchkey_early_resume(struct early_suspend *h)
 	 */
 	if(!bln_notification_ongoing) {
 
-	mod_timer(&bl_timer, jiffies + msecs_to_jiffies(BACKLIGHT_TIMEOUT));	
+	bl_set_timeout();	
 	}
 #endif
 
-//	mod_timer(&bl_timer, jiffies + msecs_to_jiffies(BACKLIGHT_TIMEOUT));
+
 }
 #endif
 
@@ -415,10 +397,22 @@ static ssize_t led_status_write(struct device *dev, struct device_attribute *att
 	return size;
 }
 
+static ssize_t bl_timeout_read(struct device *dev, struct device_attribute *attr, char *buf) {
+	return sprintf(buf,"%d\n", bl_timeout);
+}
+
+static ssize_t bl_timeout_write(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	sscanf(buf, "%d\n", &bl_timeout);
+	return size;
+}
+
 static DEVICE_ATTR(led, S_IRUGO | S_IWUGO , led_status_read, led_status_write);
+static DEVICE_ATTR(bl_timeout, S_IRUGO | S_IWUGO, bl_timeout_read, bl_timeout_write);
 
 static struct attribute *bl_led_attributes[] = {
 		&dev_attr_led.attr,
+		&dev_attr_bl_timeout.attr, // Not the best place, but creating a new device is more trouble that it's worth
 		NULL
 };
 
