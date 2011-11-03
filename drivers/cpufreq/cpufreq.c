@@ -36,7 +36,7 @@ int exp_UV_mV[12];
 extern unsigned int freq_uv_table[12][3];
 int enabled_freqs[12] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 extern unsigned int gpu[12][2];
-unsigned int leakage = 2; // high by default
+int leakage = 2; // high by default
 void update_leakage(unsigned int);
 
 /**
@@ -777,7 +777,7 @@ static ssize_t store_leakage( struct cpufreq_policy* policy, const char* buf, in
   if ( leak >=0 && leak <= 2 )
   {
     leakage = leak;
-    update_leakage(leakage);
+    update_leakage(leak);
   }
   
   return ret;
