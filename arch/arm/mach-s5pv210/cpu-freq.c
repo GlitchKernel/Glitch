@@ -89,7 +89,7 @@ unsigned int freq_uv_table[12][3] = {
 	{100000,	950,	950}
 };
 
-extern int leakage;
+extern unsigned int leakage;
 
 #if defined(GPU_OC)
 unsigned int gpu[12][2] = {

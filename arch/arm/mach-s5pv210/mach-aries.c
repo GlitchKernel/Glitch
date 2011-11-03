@@ -139,6 +139,10 @@ struct wifi_mem_prealloc {
 	unsigned long size;
 };
 
+
+
+
+
 static int aries_notifier_call(struct notifier_block *this,
 					unsigned long code, void *_cmd)
 {
@@ -734,7 +738,7 @@ static struct regulator_init_data aries_buck1_data = {
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= ARMBOOT,
+			.uV	= ARMBOOT_HL,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -752,7 +756,7 @@ static struct regulator_init_data aries_buck2_data = {
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= INTBOOT,
+			.uV	= INTBOOT_HL,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -760,6 +764,30 @@ static struct regulator_init_data aries_buck2_data = {
 	.num_consumer_supplies	= ARRAY_SIZE(buck2_consumer),
 	.consumer_supplies	= buck2_consumer,
 };
+
+void update_leakage( unsigned int newLeakage )
+{
+
+  static int armBoot[3] =
+  {
+    ARMBOOT_LL,
+    ARMBOOT_ML,
+    ARMBOOT_HL
+  };
+
+  static int intBoot[3] = 
+  {
+    INTBOOT_LL,
+    INTBOOT_ML,
+    INTBOOT_HL
+  };
+
+  if ( newLeakage < 3 )
+  {
+    aries_buck1_data.constraints.state_mem.uV = armBoot[leakage];
+    aries_buck2_data.constraints.state_mem.uV = intBoot[leakage];  
+  }
+}
 
 static struct regulator_init_data aries_buck3_data = {
 	.constraints	= {
