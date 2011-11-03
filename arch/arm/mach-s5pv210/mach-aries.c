@@ -784,8 +784,8 @@ void update_leakage( unsigned int newLeakage )
 
   if ( newLeakage < 3 )
   {
-    aries_buck1_data.constraints.state_mem.uV = armBoot[leakage];
-    aries_buck2_data.constraints.state_mem.uV = intBoot[leakage];  
+    aries_buck1_data.constraints.state_mem.uV = armBoot[newLeakage];
+    aries_buck2_data.constraints.state_mem.uV = intBoot[newLeakage];  
   }
 }
 
