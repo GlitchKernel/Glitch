@@ -36,8 +36,8 @@ int exp_UV_mV[12];
 extern unsigned int freq_uv_table[12][3];
 int enabled_freqs[12] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 extern unsigned int gpu[12][2];
-int leakage = 2; // high by default
-
+unsigned int leakage = 2; // high by default
+void update_leakage(unsigned int);
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -768,7 +768,7 @@ static ssize_t store_gpu_clock_table(struct cpufreq_policy *policy, const char *
 static ssize_t store_leakage( struct cpufreq_policy* policy, const char* buf, int count )
 {
   unsigned int ret = -EINVAL;
-  int leak = 2;
+  unsigned int leak = 2;
   
   ret = sscanf( buf, "%d", &leak );
   
@@ -777,6 +777,7 @@ static ssize_t store_leakage( struct cpufreq_policy* policy, const char* buf, in
   if ( leak >=0 && leak <= 2 )
   {
     leakage = leak;
+    update_leakage(leakage);
   }
   
   return ret;
