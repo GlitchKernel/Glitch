@@ -47,7 +47,7 @@ REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 		cp -r lib system || exit 1
 	fi
 	
-	zip -q -r ${REL} system boot.img META-INF script bml_over_mtd bml_over_mtd.sh || exit 1
+	zip -q -r ${REL} system boot.img recovery.bin META-INF script bml_over_mtd bml_over_mtd.sh || exit 1
 	sha256sum ${REL} > ${REL}.sha256sum
 	mv ${REL}* ${TYPE} || exit 1
 } || exit 1
