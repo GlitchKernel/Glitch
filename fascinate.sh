@@ -78,7 +78,7 @@ echo "creating boot.img"
 ../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/fascinatemtd/ramdisk.img ../../../out/target/product/fascinatemtd/ramdisk-recovery.img
 
 echo "pulling in recovery"
-cp ../../../device/samsung/fascinatemtd/recovery.bin release/recovery.bin
+../../../device/samsung/aries-common/mkshbootimg.py release/recovery.bin arch/arm/boot/zImage ../../../out/target/product/fascinatemtd/ramdisk-recovery.img
 
 echo "launching packaging script"
 ./release/auto/doit_fascinate.sh
