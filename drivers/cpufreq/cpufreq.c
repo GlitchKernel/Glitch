@@ -765,7 +765,7 @@ static ssize_t store_gpu_clock_table(struct cpufreq_policy *policy, const char *
 
 }
 
-static ssize_t store_leakage( struct cpufreq_policy* policy, const char* buf, int count )
+static ssize_t store_kern_leakage( struct cpufreq_policy* policy, const char* buf, int count )
 {
   unsigned int ret = -EINVAL;
   unsigned int leak = 2;
@@ -783,7 +783,7 @@ static ssize_t store_leakage( struct cpufreq_policy* policy, const char* buf, in
   return ret;
 }
 
-static ssize_t show_leakage(struct cpufreq_policy *policy, char *buf)
+static ssize_t show_kern_leakage(struct cpufreq_policy *policy, char *buf)
 {
   return sprintf( buf, "%d\n", leakage );  
 }
@@ -806,7 +806,7 @@ cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(UV_mV_table);
 cpufreq_freq_attr_rw(states_enabled_table);
 cpufreq_freq_attr_rw(gpu_clock_table);
-cpufreq_freq_attr_rw(leakage);
+cpufreq_freq_attr_rw(kern_leakage);
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -824,7 +824,7 @@ static struct attribute *default_attrs[] = {
 	&frequency_voltage_table.attr,
 	&states_enabled_table.attr,
 	&gpu_clock_table.attr,
-	&leakage.attr,
+	&kern_leakage.attr,
 	NULL
 };
 
