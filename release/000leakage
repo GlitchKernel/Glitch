@@ -5,7 +5,7 @@
 
 GLITCH_DIR=/system/etc/glitch-config
 LEAKAGE_SETTING="high"
-SYSFS_FILE=/sys/devices/cpu/cpu0/cpufreq/kern_leakage
+SYSFS_FILE=/sys/devices/system/cpu/cpu0/cpufreq/kern_leakage
 
 if [ -d $GLITCH_DIR ]
 then
