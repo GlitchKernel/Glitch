@@ -1,0 +1,35 @@
+#!/system/bin/sh
+
+# configures the kernel leakage level based on value in
+# /system/etc/glitch-config/leakage
+
+GLITCH_DIR=/system/etc/glitch-config
+LEAKAGE_SETTING="high"
+SYSFS_FILE=/sys/devices/system/cpu/cpu0/cpufreq/kern_leakage
+
+if [ -d $GLITCH_DIR ]
+then
+   if [ -r ${GLITCH_DIR}/leakage ]
+   then
+      LEAKAGE_SETTING=`cat ${GLITCH_DIR}/leakage`
+   
+      if [ -f $SYSFS_FILE ]
+      then
+        case "$LEAKAGE_SETTING" in
+      
+          'high')
+              echo "2" > $SYSFS_FILE
+          ;;
+        
+          'medium')
+              echo "1" > $SYSFS_FILE
+          ;;
+        
+          'low')
+              echo "0" > $SYSFS_FILE
+          ;;
+        esac              
+      fi
+   fi
+ fi
+ 

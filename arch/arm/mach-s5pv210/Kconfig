@@ -285,22 +285,6 @@ config CPU_DIDLE
 	depends on CPU_IDLE
 	default y
 
-config SOC_HIGH_LEAKAGE
-	bool "High Leakage"
-	help
-	  Define the SoC current leakage average value to adapt to different quality chips.
-
-config SOC_MEDIUM_LEAKAGE
-	bool "Medium Leakage"
-	default y
-	help
-	  Define the SoC current leakage average value to adapt to different quality chips.
-
-config SOC_LOW_LEAKAGE
-	bool "Low Leakage"
-	help
-	  Define the SoC current leakage average value to adapt to different quality chips.
-
 config WIFI_CONTROL_FUNC
        bool "Enable WiFi control function abstraction"
        help
