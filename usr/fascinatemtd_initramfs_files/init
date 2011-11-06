@@ -18,10 +18,14 @@ load_len=$boot_len
 
 busybox mount -t yaffs2 /dev/block/mtdblock2 /system
 busybox mount -t yaffs2 /dev/block/mtdblock3 /cache
+busybox mount -t ext4 /dev/block/mmcblk0p1 /data
 
-if busybox test -e /cache/.startrecovery || busybox grep -q bootmode=2 /proc/cmdline ; then
+if busybox test -e /cache/.startrecovery || \
+   busybox test -e /data/.startrecovery || \
+   busybox grep -q bootmode=2 /proc/cmdline ; then
 	# recovery boot
 	busybox rm -fr /cache/.startrecovery
+	busybox rm -fr /data/.startrecovery
 	load_offset=$recovery_offset
 	load_len=$recovery_len
 
@@ -34,7 +38,7 @@ elif ! busybox test -e /system/build.prop ; then
         busybox mount -t yaffs2 /dev/block/mtdblock3 /cache
         busybox mkdir /cache/recovery
 
-	busybox mount -t vfat /dev/block/mmcblk1p1 /sdcard	
+	busybox mount -t vfat /dev/block/mmcblk1p1 /sdcard
 
 	UPDATE=$(busybox cat /sdcard/cyanogenmod.cfg)
 
@@ -50,6 +54,7 @@ elif ! busybox test -e /system/build.prop ; then
 fi
 
 busybox umount /cache
+busybox umount /data
 busybox umount /system
 busybox umount /sdcard
 busybox rmdir /sdcard
