@@ -56,8 +56,5 @@ assert(package_extract_file("boot.img", "/tmp/boot.img"),
        write_raw_image("/tmp/boot.img", "boot"),
        run_program("/tmp/bml_over_mtd.sh", "boot", "72", "reservoir", "2004", "/tmp/boot.img"),
        delete("/tmp/boot.img"));
-       assert(package_extract_file("recovery.bin", "/tmp/recovery.bin"),
-       run_program("/tmp/bml_over_mtd.sh", "recovery", "102", "reservoir", "2004", "/tmp/recovery.bin"),
-       delete("/tmp/recovery.bin"));
 show_progress(0.100000, 0);
 unmount("/system");
