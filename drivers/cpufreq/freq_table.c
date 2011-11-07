@@ -32,7 +32,7 @@ int cpufreq_frequency_table_cpuinfo(struct cpufreq_policy *policy,
 
 	for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
 		unsigned int freq = table[i].frequency;
-		if (freq == CPUFREQ_ENTRY_INVALID || enabled_freqs[i] == 0) {
+		if (freq == CPUFREQ_ENTRY_INVALID) {
 			dprintk("table entry %u is invalid, skipping\n", i);
 
 			continue;
@@ -74,7 +74,7 @@ int cpufreq_frequency_table_verify(struct cpufreq_policy *policy,
 
 	for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
 		unsigned int freq = table[i].frequency;
-		if (freq == CPUFREQ_ENTRY_INVALID || enabled_freqs[i] == 0)
+		if (freq == CPUFREQ_ENTRY_INVALID)
 			continue;
 		if ((freq >= policy->min) && (freq <= policy->max))
 			count++;
@@ -129,9 +129,9 @@ int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
 
 	for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
 		unsigned int freq = table[i].frequency;
-		if (freq == CPUFREQ_ENTRY_INVALID || enabled_freqs[i] == 0)
+		if (freq == CPUFREQ_ENTRY_INVALID)
 			continue;
-		if ((freq < policy->min) || (freq > policy->max))
+		if ((freq < policy->min) || (freq > policy->max) || (enabled_freqs[i] == 0))
 			continue;
 		switch (relation) {
 		case CPUFREQ_RELATION_H:
