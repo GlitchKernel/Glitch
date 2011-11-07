@@ -16,6 +16,8 @@
 
 #define dprintk(msg...) \
 	cpufreq_debug_printk(CPUFREQ_DEBUG_CORE, "freq-table", msg)
+	
+extern int enabled_freqs[12];
 
 /*********************************************************************
  *                     FREQUENCY TABLE HELPERS                       *
@@ -30,7 +32,7 @@ int cpufreq_frequency_table_cpuinfo(struct cpufreq_policy *policy,
 
 	for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
 		unsigned int freq = table[i].frequency;
-		if (freq == CPUFREQ_ENTRY_INVALID) {
+		if (freq == CPUFREQ_ENTRY_INVALID || enabled_freqs[i] == 0) {
 			dprintk("table entry %u is invalid, skipping\n", i);
 
 			continue;
@@ -72,7 +74,7 @@ int cpufreq_frequency_table_verify(struct cpufreq_policy *policy,
 
 	for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
 		unsigned int freq = table[i].frequency;
-		if (freq == CPUFREQ_ENTRY_INVALID)
+		if (freq == CPUFREQ_ENTRY_INVALID || enabled_freqs[i] == 0)
 			continue;
 		if ((freq >= policy->min) && (freq <= policy->max))
 			count++;
@@ -127,7 +129,7 @@ int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
 
 	for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
 		unsigned int freq = table[i].frequency;
-		if (freq == CPUFREQ_ENTRY_INVALID)
+		if (freq == CPUFREQ_ENTRY_INVALID || enabled_freqs[i] == 0)
 			continue;
 		if ((freq < policy->min) || (freq > policy->max))
 			continue;
@@ -191,7 +193,7 @@ static ssize_t show_available_freqs(struct cpufreq_policy *policy, char *buf)
 	table = per_cpu(cpufreq_show_table, cpu);
 
 	for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
-		if (table[i].frequency == CPUFREQ_ENTRY_INVALID)
+		if (table[i].frequency == CPUFREQ_ENTRY_INVALID || enabled_freqs[i] == 0)
 			continue;
 		count += sprintf(&buf[count], "%d ", table[i].frequency);
 	}
