@@ -176,10 +176,8 @@ static inline void free_signal_struct(struct signal_struct *sig)
 
 static inline void put_signal_struct(struct signal_struct *sig)
 {
-	if (atomic_dec_and_test(&sig->sigcnt)) {
-		sched_autogroup_exit(sig);
+	if (atomic_dec_and_test(&sig->sigcnt))
 		free_signal_struct(sig);
-	}
 }
 
 int task_free_register(struct notifier_block *n)
@@ -375,10 +373,10 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 		if (IS_ERR(pol))
 			goto fail_nomem_policy;
 		vma_set_policy(tmp, pol);
+		tmp->vm_mm = mm;
 		if (anon_vma_fork(tmp, mpnt))
 			goto fail_nomem_anon_vma_fork;
 		tmp->vm_flags &= ~VM_LOCKED;
-		tmp->vm_mm = mm;
 		tmp->vm_next = tmp->vm_prev = NULL;
 		file = tmp->vm_file;
 		if (file) {
@@ -919,9 +917,9 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 	posix_cpu_timers_init_group(sig);
 
 	tty_audit_fork(sig);
-	sched_autogroup_fork(sig);
 
 	sig->oom_adj = current->signal->oom_adj;
+       sig->oom_score_adj = current->signal->oom_score_adj;
 
 	return 0;
 }

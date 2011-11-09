@@ -72,6 +72,7 @@
 #define   SDHCI_CTRL_ADMA1	0x08
 #define   SDHCI_CTRL_ADMA32	0x10
 #define   SDHCI_CTRL_ADMA64	0x18
+#define  SDHCI_CTRL_8BITBUS	0x20
 
 #define SDHCI_POWER_CONTROL	0x29
 #define  SDHCI_POWER_ON		0x01
@@ -244,11 +245,15 @@ struct sdhci_host {
 #define SDHCI_QUIRK_NO_HISPD_BIT			(1<<27)
 /* Controller has unreliable card present bit */
 #define SDHCI_QUIRK_BROKEN_CARD_PRESENT_BIT		(1<<28)
+/* Controller must maintain clock when no activity*/
+#define SDHCI_QUIRK_MUST_MAINTAIN_CLOCK			(1<<29)
 
 	int			irq;		/* Device IRQ */
 	void __iomem *		ioaddr;		/* Mapped address */
 
 	const struct sdhci_ops	*ops;		/* Low level hw interface */
+
+	struct regulator	*vmmc;		/* Power regulator */
 
 	/* Internal data */
 	struct mmc_host		*mmc;		/* MMC structure */

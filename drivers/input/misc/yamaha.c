@@ -55,7 +55,7 @@ static int yamaha_open(struct inode *inode, struct file *file)
 
 static int 
 yamaha_ioctl(struct inode *inode, struct file *file,
-		unsigned int cmd, unsigned long arg)
+	      unsigned int cmd, unsigned long arg)
 {
 
 	signed char marray[3][3] = YAMAHA_MSENSOR_TRANSFORMATION;
@@ -65,26 +65,26 @@ yamaha_ioctl(struct inode *inode, struct file *file,
 
 	switch (cmd) {
 		case YAMAHA_IOCTL_GET_MARRAY:
-			if (copy_to_user((void *)arg, marray, sizeof(marray))) 
-          	{
-            	printk("YAMAHA_MSENSOR_TRANSFORMATION copy failed\n");
-            	return -EFAULT;
-          	}
-		break;
+          if (copy_to_user((void *)arg, marray, sizeof(marray))) 
+          {
+            printk("YAMAHA_MSENSOR_TRANSFORMATION copy failed\n");
+            return -EFAULT;
+          }
+		  break;
 
-		case YAMAHA_IOCTL_GET_GARRAY:
-			if (copy_to_user((void *)arg, garray, sizeof(garray))) 
-		{
-		printk("YAMAHA_GSENSOR_TRANSFORMATION copy failed\n");
-		return -EFAULT;
-		}
-		break;
+        case YAMAHA_IOCTL_GET_GARRAY:
+          if (copy_to_user((void *)arg, garray, sizeof(garray))) 
+          {
+            printk("YAMAHA_GSENSOR_TRANSFORMATION copy failed\n");
+            return -EFAULT;
+          }
+          break;
 
-		default:
-			return -ENOTTY;
+        default:
+          return -ENOTTY;
 	}
 
-  return 0;
+	return 0;
 }
 
 static int yamaha_release(struct inode *inode, struct file *file)

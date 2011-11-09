@@ -135,12 +135,12 @@ struct gain_info_t cdma_playback_gain_table[PLAYBACK_GAIN_NUM] = {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_AIF1_DAC1_LEFT_VOLUME,	/* 402h */
 		.mask = WM8994_AIF1DAC1L_VOL_MASK,
-		.gain = WM8994_AIF1DAC1_VU | 0xB8           /* -2.625dB */
+		.gain = WM8994_AIF1DAC1_VU | 0xC0           /* 0dB (max) */
 	}, {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_AIF1_DAC1_RIGHT_VOLUME,	/* 403h */
 		.mask = WM8994_AIF1DAC1R_VOL_MASK,
-		.gain = WM8994_AIF1DAC1_VU | 0xB8           /* -2.625dB */
+		.gain = WM8994_AIF1DAC1_VU | 0xC0           /* 0db (max) */
 	}, { /* HP */
 		.mode = PLAYBACK_HP,
 		.reg  = WM8994_LEFT_OUTPUT_VOLUME,	/* 1Ch */
@@ -556,12 +556,12 @@ struct gain_info_t playback_gain_table[PLAYBACK_GAIN_NUM] = {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_AIF1_DAC1_LEFT_VOLUME,	/* 402h */
 		.mask = WM8994_AIF1DAC1L_VOL_MASK,
-		.gain = WM8994_AIF1DAC1_VU | 0xB8           /* -2.625dB */
+		.gain = WM8994_AIF1DAC1_VU | 0xC0           /* 0db (max) */
 	}, {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_AIF1_DAC1_RIGHT_VOLUME,	/* 403h */
 		.mask = WM8994_AIF1DAC1R_VOL_MASK,
-		.gain = WM8994_AIF1DAC1_VU | 0xB8           /* -2.625dB */
+		.gain = WM8994_AIF1DAC1_VU | 0xC0           /* 0db (max) */
 	}, { /* HP */
 		.mode = PLAYBACK_HP,
 		.reg  = WM8994_LEFT_OUTPUT_VOLUME,	/* 1Ch */
@@ -3332,6 +3332,9 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 
 	wm8994_set_voicecall_common_setting(codec);
 
+	/* bc - attempt to reduce feedback while on speakerphone? */
+	wm8994_write(codec, WM8994_ANTIPOP_2, 0x006C);
+
 	wm8994_write(codec, 0x601, 0x0005);
 	wm8994_write(codec, 0x602, 0x0005);
 	wm8994_write(codec, 0x603, 0x000C);
@@ -4240,9 +4243,9 @@ void wm8994_set_fmradio_common(struct snd_soc_codec *codec)
 	wm8994_write(codec, WM8994_AIF2_CONTROL_2, val);
 
 	/* DRC for Noise-gate (AIF2) */
-	//wm8994_write(codec, WM8994_AIF2_ADC_FILTERS, 0xF800);
-	//wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_1, 0x0036);
-	//wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_2, 0x0010);
+	wm8994_write(codec, WM8994_AIF2_ADC_FILTERS, 0xF800);
+	wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_1, 0x0036);
+	wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_2, 0x0010);
 	wm8994_write(codec, WM8994_AIF2_DRC_2, 0x0840);
 	wm8994_write(codec, WM8994_AIF2_DRC_3, 0x2400);
 	wm8994_write(codec, WM8994_AIF2_DRC_4, 0x0000);

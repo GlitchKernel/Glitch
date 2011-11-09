@@ -38,17 +38,9 @@
 #ifdef CONFIG_MMU
 void *module_alloc(unsigned long size)
 {
-	struct vm_struct *area;
-
-	size = PAGE_ALIGN(size);
-	if (!size)
-		return NULL;
-
-	area = __get_vm_area(size, VM_ALLOC, MODULES_VADDR, MODULES_END);
-	if (!area)
-		return NULL;
-
-	return __vmalloc_area(area, GFP_KERNEL, PAGE_KERNEL_EXEC);
+	return __vmalloc_node_range(size, 1, MODULES_VADDR, MODULES_END,
+				GFP_KERNEL, PAGE_KERNEL_EXEC, -1,
+				__builtin_return_address(0));
 }
 #else /* CONFIG_MMU */
 void *module_alloc(unsigned long size)
@@ -102,7 +94,9 @@ apply_relocate(Elf32_Shdr *sechdrs, const char *strtab, unsigned int symindex,
 		unsigned long loc;
 		Elf32_Sym *sym;
 		s32 offset;
+#ifdef CONFIG_THUMB2_KERNEL
 		u32 upper, lower, sign, j1, j2;
+#endif
 
 		offset = ELF32_R_SYM(rel->r_info);
 		if (offset < 0 || offset > (symsec->sh_size / sizeof(Elf32_Sym))) {
@@ -185,6 +179,7 @@ apply_relocate(Elf32_Shdr *sechdrs, const char *strtab, unsigned int symindex,
 					(offset & 0x0fff);
 			break;
 
+#ifdef CONFIG_THUMB2_KERNEL
 		case R_ARM_THM_CALL:
 		case R_ARM_THM_JUMP24:
 			upper = *(u16 *)loc;
@@ -236,6 +231,7 @@ apply_relocate(Elf32_Shdr *sechdrs, const char *strtab, unsigned int symindex,
 			upper = *(u16 *)loc;
 			lower = *(u16 *)(loc + 2);
 			break;
+#endif
 
 		default:
 			printk(KERN_ERR "%s: unknown relocation: %u\n",

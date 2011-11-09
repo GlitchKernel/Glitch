@@ -118,6 +118,26 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASS
 	help
 	 Use the 'smartass' governor as default.
 
+config CPU_FREQ_DEFAULT_GOV_SMARTASS2
+	bool "smartass2"
+	select CPU_FREQ_GOV_SMARTASS2
+	help
+		Use the CPUFreq governor 'smartassV2' as default.
+
+config CPU_FREQ_DEFAULT_GOV_SMOOTHASS
+	bool "smoothass"
+	select CPU_FREQ_GOV_SMOOTHASS
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	 Use the CPUFreq governor 'smoothass' as default.
+
+config CPU_FREQ_DEFAULT_GOV_BRAZILIANWAX
+	bool "brazilianwax"
+	select CPU_FREQ_GOV_BRAZILIANWAX
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	  Use the CPUFreq governor 'brazilianwax' as default.
+
 config CPU_FREQ_DEFAULT_GOV_SAVAGEDZEN
 	bool "SavagedZen"
 	select CPU_FREQ_GOV_SAVAGEDZEN
@@ -141,6 +161,13 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVEX
 	  you to get a full dynamic cpu frequency capable system by simply
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactiveX' governor for latency-sensitive workloads.
+
+config CPU_FREQ_DEFAULT_GOV_LAZY
+        bool "lazy"
+        select CPU_FREQ_GOV_LAZY
+        select CPU_FREQ_GOV_PERFORMANCE
+        help
+          Use the CPUFreq governor 'lazy' as default.
 
 endchoice
 
@@ -217,12 +244,16 @@ config CPU_FREQ_GOV_SMARTASS
 	 Designed like 'interactive', but spend more time in the lower
 	 frequencies. More adapted to mobile devices.
 
-config CPU_FREQ_GOV_SAVAGEDZEN
-	tristate "'savagedzen' cpufreq governor"
+config CPU_FREQ_GOV_SMARTASS2
+	tristate "'smartassV2' cpufreq governor"
 	depends on CPU_FREQ
 	help
-	   'Savaged-Zen' - a "smartass" based governor
-	   If in doubt, say N.
+		'smartassV2' - a "smart" governor
+		If in doubt, say N.
+
+config CPU_FREQ_GOV_LAZY
+        tristate "'lazy' cpufreq governor"
+        depends on CPU_FREQ
 
 config CPU_FREQ_GOV_CONSERVATIVE
 	tristate "'conservative' cpufreq governor"

@@ -38,8 +38,8 @@ config SND_VOODOO_RECORD_PRESETS
 
 config SND_VOODOO_FM
 	bool "FM radio: frequency response and levels optimizations"
-	depends on SND_VOODOO && ARIES_EUR
-	default n
+	depends on SND_VOODOO && (SAMSUNG_GALAXYS || SAMSUNG_GALAXYSB)
+	default y
 	help
 	  Adds a control to enable or disable the high-pass filter on FM radio
 

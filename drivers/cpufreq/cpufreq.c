@@ -36,6 +36,8 @@ int exp_UV_mV[12];
 extern unsigned int freq_uv_table[12][3];
 int enabled_freqs[12] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 extern unsigned int gpu[12][2];
+int leakage = 2; // high by default
+void update_leakage(unsigned int);
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -763,6 +765,29 @@ static ssize_t store_gpu_clock_table(struct cpufreq_policy *policy, const char *
 
 }
 
+static ssize_t store_kern_leakage( struct cpufreq_policy* policy, const char* buf, int count )
+{
+  unsigned int ret = -EINVAL;
+  unsigned int leak = 2;
+  
+  ret = sscanf( buf, "%d", &leak );
+  
+  if ( ret != 1 ) return -EINVAL;
+  
+  if ( leak >=0 && leak <= 2 )
+  {
+    leakage = leak;
+    update_leakage(leak);
+  }
+  
+  return ret;
+}
+
+static ssize_t show_kern_leakage(struct cpufreq_policy *policy, char *buf)
+{
+  return sprintf( buf, "%d\n", leakage );  
+}
+
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
 cpufreq_freq_attr_ro(cpuinfo_max_freq);
@@ -781,6 +806,7 @@ cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(UV_mV_table);
 cpufreq_freq_attr_rw(states_enabled_table);
 cpufreq_freq_attr_rw(gpu_clock_table);
+cpufreq_freq_attr_rw(kern_leakage);
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -798,6 +824,7 @@ static struct attribute *default_attrs[] = {
 	&frequency_voltage_table.attr,
 	&states_enabled_table.attr,
 	&gpu_clock_table.attr,
+	&kern_leakage.attr,
 	NULL
 };
 

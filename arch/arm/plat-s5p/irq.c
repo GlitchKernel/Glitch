@@ -36,7 +36,7 @@ static int wakeup_source[] = {
 	IRQ_HSMMC0,
 	IRQ_HSMMC1,
 	IRQ_HSMMC2,
-	IRQ_MMC3,
+	IRQ_HSMMC3,
 	IRQ_I2S0,
 	IRQ_SYSTIMER,
 	IRQ_CEC

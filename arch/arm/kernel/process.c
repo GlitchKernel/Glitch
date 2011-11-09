@@ -28,7 +28,9 @@
 #include <linux/tick.h>
 #include <linux/utsname.h>
 #include <linux/uaccess.h>
+#include <linux/random.h>
 
+#include <asm/cacheflush.h>
 #include <asm/leds.h>
 #include <asm/processor.h>
 #include <asm/system.h>
@@ -36,14 +38,13 @@
 #include <asm/stacktrace.h>
 #include <asm/mach/time.h>
 
+#ifdef CONFIG_MACH_ARIES
+#include <mach/regs-clock.h>
+#endif
 #ifdef CONFIG_CC_STACKPROTECTOR
 #include <linux/stackprotector.h>
 unsigned long __stack_chk_guard __read_mostly;
 EXPORT_SYMBOL(__stack_chk_guard);
-#endif
-
-#ifdef CONFIG_MACH_ARIES
-#include <mach/regs-clock.h>
 #endif
 
 static const char *processor_modes[] = {
@@ -94,10 +95,9 @@ __setup("hlt", hlt_setup);
 
 void arm_machine_restart(char mode, const char *cmd)
 {
-	/*
-	 * Clean and disable cache, and turn off interrupts
-	 */
-	cpu_proc_fin();
+	/* Disable interrupts first */
+	local_irq_disable();
+	local_fiq_disable();
 
 	/*
 	 * Tell the mm system that we are going to reboot -
@@ -109,6 +109,15 @@ void arm_machine_restart(char mode, const char *cmd)
 #ifdef CONFIG_MACH_ARIES
 	writel(0x12345678, S5P_INFORM5);  /* Turn off low power mode */
 #endif
+
+	/* Clean and invalidate caches */
+	flush_cache_all();
+
+	/* Turn off caching */
+	cpu_proc_fin();
+
+	/* Push out any further dirty data, and ensure cache is empty */
+	flush_cache_all();
 
 	/*
 	 * Now call the architecture specific reboot code.
@@ -512,4 +521,10 @@ unsigned long get_wchan(struct task_struct *p)
 			return frame.pc;
 	} while (count ++ < 16);
 	return 0;
+}
+
+unsigned long arch_randomize_brk(struct mm_struct *mm)
+{
+	unsigned long range_end = mm->brk + 0x02000000;
+	return randomize_range(mm->brk, range_end, 0) ? : mm->brk;
 }

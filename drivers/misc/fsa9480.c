@@ -291,7 +291,7 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 				pdata->deskdock_cb(FSA9480_ATTACHED);
 
 #if defined(CONFIG_MACH_ARIES)
-#if defined(CONFIG_SAMSUNG_CAPTIVATE) || defined (CONFIG_SAMSUNG_FASCINATE)
+#if defined(CONFIG_SAMSUNG_CAPTIVATE)
                         ret = i2c_smbus_write_byte_data(client,
                                         FSA9480_REG_MANSW1, SW_AUDIO);
                         if (ret < 0)
@@ -328,7 +328,7 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 			if (pdata->cardock_cb)
 				pdata->cardock_cb(FSA9480_ATTACHED);
 #if defined(CONFIG_MACH_ARIES)
-#if defined(CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_FASCINATE)
+#if defined(CONFIG_SAMSUNG_CAPTIVATE)
                         ret = i2c_smbus_write_byte_data(client,
                                         FSA9480_REG_MANSW1, SW_AUDIO);
 

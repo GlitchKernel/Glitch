@@ -139,6 +139,10 @@ struct wifi_mem_prealloc {
 	unsigned long size;
 };
 
+
+
+
+
 static int aries_notifier_call(struct notifier_block *this,
 					unsigned long code, void *_cmd)
 {
@@ -310,8 +314,8 @@ static struct s3cfb_lcd s6e63m0 = {
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (11264 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (5000 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (11264 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (36864 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (36864 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (32768 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (32768 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (S5PV210_LCD_WIDTH * \
 					     S5PV210_LCD_HEIGHT * 4 * \
 					     CONFIG_FB_S3C_NR_BUFFERS)
@@ -409,51 +413,51 @@ static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 	{
 		.freq	= 1700000,
 		.varm	= DVSARM1,
-		.vint	= DVSINT1,
+		.vint	= {DVSINT1_LL, DVSINT1_ML, DVSINT1_HL},
 	}, {
 		.freq	= 1600000,
 		.varm	= DVSARM1,
-		.vint	= DVSINT1,
+		.vint	= {DVSINT1_LL, DVSINT1_ML, DVSINT1_HL},
 	}, {
 		.freq	= 1500000,
 		.varm	= DVSARM1,
-		.vint	= DVSINT2,
+		.vint	= {DVSINT2_LL, DVSINT2_ML, DVSINT2_HL},
 	}, {
 		.freq	= 1440000,
 		.varm	= DVSARM1,
-		.vint	= DVSINT3,
+		.vint	= {DVSINT3_LL, DVSINT3_ML, DVSINT3_HL},
 	}, {
 		.freq	= 1400000,
 		.varm	= DVSARM2,
-		.vint	= DVSINT4,
+		.vint	= {DVSINT4_LL, DVSINT4_ML, DVSINT4_HL},
 	}, {
 		.freq	= 1300000,
 		.varm	= DVSARM3,
-		.vint	= DVSINT5,
+		.vint	= {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
 	}, {
 		.freq	= 1200000,
 		.varm	= DVSARM4,
-		.vint	= DVSINT6,
+		.vint	= {DVSINT6_LL, DVSINT6_ML, DVSINT6_HL},
 	}, {
 		.freq	= 1000000,
 		.varm	= DVSARM5,
-		.vint	= DVSINT7,
+		.vint	= {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
 	}, {
 		.freq	=  800000,
 		.varm	= DVSARM6,
-		.vint	= DVSINT8,
+		.vint	= {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
 	}, {
 		.freq	=  400000,
 		.varm	= DVSARM7,
-		.vint	= DVSINT8,
+		.vint	= {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
 	}, {
 		.freq	=  200000,
 		.varm	= DVSARM8,
-		.vint	= DVSINT8,
+		.vint	= {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
 	}, {
 		.freq	=  100000,
 		.varm	= DVSARM8,
-		.vint	= DVSINT9,
+		.vint	= {DVSINT9_LL, DVSINT9_ML, DVSINT9_HL},
 	},
 };
 static struct s5pv210_cpufreq_data smdkc110_cpufreq_plat = {
@@ -471,7 +475,7 @@ static struct regulator_consumer_supply ldo4_consumer[] = {
 };
 
 static struct regulator_consumer_supply ldo5_consumer[] = {
-	REGULATOR_SUPPLY("vtf", NULL),
+	REGULATOR_SUPPLY("vmmc", NULL),
 };
 
 static struct regulator_consumer_supply ldo7_consumer[] = {
@@ -574,6 +578,22 @@ static struct regulator_init_data aries_ldo4_data = {
         .num_consumer_supplies  = ARRAY_SIZE(ldo4_consumer),
         .consumer_supplies      = ldo4_consumer,
 };
+
+static struct regulator_init_data aries_ldo5_data = {
+	.constraints	= {
+		.name		= "VTF_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+		.state_mem	= {
+			.disabled = 1,
+		},
+	},
+	.num_consumer_supplies	= ARRAY_SIZE(ldo5_consumer),
+	.consumer_supplies	= ldo5_consumer,
+};
+
 
 static struct regulator_init_data aries_ldo7_data = {
 	.constraints	= {
@@ -709,14 +729,14 @@ static struct regulator_init_data aries_ldo16_data = {
 static struct regulator_init_data aries_ldo17_data = {
 	.constraints	= {
 		.name		= "VCC_3.0V_LCD",
-		.min_uV		= 2600000, //3000000
-		.max_uV		= 2600000, //3000000
+		.min_uV		= 3000000, //3000000
+		.max_uV		= 3000000, //3000000
 		.apply_uV	= 1,
 		.always_on	= 0,
 		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-                        .uV     = 2600000,
+                        .uV     = 3000000,
                         .mode   = REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -734,7 +754,7 @@ static struct regulator_init_data aries_buck1_data = {
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= ARMBOOT,
+			.uV	= ARMBOOT_HL,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -752,7 +772,7 @@ static struct regulator_init_data aries_buck2_data = {
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= INTBOOT,
+			.uV	= INTBOOT_HL,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -760,6 +780,30 @@ static struct regulator_init_data aries_buck2_data = {
 	.num_consumer_supplies	= ARRAY_SIZE(buck2_consumer),
 	.consumer_supplies	= buck2_consumer,
 };
+
+void update_leakage( unsigned int newLeakage )
+{
+
+  static int armBoot[3] =
+  {
+    ARMBOOT_LL,
+    ARMBOOT_ML,
+    ARMBOOT_HL
+  };
+
+  static int intBoot[3] = 
+  {
+    INTBOOT_LL,
+    INTBOOT_ML,
+    INTBOOT_HL
+  };
+
+  if ( newLeakage < 3 )
+  {
+    aries_buck1_data.constraints.state_mem.uV = armBoot[newLeakage];
+    aries_buck2_data.constraints.state_mem.uV = intBoot[newLeakage];  
+  }
+}
 
 static struct regulator_init_data aries_buck3_data = {
 	.constraints	= {
@@ -800,6 +844,7 @@ static struct max8998_regulator_data aries_regulators[] = {
 	{ MAX8998_LDO2,  &aries_ldo2_data },
 	{ MAX8998_LDO3,  &aries_ldo3_data },
 	{ MAX8998_LDO4,  &aries_ldo4_data },
+	{ MAX8998_LDO5,  &aries_ldo5_data },
 	{ MAX8998_LDO7,  &aries_ldo7_data },
 	{ MAX8998_LDO8,  &aries_ldo8_data },
 	{ MAX8998_LDO9,  &aries_ldo9_data },
@@ -1246,6 +1291,12 @@ static void touch_keypad_onoff(int onoff)
 		msleep(25);
 }
 
+static void touch_keypad_gpio_sleep(int onoff){
+	if(onoff == TOUCHKEY_ON)
+		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT1);
+	else
+		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT0);
+}
 
 static const int touch_keypad_code[] = {
 #if defined (CONFIG_SAMSUNG_GALAXYS) || defined (CONFIG_SAMSUNG_GALAXYSB)
@@ -1265,6 +1316,7 @@ static struct touchkey_platform_data touchkey_data = {
 	.keycode_cnt = ARRAY_SIZE(touch_keypad_code),
 	.keycode = touch_keypad_code,
 	.touchkey_onoff = touch_keypad_onoff,
+	.touchkey_sleep_onoff = touch_keypad_gpio_sleep,
 	.fw_name = "cypress-touchkey.bin",
 	.scl_pin = _3_TOUCH_SCL_28V,
 	.sda_pin = _3_TOUCH_SDA_28V,
@@ -4479,7 +4531,7 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 	// GPJ3 ---------------------------------------------------
 	{ S5PV210_GPJ3(0), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//_3_TOUCH_SDA_28V
 	{ S5PV210_GPJ3(1), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//_3_TOUCH_SCL_28V
-	{ S5PV210_GPJ3(2), S3C_GPIO_SLP_PREV,   S3C_GPIO_PULL_NONE},	//_3_GPIO_TOUCH_EN
+	{ S5PV210_GPJ3(2), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//_3_GPIO_TOUCH_EN
 #if defined (CONFIG_SAMSUNG_CAPTIVATE)
   	{ S5PV210_GPJ3(3), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_GPJ33
 #else

@@ -81,6 +81,12 @@ extern struct group_info init_groups;
  */
 # define CAP_INIT_BSET  CAP_FULL_SET
 
+#ifdef CONFIG_RCU_BOOST
+#define INIT_TASK_RCU_BOOST()						\
+	.rcu_boost_mutex = NULL,
+#else
+#define INIT_TASK_RCU_BOOST()
+#endif
 #ifdef CONFIG_TREE_PREEMPT_RCU
 #define INIT_TASK_RCU_TREE_PREEMPT()					\
 	.rcu_blocked_node = NULL,
@@ -92,7 +98,8 @@ extern struct group_info init_groups;
 	.rcu_read_lock_nesting = 0,					\
 	.rcu_read_unlock_special = 0,					\
 	.rcu_node_entry = LIST_HEAD_INIT(tsk.rcu_node_entry),		\
-	INIT_TASK_RCU_TREE_PREEMPT()
+	INIT_TASK_RCU_TREE_PREEMPT()					\
+	INIT_TASK_RCU_BOOST()
 #else
 #define INIT_TASK_RCU_PREEMPT(tsk)
 #endif
@@ -107,6 +114,8 @@ extern struct cred init_cred;
 #else
 # define INIT_PERF_EVENTS(tsk)
 #endif
+
+#define TIMER_SLACK_NS_DEFAULT 50000
 
 /*
  *  INIT_TASK is used to set up the first task table, touch at
@@ -163,7 +172,7 @@ extern struct cred init_cred;
 	.cpu_timers	= INIT_CPU_TIMERS(tsk.cpu_timers),		\
 	.fs_excl	= ATOMIC_INIT(0),				\
 	.pi_lock	= __RAW_SPIN_LOCK_UNLOCKED(tsk.pi_lock),	\
-	.timer_slack_ns = 50000, /* 50 usec default slack */		\
+	.timer_slack_ns = TIMER_SLACK_NS_DEFAULT,			\
 	.pids = {							\
 		[PIDTYPE_PID]  = INIT_PID_LINK(PIDTYPE_PID),		\
 		[PIDTYPE_PGID] = INIT_PID_LINK(PIDTYPE_PGID),		\

@@ -20,7 +20,7 @@
 * software in any way with any other Broadcom software provided under a license
 * other than the GPL, without Broadcom's express prior written consent.
 *
-* $Id: dhd_custom_gpio.c,v 1.1.4.8.4.1 2010/09/02 23:13:16 Exp $
+* $Id: dhd_custom_gpio.c,v 1.1.4.8.4.4 2011/01/20 20:23:09 Exp $
 */
 
 
@@ -177,3 +177,4 @@ dhd_custom_get_mac_address(unsigned char *buf)
 	return ret;
 }
 #endif /* GET_CUSTOM_MAC_ENABLE */
+
