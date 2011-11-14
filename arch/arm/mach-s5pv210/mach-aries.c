@@ -2566,7 +2566,7 @@ static void gp2a_gpio_init(void)
 	if (ret)
 		printk(KERN_ERR "Failed to request gpio gp2a power supply.\n");
 
-#ifdef CONFIG_SAMSUNG_FASCINATE
+#if 0// def CONFIG_SAMSUNG_FASCINATE
         s3c_gpio_cfgpin(GPIO_PS_VOUT, S3C_GPIO_SFN(GPIO_PS_VOUT_AF));
         s3c_gpio_setpull(GPIO_PS_VOUT, S3C_GPIO_PULL_NONE);
         set_irq_type(IRQ_EINT1, IRQ_TYPE_EDGE_BOTH);
