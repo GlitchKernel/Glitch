@@ -471,7 +471,11 @@ static struct regulator_consumer_supply ldo4_consumer[] = {
 };
 
 static struct regulator_consumer_supply ldo5_consumer[] = {
+#ifndef CONFIG_SAMSUNG_FASCINATE
 	REGULATOR_SUPPLY("vmmc", NULL),
+#else
+  REGULATOR_SUPPLY("vtf", NULL),
+#endif
 };
 
 static struct regulator_consumer_supply ldo7_consumer[] = {
@@ -575,6 +579,7 @@ static struct regulator_init_data aries_ldo4_data = {
         .consumer_supplies      = ldo4_consumer,
 };
 
+#ifndef CONFIG_SAMSUNG_FASCINATE
 static struct regulator_init_data aries_ldo5_data = {
 	.constraints	= {
 		.name		= "VTF_2.8V",
@@ -589,7 +594,7 @@ static struct regulator_init_data aries_ldo5_data = {
 	.num_consumer_supplies	= ARRAY_SIZE(ldo5_consumer),
 	.consumer_supplies	= ldo5_consumer,
 };
-
+#endif
 
 static struct regulator_init_data aries_ldo7_data = {
 	.constraints	= {
@@ -816,7 +821,9 @@ static struct max8998_regulator_data aries_regulators[] = {
 	{ MAX8998_LDO2,  &aries_ldo2_data },
 	{ MAX8998_LDO3,  &aries_ldo3_data },
 	{ MAX8998_LDO4,  &aries_ldo4_data },
+#ifndef CONFIG_SAMSUNG_FASCINATE
 	{ MAX8998_LDO5,  &aries_ldo5_data },
+#endif
 	{ MAX8998_LDO7,  &aries_ldo7_data },
 	{ MAX8998_LDO8,  &aries_ldo8_data },
 	{ MAX8998_LDO9,  &aries_ldo9_data },
