@@ -191,7 +191,8 @@ export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
 # CROSS_COMPILE	?= ../../../prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
 #CROSS_COMPILE	?= ../../../prebuilt/linux-x86/toolchain/android-toolchain-eabi-4.5-2011.09/bin/arm-eabi-
-CROSS_COMPILE	?= ../../../prebuilt/linux-x86/toolchain/android-toolchain-eabi-4.5-2011.10/bin/arm-eabi-
+CROSS_COMPILE	?= ../../../prebuilt/linux-x86/toolchain/android-toolchain-eabi/bin/arm-eabi-
+
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -334,11 +335,21 @@ CHECK		= sparse
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 MODFLAGS	= -DMODULE
-CFLAGS_MODULE   = $(MODFLAGS)
-AFLAGS_MODULE   = $(MODFLAGS)
+
+# from efpophis pre-boot-loop
+GLITCHFLAGS = -finline-functions -fgcse-after-reload -ffast-math -fsingle-precision-constant -pipe -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
+
+# from glitch
+#GLITCHFLAGS = -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
+
+CFLAGS_MODULE   = $(MODFLAGS) $(GLITCH_FLAGS)
+AFLAGS_MODULE   = $(MODFLAGS) $(GLITCH_FLAGS)
 LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
-CFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
-AFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
+#CFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
+#AFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
+CFLAGS_KERNEL = $(GLITCHFLAGS)
+AFLAGS_KERNEL = $(GLITCHFLAGS)
+
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
@@ -353,13 +364,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks \
-		   -fsched-spec-load-dangerous -fpredictive-commoning \
-		   -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone \
-		   -mtune=cortex-a8 -mfpu=vfpv3 \
-		   -mvectorize-with-neon-quad -fvect-cost-model \
-		   --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64
-
+		   -fno-delete-null-pointer-checks $(GLITCHFLAGS)
+		   
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
