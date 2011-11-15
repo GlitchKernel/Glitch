@@ -19,6 +19,6 @@ function verify_toolchain()
 
   export CROSS_COMPILE_GLITCH=`pwd`/android-toolchain-eabi/bin/arm-eabi-
   export CROSS_COMPILE_443=../../../prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
-
+  
   echo "toolchains ok"
 }

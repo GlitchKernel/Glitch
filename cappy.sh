@@ -3,6 +3,8 @@
 source ./verify_toolchain.sh
 verify_toolchain
 
+export CROSS_COMPILE=$CROSS_COMPILE_GLITCH
+
 export KBUILD_BUILD_VERSION="1"
 
 # kernel option changes
