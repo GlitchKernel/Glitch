@@ -179,6 +179,7 @@ EXPORT_SYMBOL_GPL(cpufreq_frequency_table_target);
 static DEFINE_PER_CPU(struct cpufreq_frequency_table *, cpufreq_show_table);
 /**
  * show_available_freqs - show available frequencies for the specified CPU
+ * this should show them all, whether they're enabled or not.
  */
 static ssize_t show_available_freqs(struct cpufreq_policy *policy, char *buf)
 {
@@ -193,7 +194,7 @@ static ssize_t show_available_freqs(struct cpufreq_policy *policy, char *buf)
 	table = per_cpu(cpufreq_show_table, cpu);
 
 	for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
-		if (table[i].frequency == CPUFREQ_ENTRY_INVALID || enabled_freqs[i] == 0)
+		if (table[i].frequency == CPUFREQ_ENTRY_INVALID)
 			continue;
 		count += sprintf(&buf[count], "%d ", table[i].frequency);
 	}
