@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source ./verify_toolchain.sh
+verify_toolchain
+
 export KBUILD_BUILD_VERSION="1"
 
 # kernel option changes

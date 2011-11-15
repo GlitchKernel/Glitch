@@ -2,6 +2,9 @@
 
 make mrproper
 
+source ./verify_toolchain.sh
+verify_toolchain
+
 if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/samsung_modemctl_backup; then
 
 		mv Makefile Makefile_opti
