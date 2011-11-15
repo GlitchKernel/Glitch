@@ -336,8 +336,11 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 MODFLAGS	= -DMODULE
 
-# from efpophis pre-boot-loop
-GLITCHFLAGS = -finline-functions -fgcse-after-reload -ffast-math -fsingle-precision-constant -pipe -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
+# from efpophis pre-boot-loop - they work!
+#GLITCHFLAGS = -finline-functions -fgcse-after-reload -ffast-math -fsingle-precision-constant -pipe -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
+
+# efpophis testing flags
+GLITCHFLAGS = -finline-functions -fgcse-after-reload -ffast-math -fsingle-precision-constant -pipe -mtune=cortex-a8 -mfpu=neon --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
 
 # from glitch
 #GLITCHFLAGS = -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
@@ -345,8 +348,6 @@ GLITCHFLAGS = -finline-functions -fgcse-after-reload -ffast-math -fsingle-precis
 CFLAGS_MODULE   = $(MODFLAGS) $(GLITCH_FLAGS)
 AFLAGS_MODULE   = $(MODFLAGS) $(GLITCH_FLAGS)
 LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
-#CFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
-#AFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
 CFLAGS_KERNEL = $(GLITCHFLAGS)
 AFLAGS_KERNEL = $(GLITCHFLAGS)
 
