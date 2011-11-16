@@ -707,7 +707,7 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 }
 
 static ssize_t show_states_enabled_table(struct cpufreq_policy *policy, char *buf) {
-	return sprintf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d", enabled_freqs[0], enabled_freqs[1], enabled_freqs[2], enabled_freqs[3], enabled_freqs[4], enabled_freqs[5], enabled_freqs[6], enabled_freqs[7], enabled_freqs[8], enabled_freqs[9], enabled_freqs[10], enabled_freqs[11]);
+	return sprintf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d\n", enabled_freqs[0], enabled_freqs[1], enabled_freqs[2], enabled_freqs[3], enabled_freqs[4], enabled_freqs[5], enabled_freqs[6], enabled_freqs[7], enabled_freqs[8], enabled_freqs[9], enabled_freqs[10], enabled_freqs[11]);
 
 }
 
