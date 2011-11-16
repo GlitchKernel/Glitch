@@ -19,7 +19,10 @@
 #include <linux/dma-mapping.h>
 #include <linux/slab.h>
 #include <linux/scatterlist.h>
+
+#ifndef CONFIG_SAMSUNG_FASCINATE
 #include <linux/regulator/consumer.h>
+#endif
 
 #include <linux/leds.h>
 
@@ -1727,8 +1730,10 @@ int sdhci_suspend_host(struct sdhci_host *host, pm_message_t state)
 
 	sdhci_mask_irqs(host, SDHCI_INT_ALL_MASK);
 
+#ifndef CONFIG_SAMSUNG_FASCINATE
 	if (host->vmmc)
 		ret = regulator_disable(host->vmmc);
+#endif
 
 	return ret;
 }
@@ -1740,12 +1745,13 @@ int sdhci_resume_host(struct sdhci_host *host)
 	int ret = 0;
 	struct mmc_host *mmc = host->mmc;
 
+#ifndef CONFIG_SAMSUNG_FASCINATE
 	if (host->vmmc) {
 		int ret = regulator_enable(host->vmmc);
 		if (ret)
 			return ret;
 	}
-
+#endif
 
 	if (host->flags & (SDHCI_USE_SDMA | SDHCI_USE_ADMA)) {
 		if (host->ops->enable_dma)
@@ -2023,6 +2029,7 @@ int sdhci_add_host(struct sdhci_host *host)
 	if (ret)
 		goto untasklet;
 
+#ifndef CONFIG_SAMSUNG_FASCINATE
 	host->vmmc = regulator_get(mmc_dev(mmc), "vmmc");
 	if (IS_ERR(host->vmmc)) {
 		printk(KERN_INFO "%s: no vmmc regulator found\n", mmc_hostname(mmc));
@@ -2030,6 +2037,7 @@ int sdhci_add_host(struct sdhci_host *host)
 	} else {
 		regulator_enable(host->vmmc);
 	}
+#endif
 
 	sdhci_init(host, 0);
 
@@ -2116,10 +2124,12 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
 	tasklet_kill(&host->card_tasklet);
 	tasklet_kill(&host->finish_tasklet);
 
+#ifndef CONFIG_SAMSUNG_FASCINATE
 	if (host->vmmc) {
 		regulator_disable(host->vmmc);
 		regulator_put(host->vmmc);
 	}
+#endif
 
 	kfree(host->adma_desc);
 	kfree(host->align_buffer);

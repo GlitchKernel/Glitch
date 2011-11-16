@@ -93,6 +93,9 @@
 #define	CMD_INFO_LONGITUDE_LATITUDE	0xA3
 #define	CMD_INFO_ALTITUDE		0xA4
 #define	CMD_SET_FLASH			0xB2
+#ifdef CONFIG_SAMSUNG_FASCINATE
+#define	CMD_SET_FLASH_POWER             0xB3
+#endif
 #define	CMD_SET_DZOOM			0xB9
 #define	CMD_GET_DZOOM_LEVEL		0xBA
 #define	CMD_SET_EFFECT_SHOT		0xC0
@@ -122,6 +125,9 @@ static unsigned char ce147_buf_set_dzoom[31] = {
 	0x3f
 };
 static int DZoom_State;
+#ifdef CONFIG_SAMSUNG_FASCINATE
+static int Flash_Mode = 0;
+#endif
 
 enum ce147_oprmode {
 	CE147_OPRMODE_VIDEO = 0,
@@ -141,6 +147,9 @@ static int ce147_set_white_balance(struct v4l2_subdev *sd,
 				struct v4l2_control *ctrl);
 static int ce147_s_ext_ctrl(struct v4l2_subdev *sd,
 				struct v4l2_ext_control *ctrl);
+#ifdef CONFIG_SAMSUNG_FASCINATE
+static int ce147_set_preflash(struct v4l2_subdev *sd, int flash_mode);
+#endif
 
 enum {
 	AUTO_FOCUS_FAILED,
@@ -348,7 +357,7 @@ struct ce147_state {
 	int effect;
 	int wb;
 	struct tm *exifTimeInfo;
-#if defined(CONFIG_ARIES_NTT) /* Modify	NTTS1 */
+#if defined(CONFIG_ARIES_NTT) || defined(CONFIG_SAMSUNG_FASCINATE)
 	int disable_aeawb_lock;
 #endif
 	int exif_ctrl;
@@ -2088,6 +2097,8 @@ static int ce147_set_capture_exif(struct v4l2_subdev *sd)
 	unsigned int ce147_reglen_gps_processing = 130;
 #if !defined(CONFIG_ARIES_NTT)
 	unsigned char ce147_str_model[9] = "GT-I9000\0";
+#elif defined(CONFIG_SAMSUNG_FASCINATE)
+	unsigned char ce147_str_model[9] = "SCH-I500\0";
 #else /* Modify	NTTS1 */
 	unsigned char ce147_str_model[7] = "SC-02B\0";
 #endif
@@ -2488,6 +2499,18 @@ static int ce147_set_capture_config(struct v4l2_subdev *sd,
 		}
 	}
 
+#ifdef CONFIG_SAMSUNG_FASCINATE
+ 	/*
+ 	 * Set Flash
+ 	 */
+	err = ce147_set_awb_lock(sd, 0);
+	if(err < 0){
+		dev_err(&client->dev, "%s: failed: ce147_set_awb_lock, err %d\n", __func__, err);
+		return -EIO;
+	}
+        ce147_set_preflash(sd, 1);
+#endif
+
 	/*
 	 * Set AWB Lock
 	 */
@@ -2683,6 +2706,14 @@ static int ce147_set_flash(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	unsigned char ce147_buf_set_flash_manual[2] = { 0x00, 0x00 };
 	unsigned int ce147_len_set_flash_manual = 2;
 
+#ifdef CONFIG_SAMSUNG_FASCINATE
+	unsigned char ce147_buf_set_flash_power_control[4] = {0x03,0x01,0x1D,0x0c};
+	unsigned int ce147_len_set_flash_power_control = 4;
+
+        if(ctrl->value != FLASH_MODE_TORCH_ON && ctrl->value != FLASH_MODE_TORCH_OFF)
+            Flash_Mode = ctrl->value;
+#endif
+
 	switch (ctrl->value) {
 	case FLASH_MODE_OFF:
 		ce147_buf_set_flash[1] = 0x00;
@@ -2696,16 +2727,55 @@ static int ce147_set_flash(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		ce147_buf_set_flash[1] = 0x01;
 		break;
 
+#ifdef CONFIG_SAMSUNG_FASCINATE
+       	case FLASH_MODE_TORCH_ON:
+ 		ce147_buf_set_flash_manual[1] = 0x01;
+ 		break;
+
+       	case FLASH_MODE_TORCH_OFF:
+       		ce147_buf_set_flash_manual[1] = 0x00;
+               	break;
+
+       	case FLASH_MODE_BACKLIGHT_ON:
+       		ce147_buf_set_flash_power_control[1] = 0x00;
+       		ce147_buf_set_flash[1] = 0x01;
+		break;
+#else
 	case FLASH_MODE_TORCH:
 		ce147_buf_set_flash_manual[1] = 0x01;
 		break;
+#endif
 
 	default:
 		ce147_buf_set_flash[1] = 0x00;
 		break;
 	}
 
-	/* need	to modify flash off for	torch mode */
+#ifdef CONFIG_SAMSUNG_FASCINATE
+        // set flash power
+        err = ce147_i2c_write_multi(client, CMD_SET_FLASH_POWER, ce147_buf_set_flash_power_control, ce147_len_set_flash_power_control);
+        if(err < 0){
+            dev_err(&client->dev, "%s: failed: i2c_write for set_flash_power\n", __func__);
+            return -EIO;
+        }
+	//need to modify flash off for torch mode
+	if(ctrl->value == FLASH_MODE_TORCH_ON ||ctrl->value == FLASH_MODE_TORCH_OFF) {
+		err = ce147_i2c_write_multi(client, CMD_SET_FLASH_MANUAL, ce147_buf_set_flash_manual, ce147_len_set_flash_manual);
+		if (err < 0) {
+			dev_err(&client->dev, "%s: failed: i2c_write for set_flash\n", __func__);
+			return -EIO;
+		}
+                ce147_msg(&client->dev, "%s: done, camcorder_flash: 0x%02x\n", __func__, ce147_buf_set_flash_manual[1]);
+        	}
+                else {
+                	err = ce147_i2c_write_multi(client, CMD_SET_FLASH, ce147_buf_set_flash, ce147_len_set_flash);
+                        if (err < 0) {
+                        		dev_err(&client->dev, "%s: failed: i2c_write for set_flash\n", __func__);
+                	return -EIO;
+                }
+        	ce147_msg(&client->dev, "%s: done, flash: 0x%02x\n", __func__, ce147_buf_set_flash[1]);
+        }
+#else
 	if (ctrl->value == FLASH_MODE_OFF) {
 		err = ce147_i2c_write_multi(client, CMD_SET_FLASH_MANUAL,
 				ce147_buf_set_flash_manual,
@@ -2727,9 +2797,113 @@ static int ce147_set_flash(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 
 	ce147_msg(&client->dev, "%s: done, flash: 0x%02x\n",
 			__func__, ce147_buf_set_flash[1]);
+#endif
 
 	return 0;
 }
+
+#ifdef CONFIG_SAMSUNG_FASCINATE
+static int ce147_set_preflash(struct v4l2_subdev *sd, int flash_mode) //SecFeature.Camera aswoogi
+{
+        int err;
+        struct i2c_client *client = v4l2_get_subdevdata(sd);
+
+        unsigned char ce147_buf_set_preflash[2] = { 0x01, 0x00 };
+        unsigned int ce147_len_set_preflash = 2;
+        unsigned char ce147_buf_set_preflash_manual[2] = { 0x00, 0x00 };
+        unsigned int ce147_len_set_preflash_manual = 2;
+        unsigned char ce147_buf_set_flash[2] = { 0x03, 0x00 };
+        unsigned int ce147_len_set_flash = 2;
+        unsigned char ce147_buf_set_flash_manual[2] = { 0x00, 0x00 };
+        unsigned int ce147_len_set_flash_manual = 2;
+        unsigned char ce147_buf_set_flash_off[2] = { 0x03, 0x00 };
+        unsigned int ce147_len_set_flash_off = 2;
+        unsigned char ce147_buf_set_preflash_off[2] = { 0x01, 0x00 };
+        unsigned int ce147_len_set_preflash_off = 2;
+        unsigned char ce147_buf_set_preflash_init[2] = { 0x02, 0x02 };
+        unsigned int ce147_len_set_preflash_init = 2;
+        unsigned char ce147_buf_set_preflash_init2[2] = { 0x02, 0x00 };
+        unsigned int ce147_len_set_preflash_init2 = 2;
+
+
+         	ce147_msg(&client->dev, "%s, %d\n", __func__, flash_mode);
+
+        switch(Flash_Mode) {
+            case FLASH_MODE_OFF:
+                ce147_buf_set_preflash[1] = 0x00;
+                ce147_buf_set_flash[1] = 0x00;
+            break;
+
+            case FLASH_MODE_AUTO:
+                ce147_buf_set_preflash[1] = 0x02;
+                ce147_buf_set_flash[1] = 0x02;
+                    	err = ce147_i2c_write_multi(client, 0x07, ce147_buf_set_preflash_init2, ce147_len_set_preflash_init2);
+                    	if(err < 0){
+                    		dev_err(&client->dev, "%s: failed: i2c_write for set_preflash\n", __func__);
+                    		return -EIO;
+                    	}
+            break;
+
+            case FLASH_MODE_ON:
+                ce147_buf_set_preflash[1] = 0x01;
+                ce147_buf_set_flash[1] = 0x01;
+                    	err = ce147_i2c_write_multi(client, 0x07, ce147_buf_set_preflash_init2, ce147_len_set_preflash_init2);
+                    	if(err < 0){
+                    		dev_err(&client->dev, "%s: failed: i2c_write for set_preflash\n", __func__);
+                    		return -EIO;
+                    	}
+            break;
+
+        	case FLASH_MODE_BACKLIGHT_ON:
+        		ce147_buf_set_preflash[1] = 0x01;
+        		ce147_buf_set_flash[1] = 0x01;
+                    	err = ce147_i2c_write_multi(client, 0x07, ce147_buf_set_preflash_init, ce147_len_set_preflash_init);
+                    	if(err < 0){
+                    		dev_err(&client->dev, "%s: failed: i2c_write for set_preflash\n", __func__);
+                    		return -EIO;
+                    	}
+        	break;
+            default:
+                ce147_buf_set_preflash[1] = 0x00;
+                ce147_buf_set_flash[1] = 0x00;
+            break;
+        }
+
+        //need to modify flash off for torch mode
+        if(flash_mode == 0) {
+            err = ce147_i2c_write_multi(client, CMD_SET_FLASH, ce147_buf_set_preflash, ce147_len_set_preflash);
+            if(err < 0){
+                dev_err(&client->dev, "%s: failed: i2c_write for set_preflash\n", __func__);
+                return -EIO;
+            }
+
+            err = ce147_i2c_write_multi(client, CMD_SET_FLASH, ce147_buf_set_flash_off, ce147_len_set_flash_off);
+            if(err < 0){
+                dev_err(&client->dev, "%s: failed: i2c_write for set_flash_off\n", __func__);
+                return -EIO;
+            }
+
+            dev_err(&client->dev, "%s: done, preflash: 0x%02x\n", __func__, ce147_buf_set_preflash[1]);
+        }
+        else {
+            err = ce147_i2c_write_multi(client, CMD_SET_FLASH, ce147_buf_set_flash, ce147_len_set_flash);
+            if(err < 0){
+                dev_err(&client->dev, "%s: failed: i2c_write for set_flash\n", __func__);
+                return -EIO;
+            }
+
+            err = ce147_i2c_write_multi(client, CMD_SET_FLASH, ce147_buf_set_preflash_off, ce147_len_set_preflash_off);
+            if(err < 0){
+                dev_err(&client->dev, "%s: failed: i2c_write for set_preflash_off\n", __func__);
+                return -EIO;
+            }
+
+            ce147_msg(&client->dev, "%s: done, flash: 0x%02x\n", __func__, ce147_buf_set_flash[1]);
+        }
+
+        return 0;
+}
+#endif
 
 static int ce147_set_effect(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
@@ -3407,7 +3581,8 @@ static int ce147_set_touch_auto_focus(struct v4l2_subdev *sd,
 	unsigned char ce147_buf_set_touch_af[11] = { 0x00, };
 	unsigned int ce147_len_set_touch_af = 11;
 
-#if defined(CONFIG_ARIES_NTT) /* Modify	NTTS1 */
+#if defined(CONFIG_ARIES_NTT) || defined(CONFIG_SAMSUNG_FASCINATE)/* Modify	NTTS1 */
+	state->disable_aeawb_lock = 1;
 	err = ce147_set_awb_lock(sd, 0);
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: ce147_set_awb_lock, "
@@ -3480,8 +3655,9 @@ static int ce147_set_focus_mode(struct v4l2_subdev *sd,
 		|| (ctrl->value == FOCUS_MODE_MACRO_DEFAULT)
 		|| (ctrl->value == FOCUS_MODE_AUTO_DEFAULT)) {
 		/* || (ctrl->value == FOCUS_MODE_FD_DEFAULT)) */
-#if defined(CONFIG_ARIES_NTT) /* Modify	NTTS1 */
+#if defined(CONFIG_ARIES_NTT) || defined(CONFIG_SAMSUNG_FASCINATE)/* Modify	NTTS1 */
 		ce147_msg(&client->dev, "%s: unlock\n", __func__);
+		state->disable_aeawb_lock = 0;
 		err = ce147_set_awb_lock(sd, 0);
 		if (err < 0) {
 			dev_err(&client->dev, "%s: failed: ce147_set_awb_"
@@ -3995,6 +4171,16 @@ static int ce147_start_auto_focus(struct v4l2_subdev *sd,
 
 	ce147_msg(&client->dev, "%s\n", __func__);
 
+#ifdef CONFIG_SAMSUNG_FASCINATE
+	ce147_msg(&client->dev, "%s: unlock\n", __func__);
+	err = ce147_set_awb_lock(sd, 0);
+	if (err < 0) {
+		dev_err(&client->dev, "%s: failed: ce147_set_awb_"
+				"unlock, err %d\n", __func__, err);
+		return -EIO;
+	}
+#endif
+
 	/* start af */
 	err = ce147_i2c_write_multi(client, CMD_START_AUTO_FOCUS_SEARCH,
 			ce147_buf_set_af, ce147_len_set_af);
@@ -4114,6 +4300,16 @@ static int ce147_get_auto_focus_status(struct v4l2_subdev *sd,
 		goto out;
 	}
 	ce147_msg(&client->dev, "%s: done\n", __func__);
+
+#ifdef CONFIG_SAMSUNG_FASCINATE
+	if ((ctrl->value == AUTO_FOCUS_DONE) && !state->disable_aeawb_lock) {
+		err = ce147_set_awb_lock(sd, 1);
+		if (err < 0) {
+			dev_err(&client->dev, "%s: failed: ce147_set_awb_lock, err %d\n",__func__, err);
+					return -EIO;
+		}
+	}
+#endif
 
 out:
 	state->af_status = AF_NONE;
@@ -5031,6 +5227,9 @@ static int ce147_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		break;
 
 	case V4L2_CID_CAMERA_SET_AUTO_FOCUS:
+#ifdef CONFIG_SAMSUNG_FASCINATE
+		ce147_set_preflash(sd, 0);
+#endif
 		if (value == AUTO_FOCUS_ON)
 			err = ce147_start_auto_focus(sd, ctrl);
 		else if (value == AUTO_FOCUS_OFF)
@@ -5095,7 +5294,7 @@ static int ce147_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		err = 0;
 		break;
 
-#if defined(CONFIG_ARIES_NTT) /* Modify	NTTS1 */
+#if defined(CONFIG_ARIES_NTT) || defined(CONFIG_SAMSUNG_FASCINATE) /* Modify	NTTS1 */
 	case V4L2_CID_CAMERA_AE_AWB_DISABLE_LOCK:
 		state->disable_aeawb_lock = ctrl->value;
 		err = 0;
@@ -5140,6 +5339,12 @@ static int ce147_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		state->thumb_null = ctrl->value;
 		err = 0;
 		break;
+
+#ifdef CONFIG_SAMSUNG_FASCINATE
+	case V4L2_CID_CAMERA_LENS_SOFTLANDING:
+		ce147_set_af_softlanding(sd);
+		err = 0;
+#endif
 
 	default:
 		dev_err(&client->dev, "%s: no such control\n", __func__);
