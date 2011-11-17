@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Vibrant needs a fix on CM7 repo for now. Navigate to device/samsung/vibrantmtd/, and open full_vibrantmtd.mk. On line 34, PRODUCT_DEVICE := SGH-T959 should be changed to PRODUCT_DEVICE := vibrantmtd
+# Vibrant needs a fix on CM7 repo for now. Navigate to device/samsung/vibrantmtd/, and open full_vibrantmtd.mk. 
+# On line 34, PRODUCT_DEVICE := SGH-T959 should be changed to PRODUCT_DEVICE := vibrantmtd
 
 # This script will build for all listed devices by default
 
