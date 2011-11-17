@@ -17,7 +17,7 @@
 #define dprintk(msg...) \
 	cpufreq_debug_printk(CPUFREQ_DEBUG_CORE, "freq-table", msg)
 	
-extern int enabled_freqs[12];
+int freq_is_enabled( int index );
 
 /*********************************************************************
  *                     FREQUENCY TABLE HELPERS                       *
@@ -131,7 +131,7 @@ int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
 		unsigned int freq = table[i].frequency;
 		if (freq == CPUFREQ_ENTRY_INVALID)
 			continue;
-		if ((freq < policy->min) || (freq > policy->max) || (enabled_freqs[i] == 0))
+		if ((freq < policy->min) || (freq > policy->max) || (freq_is_enabled(i) == 0))
 			continue;
 		switch (relation) {
 		case CPUFREQ_RELATION_H:
