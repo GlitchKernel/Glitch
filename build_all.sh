@@ -9,6 +9,8 @@ export CROSS_COMPILE=$CROSS_COMPILE_GLITCH
 make clean
 make mrproper
 
+rm -rf ./release/{Captivate,CDMA_OLDMODEM,Fascinate,GSM_OLDMODEM,i9k,TelusFascinate,Vibrant}
+
 echo "building ALL variants of ALL kernels!"
 
 echo "building initramfs"
