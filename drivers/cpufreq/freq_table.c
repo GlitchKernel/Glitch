@@ -131,7 +131,9 @@ int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
 		unsigned int freq = table[i].frequency;
 		if (freq == CPUFREQ_ENTRY_INVALID)
 			continue;
-		if ((freq < policy->min) || (freq > policy->max) || (freq_is_enabled(i) == 0))
+		if ( freq_is_enabled(i) == 0 )
+      continue;
+		if ((freq < policy->min) || (freq > policy->max))
 			continue;
 		switch (relation) {
 		case CPUFREQ_RELATION_H:
