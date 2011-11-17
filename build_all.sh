@@ -1,10 +1,15 @@
 #!/bin/bash
 
 source ./verify_toolchain.sh
-
 verify_toolchain
 
-echo "building ALL variants of all kernels!"
+echo "Cleaning up .. "
+
+export CROSS_COMPILE=$CROSS_COMPILE_GLITCH
+make clean
+make mrproper
+
+echo "building ALL variants of ALL kernels!"
 
 echo "building initramfs"
 
