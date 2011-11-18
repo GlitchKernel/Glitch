@@ -28,6 +28,12 @@
 #include <mach/gpio.h>
 #include <asm/mach-types.h>
 
+#if defined (CONFIG_SAMSUNG_GALAXYS)
+#	define DRVSTR S3C_GPIO_DRVSTR_3X
+#else
+#	define DRVSTR S3C_GPIO_DRVSTR_2X
+#endif
+
 /* clock sources for the mmc bus clock, order as for the ctrl2[5..4] */
 char *s5pv210_hsmmc_clksrcs[4] = {
 	[0] = "hsmmc",		/* HCLK */
@@ -47,7 +53,7 @@ void s5pv210_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 		for (gpio = S5PV210_GPG1(3); gpio <= S5PV210_GPG1(6); gpio++) {
 			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
 			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-			s3c_gpio_set_drvstrength(gpio, S3C_GPIO_DRVSTR_2X);
+			s3c_gpio_set_drvstrength(gpio, DRVSTR);
 		}
 
 	case 0:
@@ -59,7 +65,7 @@ void s5pv210_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 				s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
 				s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
 			}
-			s3c_gpio_set_drvstrength(gpio, S3C_GPIO_DRVSTR_2X);
+			s3c_gpio_set_drvstrength(gpio, DRVSTR);
 		}
 		break;
 	default:
@@ -93,7 +99,7 @@ void s5pv210_setup_sdhci1_cfg_gpio(struct platform_device *dev, int width)
 				s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
 				s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
 			}
-			s3c_gpio_set_drvstrength(gpio, S3C_GPIO_DRVSTR_2X);
+			s3c_gpio_set_drvstrength(gpio, DRVSTR);
 		}
 		break;
 	default:
@@ -112,7 +118,7 @@ void s5pv210_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 		for (gpio = S5PV210_GPG3(3); gpio <= S5PV210_GPG3(6); gpio++) {
 			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
 			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-			s3c_gpio_set_drvstrength(gpio, S3C_GPIO_DRVSTR_2X);
+			s3c_gpio_set_drvstrength(gpio, DRVSTR);
 		}
 
 	case 0:
@@ -124,7 +130,7 @@ void s5pv210_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 				s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
 				s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
 			}
-			s3c_gpio_set_drvstrength(gpio, S3C_GPIO_DRVSTR_2X);
+			s3c_gpio_set_drvstrength(gpio, DRVSTR);
 		}
 		break;
 	default:
@@ -147,7 +153,7 @@ void s5pv210_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 				s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
 				s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
 			}
-			s3c_gpio_set_drvstrength(gpio, S3C_GPIO_DRVSTR_2X);
+			s3c_gpio_set_drvstrength(gpio, DRVSTR);
 		}
 		break;
 	default:

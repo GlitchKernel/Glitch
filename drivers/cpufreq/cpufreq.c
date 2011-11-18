@@ -39,6 +39,8 @@ extern unsigned int gpu[12][2];
 int leakage = 2; // high by default
 void update_leakage(unsigned int);
 
+int freq_is_enabled(int);
+
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
  * level driver of CPUFreq support, and its spinlock. This lock
@@ -720,6 +722,19 @@ static ssize_t store_states_enabled_table(struct cpufreq_policy *policy, const c
 	}
 	else
 		return count;
+}
+
+int freq_is_enabled(int index)
+{
+  int result = 0;
+  
+  if ( (index >= 0) && 
+       (index < (sizeof(enabled_freqs) / sizeof(int))) )
+  {
+    result = enabled_freqs[index];
+  }
+  
+  return result;
 }
 
 static ssize_t show_gpu_clock_table(struct cpufreq_policy *policy, char *buf) {
