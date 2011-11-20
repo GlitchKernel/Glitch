@@ -62,7 +62,7 @@ EXPORT_SYMBOL_GPL(nf_conntrack_htable_size);
 unsigned int nf_conntrack_max __read_mostly;
 EXPORT_SYMBOL_GPL(nf_conntrack_max);
 
-struct nf_conn nf_conntrack_untracked __read_mostly;
+struct nf_conn nf_conntrack_untracked;
 EXPORT_SYMBOL_GPL(nf_conntrack_untracked);
 
 static int nf_conntrack_hash_rnd_initted;
@@ -779,7 +779,7 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
 
 	/* It exists; we have (non-exclusive) reference. */
 	if (NF_CT_DIRECTION(h) == IP_CT_DIR_REPLY) {
-		*ctinfo = IP_CT_ESTABLISHED + IP_CT_IS_REPLY;
+		*ctinfo = IP_CT_ESTABLISHED_REPLY;
 		/* Please set reply bit if this packet OK */
 		*set_reply = 1;
 	} else {
@@ -1066,7 +1066,7 @@ static void nf_conntrack_attach(struct sk_buff *nskb, struct sk_buff *skb)
 	/* This ICMP is in reverse direction to the packet which caused it */
 	ct = nf_ct_get(skb, &ctinfo);
 	if (CTINFO2DIR(ctinfo) == IP_CT_DIR_ORIGINAL)
-		ctinfo = IP_CT_RELATED + IP_CT_IS_REPLY;
+		ctinfo = IP_CT_RELATED_REPLY;
 	else
 		ctinfo = IP_CT_RELATED;
 
@@ -1322,6 +1322,12 @@ EXPORT_SYMBOL_GPL(nf_conntrack_set_hashsize);
 module_param_call(hashsize, nf_conntrack_set_hashsize, param_get_uint,
 		  &nf_conntrack_htable_size, 0600);
 
+void nf_ct_untracked_status_or(unsigned long bits)
+{
+	nf_conntrack_untracked.status |= bits;
+}
+EXPORT_SYMBOL_GPL(nf_ct_untracked_status_or);
+
 static int nf_conntrack_init_init_net(void)
 {
 	int max_factor = 8;
@@ -1369,8 +1375,7 @@ static int nf_conntrack_init_init_net(void)
 #endif
 	atomic_set(&nf_conntrack_untracked.ct_general.use, 1);
 	/*  - and look it like as a confirmed connection */
-	set_bit(IPS_CONFIRMED_BIT, &nf_conntrack_untracked.status);
-
+	nf_ct_untracked_status_or(IPS_CONFIRMED | IPS_UNTRACKED);
 	return 0;
 
 #ifdef CONFIG_NF_CONNTRACK_ZONES

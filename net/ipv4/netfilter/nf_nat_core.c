@@ -449,7 +449,7 @@ int nf_nat_icmp_reply_translation(struct nf_conn *ct,
 
 	/* Must be RELATED */
 	NF_CT_ASSERT(skb->nfctinfo == IP_CT_RELATED ||
-		     skb->nfctinfo == IP_CT_RELATED+IP_CT_IS_REPLY);
+		     skb->nfctinfo == IP_CT_RELATED_REPLY);
 
 	/* Redirects on non-null nats must be dropped, else they'll
 	   start talking to each other without our translation, and be
@@ -742,7 +742,7 @@ static int __init nf_nat_init(void)
 	spin_unlock_bh(&nf_nat_lock);
 
 	/* Initialize fake conntrack so that NAT will skip it */
-	nf_conntrack_untracked.status |= IPS_NAT_DONE_MASK;
+	nf_ct_untracked_status_or(IPS_NAT_DONE_MASK);
 
 	l3proto = nf_ct_l3proto_find_get((u_int16_t)AF_INET);
 

@@ -475,7 +475,7 @@ PVRSRV_ERROR SysFinalise(IMG_VOID)
     }
 	else
 	{
-		PVR_DPF((PVR_DBG_VERBOSE, "SysFinalise: Version string: %s", gpsSysData->pszVersionString));
+		PVR_DPF((PVR_DBG_WARNING, "SysFinalise: Version string: %s", gpsSysData->pszVersionString));
 	}
 
 #if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
@@ -789,12 +789,12 @@ PVRSRV_ERROR SysOEMFunction(IMG_UINT32	ui32ID,
 }
 
 
-PVRSRV_ERROR SysPowerLockWrap(SYS_DATA unref__ *psSysData)
+PVRSRV_ERROR SysPowerLockWrap(IMG_BOOL bTryLock)
 {                                                               
 	return PVRSRV_OK;                                       
 }                                                               
                                                                 
-IMG_VOID SysPowerLockUnwrap(SYS_DATA unref__ *psSysData)
+IMG_VOID SysPowerLockUnwrap(IMG_VOID)
 {                                                               
 }                                                               
 

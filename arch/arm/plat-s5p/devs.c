@@ -41,185 +41,19 @@
 #include <mach/media.h>
 
 /* Android Gadget */
-#include <linux/usb/android_composite.h>
-#include <linux/usb/f_accessory.h>
-
-#define S3C_VENDOR_ID			0x18d1
-#define S3C_UMS_PRODUCT_ID		0x4E21
-#define S3C_UMS_ADB_PRODUCT_ID		0x4E22
-#define S3C_RNDIS_PRODUCT_ID		0x4E23
-#define S3C_RNDIS_ADB_PRODUCT_ID	0x4E24
-#define S3C_RNDIS_UMS_ADB_PRODUCT_ID	0x4E25
-
-#define MAX_USB_SERIAL_NUM	17
-
-static char *usb_functions_ums[] = {
-	"usb_mass_storage",
-};
-
-static char *usb_functions_rndis[] = {
-	"rndis",
-};
-
-static char *usb_functions_rndis_adb[] = {
-	"rndis",
-	"adb",
-};
-static char *usb_functions_ums_adb[] = {
-	"usb_mass_storage",
-	"adb",
-};
-static char *usb_functions_accessory[] = {
-	"accessory",
-};
-static char *usb_functions_accessory_adb[] = {
-	"accessory",
-	"adb",
-};
-static char *usb_functions_all[] = {
-#ifdef CONFIG_USB_ANDROID_RNDIS
-	"rndis",
-#endif
-#ifdef CONFIG_USB_ACCESSORY
-	"accessory",
-#endif
-#ifdef CONFIG_USB_ANDROID_MASS_STORAGE
-	"usb_mass_storage",
-#endif
-#ifdef CONFIG_USB_ANDROID_ADB
-	"adb",
-#endif
-#ifdef CONFIG_USB_ANDROID_MTP
-    "mtp",
-#endif
-#ifdef CONFIG_USB_ANDROID_ACM
-    "acm",
-#endif
-};
-static struct android_usb_product usb_products[] = {
-	{
-		.product_id	= S3C_UMS_PRODUCT_ID,
-		.num_functions	= ARRAY_SIZE(usb_functions_ums),
-		.functions	= usb_functions_ums,
-	},
-	{
-		.product_id	= S3C_UMS_ADB_PRODUCT_ID,
-		.num_functions	= ARRAY_SIZE(usb_functions_ums_adb),
-		.functions	= usb_functions_ums_adb,
-	},
-	{
-		.product_id	= S3C_RNDIS_PRODUCT_ID,
-		.num_functions	= ARRAY_SIZE(usb_functions_rndis),
-		.functions	= usb_functions_rndis,
-	},
-	{
-		.product_id	= S3C_RNDIS_ADB_PRODUCT_ID,
-		.num_functions	= ARRAY_SIZE(usb_functions_rndis_adb),
-		.functions	= usb_functions_rndis_adb,
-	},
-	{
-		.vendor_id	= USB_ACCESSORY_VENDOR_ID,
-		.product_id	= USB_ACCESSORY_PRODUCT_ID,
-		.num_functions	= ARRAY_SIZE(usb_functions_accessory),
-		.functions	= usb_functions_accessory,
-	},
-	{
-		.vendor_id	= USB_ACCESSORY_VENDOR_ID,
-		.product_id	= USB_ACCESSORY_ADB_PRODUCT_ID,
-		.num_functions	= ARRAY_SIZE(usb_functions_accessory_adb),
-		.functions	= usb_functions_accessory_adb,
-	},
-};
-
-static char device_serial[MAX_USB_SERIAL_NUM] = "0123456789ABCDEF";
-/* standard android USB platform data */
-
-/* Information should be changed as real product for commercial release */
-static struct android_usb_platform_data android_usb_pdata = {
-	.vendor_id		= S3C_VENDOR_ID,
-	.product_id		= S3C_UMS_PRODUCT_ID,
-	.manufacturer_name	= "Samsung",
-#if defined(CONFIG_SAMSUNG_GALAXYS) || defined(CONFIG_SAMSUNG_GALAXYSB)
-	.product_name		= "Galaxy S",
-#elif defined(CONFIG_SAMSUNG_CAPTIVATE)
-	.product_name		= "Captivate",
-#elif defined(CONFIG_SAMSUNG_VIBRANT)
-	.product_name		= "Vibrant",
-#elif defined(CONFIG_SAMSUNG_FASCINATE)
-	.product_name		= "Fascinate",
-#else
-	.product_name		= "Nexus S",
-#endif
-	.serial_number		= device_serial,
-	.num_products		= ARRAY_SIZE(usb_products),
-	.products		= usb_products,
-	.num_functions		= ARRAY_SIZE(usb_functions_all),
-	.functions		= usb_functions_all,
-};
-
-static struct usb_ether_platform_data rndis_pdata = {
-	/* ethaddr is filled by board_serialno_setup */
-	.vendorID	= 0x18d1,
-	.vendorDescr	= "Samsung",
-};
-
-struct platform_device s3c_device_rndis = {
-	.name	= "rndis",
-	.id	= -1,
-	.dev	= {
-		.platform_data = &rndis_pdata,
-	},
-};
-
+// Ugly hack to inject device serial into /proc/cmdline
 void __init s3c_usb_set_serial(void)
 {
-	int i;
-	char *src;
+	char *new_command_line;
+	int size;
 
-	sprintf(device_serial, "%08X%08X", system_serial_high,
-			system_serial_low);
-
-	/* create a fake MAC address from our serial number.
-	 * first byte is 0x02 to signify locally administered.
-	 */
-	src = device_serial;
-	rndis_pdata.ethaddr[0] = 0x02;
-	for (i = 0; *src; i++) {
-		/* XOR the USB serial across the remaining bytes */
-		rndis_pdata.ethaddr[i % (ETH_ALEN - 1) + 1] ^= *src++;
-	}
+	size = strlen(boot_command_line);
+	new_command_line = kmalloc(size + 40, GFP_KERNEL);
+	strcpy(new_command_line, saved_command_line);
+	sprintf(new_command_line + size, " androidboot.serialno=%08X%08X",
+			system_serial_high, system_serial_low);
+	saved_command_line = new_command_line;
 }
-
-struct platform_device s3c_device_android_usb = {
-	.name	= "android_usb",
-	.id	= -1,
-	.dev	= {
-		.platform_data	= &android_usb_pdata,
-	},
-};
-
-
-
-static struct usb_mass_storage_platform_data ums_pdata = {
-	.vendor			= "Android",
-	.product		= "UMS Composite",
-	.release		= 1,
-#if defined(CONFIG_MACH_ARIES) && !defined(CONFIG_SAMSUNG_FASCINATE)
-	.nluns			= 2,
-#else
-	.nluns			= 1,
-#endif
-};
-
-
-
-struct platform_device s3c_device_usb_mass_storage = {
-	.name	= "usb_mass_storage",
-	.id	= -1,
-	.dev	= {
-		.platform_data = &ums_pdata,
-	},
-};
 
 /* RTC */
 static struct resource s5p_rtc_resource[] = {

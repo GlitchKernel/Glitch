@@ -22,7 +22,7 @@ setup ()
         CCACHE=""
     fi
 
-    CROSS_PREFIX="$ANDROID_TOOLCHAIN/arm-eabi-"
+    CROSS_PREFIX="$ANDROID_BUILD_TOP/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-"
 }
 
 build ()
