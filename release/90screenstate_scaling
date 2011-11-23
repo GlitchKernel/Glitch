@@ -27,72 +27,10 @@ else
     SLEEP_GOVERNOR=`cat ${GLITCH_DIR}/sleep_governor`
 fi
 
-# use the one voltage control has specified
-# assumes 1. we're awake at start, and 2. that VC has set the governor according to user wishes.
-# EDIT: after some testing, it turns out these assumptions are correct, so this works.
-AWAKE_GOVERNOR=`cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`
-
+CPUFREQ_PATH=/sys/devices/system/cpu/cpu0/cpufreq
 
 (while [ $SCREENSTATE_SCALING_ACTIVE = "active" ]
 do
-    # the "cat" call blocks on these files if the device is not in the state being checked for
-    # meaning execution will wait here until the phone wakes up. Neat.
-    AWAKE=`cat /sys/power/wait_for_fb_wake`
-    
-    if [ $AWAKE = "awake" ]; then
-	echo $AWAKE_GOVERNOR > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-
-	# adjust some stuff based on what gov we're using
-	case "$AWAKE_GOVERNOR" in
-
-	# =========
-	# Smartass settings (restore defaults while awake)
-	# =========
-	'smartass')
-		# default = 70
-		echo "70" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
-		
-		# default = 35
-		echo "35" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
-		
-		
-		# these are the defaults
-		echo "800000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
-		echo "400000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/sleep_max_freq
-	;;
-
-	# =========
-	# Ondemand settings [restore defaults while awake]
-	# =========
-	'ondemand')
-	
-		# default value = 55
-		echo "55" > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
-		
-		# default value = 40000
-		echo "40000" > /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate
-	;;
-
-	# =========
-	# Conservative settings [SavagedZen (which is smartass-like) governor-like] (conservative AWAKE_GOVERNOR)
-	# =========
-	'conservative')
-		# default = 80
-		echo "75" > /sys/devices/system/cpu/cpufreq/conservative/up_threshold
-		
-		# default = 20
-		echo "30" > /sys/devices/system/cpu/cpufreq/conservative/down_threshold
-		
-		# default = 5
-		echo "50" > /sys/devices/system/cpu/cpufreq/conservative/freq_step
-		
-		# default = 78124
-		echo "80000" > /sys/devices/system/cpu/cpu0/cpufreq/conservative/sampling_rate
-	;;
-	esac
-
-AWAKE=
-    fi
 
     # the "cat" call blocks on these files if the device is not in the state being checked for
     # meaning execution will wait here until the phone goes to sleep. Neat.
@@ -100,77 +38,162 @@ AWAKE=
     
     if [ $SLEEPING = "sleeping" ]; then
     
-	# save the current awake gov for restoration later - someone may have changed it
-	# we can do this since coming into this if statement is edge-sensitive, i/e: it
-	# only happens when the state initially transitions to "sleeping"
-	AWAKE_GOVERNOR=`cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`
+        # save the current awake gov for restoration later - someone may have changed it
+        # we can do this since coming into this if statement is edge-sensitive, i/e: it
+        # only happens when the state initially transitions to "sleeping"
+        AWAKE_GOVERNOR=`cat ${CPUFREQ_PATH}/scaling_governor`
+        
+        if [ ! $AWAKE_GOVERNOR = $SLEEP_GOVERNOR ]; then
 
-        echo $SLEEP_GOVERNOR > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+          echo $SLEEP_GOVERNOR > ${CPUFREQ_PATH}/scaling_governor
+        
+          # gives the system time to apply our setting by 
+          # creating subdirectories if needed, etc
+          sleep 1
+        fi
 
-	case "$SLEEP_GOVERNOR" in
+        case "$SLEEP_GOVERNOR" in
 
-		# =========
-		# Conservative settings [very conservative](conservative SLEEP_GOVERNOR)
-		# =========
-		'conservative')
-			# default = 80
-			echo "90" > /sys/devices/system/cpu/cpufreq/conservative/up_threshold
-			
-			# default = 20
-	        	echo "50" > /sys/devices/system/cpu/cpufreq/conservative/down_threshold
-			
-			# default = 5
-			echo "10" > /sys/devices/system/cpu/cpufreq/conservative/freq_step
-			
-			# default = 78124
-			echo "500000" > /sys/devices/system/cpu/cpu0/cpufreq/conservative/sampling_rate
-		;;
+          # =========
+          # Conservative settings [very conservative](conservative SLEEP_GOVERNOR)
+          # =========
+          'conservative')
+            # default = 80
+            echo "90" > ${CPUFREQ_PATH}/conservative/up_threshold
+            
+            # default = 20
+                  echo "50" > ${CPUFREQ_PATH}/conservative/down_threshold
+            
+            # default = 5
+            echo "10" > ${CPUFREQ_PATH}/conservative/freq_step
+            
+            # default = 78124
+            echo "500000" > ${CPUFREQ_PATH}/conservative/sampling_rate
+          ;;
 
 
-		# =========
-		# Smartass settings (slightly more battery friendly than Glitch Kernel defaults - peformance penalty unclear)
-		# =========
-		'smartass')
-			# default = 70
-			echo "50" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/max_cpu_load
-		
-			# default = 35
-			echo "30" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/min_cpu_load
-		
-		
-			# these are the defaults
-			echo "800000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/up_min_freq
-			echo "400000" > /sys/devices/system/cpu/cpu0/cpufreq/smartass/sleep_max_freq
-		;;
+          # =========
+          # Smartass settings (slightly more battery friendly than Glitch Kernel defaults - peformance penalty unclear)
+          # =========
+          'smartass')
+            # default = 70
+            echo "50" > ${CPUFREQ_PATH}/smartass/max_cpu_load
+          
+            # default = 35
+            echo "30" > ${CPUFREQ_PATH}/smartass/min_cpu_load
+          
+          
+            # these are the defaults
+            echo "800000" > ${CPUFREQ_PATH}/smartass/up_min_freq
+            echo "400000" > ${CPUFREQ_PATH}/smartass/sleep_max_freq
+          ;;
 
-		# =========
-		# Ondemand settings [more aggressive power savings vs. standard ondemand]
-		# also less responsive, but we don't need responsiveness when the screen is
-		# off.
-		# =========
-		'ondemand')
-	
-			# default value = 55
-			echo "98" > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
-		
-			# default value = 40000
-			echo "300000" > /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate
-		;;
+          # =========
+          # Ondemand settings [more aggressive power savings vs. standard ondemand]
+          # also less responsive, but we don't need responsiveness when the screen is
+          # off.
+          # =========
+          'ondemand')
+        
+            # default value = 55
+            echo "98" > ${CPUFREQ_PATH}/ondemand/up_threshold
+          
+            # default value = 40000
+            echo "300000" > ${CPUFREQ_PATH}/ondemand/sampling_rate
+          ;;
 
-		#==========
-		# Powersave settings - nothing here is relevant since powersave sticks to
-		# the lowest allowable freq. Note that this gov will
-		# probably be WORSE on power than conservative.
-		#==========
-		'powersave')
-			# nothing to do here
-		;;
+          # since lazy is on-demand-ish, lets see if the same sleepy settings will save
+          # us some battery while sleeping.
+          'lazy')
+            echo "98" > ${CPUFREQ_PATH}/lazy/up_threshold
+            echo "300000" > ${CPUFREQ_PATH}/lazy/sampling_rate
+          ;;
+             
+          #==========
+          # Powersave settings - nothing here is relevant since powersave sticks to
+          # the lowest allowable freq. Note that this gov will
+          # probably be WORSE on power than conservative.
+          #==========
+          'powersave')
+            # nothing to do here
+          ;;
 
-	esac
+        esac
 
-	# Finishing.
+        # Finishing.
 
-	SLEEPING=
+        SLEEPING=
+    fi
+
+
+    # the "cat" call blocks on these files if the device is not in the state being checked for
+    # meaning execution will wait here until the phone wakes up. Neat.
+    AWAKE=`cat /sys/power/wait_for_fb_wake`
+    
+    if [ $AWAKE = "awake" ]; then
+        CURRENT_GOV=`cat ${CPUFREQ_PATH}/scaling_governor`
+        
+        if [ ! $CURRENT_GOV = $AWAKE_GOVERNOR ]; then
+          echo $AWAKE_GOVERNOR > ${CPUFREQ_PATH}/scaling_governor        
+          sleep 1
+        fi
+
+        # adjust some stuff based on what gov we're using
+        case "$AWAKE_GOVERNOR" in
+
+          # =========
+          # Smartass settings (restore defaults while awake)
+          # =========
+          'smartass')
+              # default = 70
+              echo "70" > ${CPUFREQ_PATH}/smartass/max_cpu_load
+              
+              # default = 35
+              echo "35" > ${CPUFREQ_PATH}/smartass/min_cpu_load
+              
+              
+              # these are the defaults
+              echo "800000" > ${CPUFREQ_PATH}/smartass/up_min_freq
+              echo "400000" > ${CPUFREQ_PATH}/smartass/sleep_max_freq
+          ;;
+
+          # =========
+          # Ondemand settings [restore defaults while awake]
+          # =========
+          'ondemand')          
+              # default value = 55
+              echo "55" > ${CPUFREQ_PATH}/ondemand/up_threshold
+              
+              # default value = 40000
+              echo "40000" > ${CPUFREQ_PATH}/ondemand/sampling_rate
+          ;;
+
+          'lazy')
+            # default value is 90
+            echo "90" > ${CPUFREQ_PATH}/lazy/up_threshold
+            # default value 10000
+            echo "10000" > ${CPUFREQ_PATH}/lazy/sampling_rate
+          ;;
+          
+          # =========
+          # Conservative settings [SavagedZen (which is smartass-like) governor-like] (conservative AWAKE_GOVERNOR)
+          # =========
+          'conservative')
+              # default = 80
+              echo "75" > ${CPUFREQ_PATH}/conservative/up_threshold
+              
+              # default = 20
+              echo "30" > ${CPUFREQ_PATH}/conservative/down_threshold
+              
+              # default = 5
+              echo "50" > ${CPUFREQ_PATH}/conservative/freq_step
+              
+              # default = 78124
+              echo "80000" > ${CPUFREQ_PATH}/conservative/sampling_rate
+          ;;
+        esac
+
+      AWAKE=
     fi
 
     SCREENSTATE_SCALING_ACTIVE=`cat ${GLITCH_DIR}/screenstate_scaling`
