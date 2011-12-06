@@ -218,6 +218,8 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 		}
 	}
 
+/* glitch's way */
+#if 0
 	if (devdata->has_legacy_keycode) {
 		scancode = (data & SCANCODE_MASK) - 1;
 		if (scancode < 0 || scancode >= devdata->pdata->keycode_cnt) {
@@ -242,6 +244,41 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 	}
 
 	input_sync(devdata->input_dev);
+#endif
+
+/* samsung's way */
+	if (data & UPDOWN_EVENT_MASK) {
+		scancode = (data & SCANCODE_MASK) - 1;
+		input_report_key(devdata->input_dev,
+			devdata->pdata->keycode[scancode], 0);
+		input_sync(devdata->input_dev);
+		dev_dbg(&devdata->client->dev, "[release] cypress touch key : %d \n",
+			devdata->pdata->keycode[scancode]);
+	} else {
+		if (!touch_state_val) {
+			if (devdata->has_legacy_keycode) {
+				scancode = (data & SCANCODE_MASK) - 1;
+				if (scancode < 0 || scancode >= devdata->pdata->keycode_cnt) {
+					dev_err(&devdata->client->dev, "%s: scancode is out of "
+						"range\n", __func__);
+					goto err;
+				}
+				if (scancode == 1)
+					TSP_forced_release();
+				input_report_key(devdata->input_dev,
+					devdata->pdata->keycode[scancode], 1);
+				dev_dbg(&devdata->client->dev, "[press] cypress touch key : %d \n",
+					devdata->pdata->keycode[scancode]);
+			} else {
+				for (i = 0; i < devdata->pdata->keycode_cnt; i++)
+				input_report_key(devdata->input_dev,
+					devdata->pdata->keycode[i],
+					!!(data & (1U << i)));
+			}
+			input_sync(devdata->input_dev);
+		}
+	}
+	
 	mod_timer(&bl_timer, jiffies + msecs_to_jiffies(BACKLIGHT_TIMEOUT));
 err:
 	return IRQ_HANDLED;
