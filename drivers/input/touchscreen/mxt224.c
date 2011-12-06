@@ -80,6 +80,8 @@ struct mxt224_data {
 	struct finger_info fingers[];
 };
 
+static struct mxt224_data* _my_dev_data = NULL;
+
 static int read_mem(struct mxt224_data *data, u16 reg, u8 len, u8 *buf)
 {
 	int ret;
@@ -332,6 +334,10 @@ void touchpad_forced_release( void )
 {
    int i;
    int tmp_val = 0;
+   struct mxt224_data *data = _my_dev_data;
+   
+   if ( data == NULL )
+     return;
 
 	for (i = 0; i < data->num_fingers; i++) {
 		if (data->fingers[i].z == -1)
@@ -521,6 +527,7 @@ static int __devinit mxt224_probe(struct i2c_client *client,
 
 	data->client = client;
 	i2c_set_clientdata(client, data);
+	_my_dev_data = data;
 
 	input_dev = input_allocate_device();
 	if (!input_dev) {
