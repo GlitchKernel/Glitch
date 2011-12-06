@@ -328,6 +328,40 @@ static void report_input_data(struct mxt224_data *data)
 	input_sync(data->input_dev);
 }
 
+void touchpad_forced_release( void )
+{
+   int i;
+   int tmp_val = 0;
+
+	for (i = 0; i < data->num_fingers; i++) {
+		if (data->fingers[i].z == -1)
+			continue;
+
+    // force release
+    data->fingers[i].z = 0;
+
+		input_report_abs(data->input_dev, ABS_MT_POSITION_X,
+					data->fingers[i].x);
+		input_report_abs(data->input_dev, ABS_MT_POSITION_Y,
+					data->fingers[i].y);
+		input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR,
+					data->fingers[i].z);
+		input_report_abs(data->input_dev, ABS_MT_WIDTH_MAJOR,
+					data->fingers[i].w);
+		input_report_abs(data->input_dev, ABS_MT_TRACKING_ID, i);
+		input_mt_sync(data->input_dev);
+
+		if (data->fingers[i].z == 0)
+			data->fingers[i].z = -1;
+			
+		++tmp_val;
+	}
+
+  if ( tmp_val )
+	input_sync(data->input_dev);
+}
+EXPORT_SYMBOL(touchpad_forced_release);
+
 static irqreturn_t mxt224_irq_thread(int irq, void *ptr)
 {
 	struct mxt224_data *data = ptr;

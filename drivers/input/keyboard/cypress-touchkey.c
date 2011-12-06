@@ -199,6 +199,7 @@ out:
 
 // Accidental touch key prevention (see mxt224.c)
 extern unsigned int touch_state_val;
+extern void touchpad_forced_release(void);
 
 static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 {
@@ -264,7 +265,7 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 					goto err;
 				}
 				if (scancode == 1)
-					TSP_forced_release();
+					touchpad_forced_release();
 				input_report_key(devdata->input_dev,
 					devdata->pdata->keycode[scancode], 1);
 				dev_dbg(&devdata->client->dev, "[press] cypress touch key : %d \n",
