@@ -422,7 +422,7 @@ static irqreturn_t mxt224_irq_thread(int irq, void *ptr)
 
 static int mxt224_internal_suspend(struct mxt224_data *data)
 {
-	static const u8 sleep_power_cfg[3];
+	static const u8 sleep_power_cfg[3] = {0,0,0};
 	int ret;
 	int i;
 
