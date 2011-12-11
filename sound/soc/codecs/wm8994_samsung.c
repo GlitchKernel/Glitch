@@ -3112,7 +3112,7 @@ static int wm8994_init(struct wm8994_priv *wm8994_private,
 	codec->write = wm8994_write;
 	codec->readable_register = wm8994_readable_register;
 	codec->reg_cache_size = WM8994_IRQ_POLARITY; /* Skip write sequencer */
-	codec->set_bias_level = NULL;
+	codec->set_bias_level = wm8994_set_bias_level;
 	codec->dai = &wm8994_dai;
 	codec->num_dai = 1;
 	wm8994->universal_playback_path = universal_wm8994_playback_paths;
