@@ -3445,10 +3445,10 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.pud	= S3C_GPIO_PULL_DOWN,
 		.drv	= S3C_GPIO_DRVSTR_1X,
 #else
-    .num	= S5PV210_GPH1(0), 
-		.cfg	= S3C_GPIO_INPUT, 
-		.val	= S3C_GPIO_SETPIN_NONE, 
-		.pud	= S3C_GPIO_PULL_DOWN, 
+		.num	= S5PV210_GPH1(0),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= S3C_GPIO_SETPIN_NONE,
+		.pud	= S3C_GPIO_PULL_DOWN,
 		.drv	= S3C_GPIO_DRVSTR_1X,
 #endif
 	}, {
