@@ -3444,12 +3444,6 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.val	= S3C_GPIO_SETPIN_NONE,
 		.pud	= S3C_GPIO_PULL_DOWN,
 		.drv	= S3C_GPIO_DRVSTR_1X,
-#elif defined (CONFIG_SAMSUNG_FASCINATE)
-		.num	= S5PV210_GPH1(0), // PDA_ACTIVE on fascinate ?
-		.cfg  = S3C_GPIO_OUTPUT, 
-		.val  = S3C_GPIO_SETPIN_ZERO,
-		.pud  = S3C_GPIO_PULL_NONE, 
-		.drv	= S3C_GPIO_DRVSTR_1X,
 #else
     .num	= S5PV210_GPH1(0), 
 		.cfg	= S3C_GPIO_INPUT, 
@@ -4680,10 +4674,8 @@ void s3c_config_sleep_gpio(void)
 	s3c_gpio_setpull(S5PV210_GPH0(5), S3C_GPIO_PULL_NONE);
 	gpio_set_value(S5PV210_GPH0(5), 0);
 
-#ifndef CONFIG_SAMSUNG_FASCINATE
 	s3c_gpio_cfgpin(S5PV210_GPH1(0), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(0), S3C_GPIO_PULL_DOWN);
-#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH1(1), S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(1), S3C_GPIO_PULL_NONE);
