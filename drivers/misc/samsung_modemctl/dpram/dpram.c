@@ -56,7 +56,8 @@
 #define GPIO_PHONE_RST_N					S5PV210_GPH3(7)
 #define GPIO_PHONE_RST_N_AF				0x1
 
-#define GPIO_PDA_ACTIVE				S5PV210_GPH1(0)
+//#define GPIO_PDA_ACTIVE				S5PV210_GPH1(0)
+#define GPIO_PDA_ACTIVE         S5PV210_MP03(3)
 #define GPIO_PDA_ACTIVE_AF			0x1
 
 #if 0
@@ -2757,6 +2758,7 @@ static int __devinit dpram_probe(struct platform_device *dev)
 
 	/* @LDK@ check out missing interrupt from the phone */
 	//check_miss_interrupt();
+	gpio_set_value(GPIO_PDA_ACTIVE, GPIO_LEVEL_HIGH);
 	
 	return 0;
 }
