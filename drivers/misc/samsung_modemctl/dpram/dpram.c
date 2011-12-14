@@ -56,8 +56,7 @@
 #define GPIO_PHONE_RST_N					S5PV210_GPH3(7)
 #define GPIO_PHONE_RST_N_AF				0x1
 
-//#define GPIO_PDA_ACTIVE				S5PV210_GPH1(0)
-#define GPIO_PDA_ACTIVE         S5PV210_MP03(3)
+#define GPIO_PDA_ACTIVE				S5PV210_GPH1(0)
 #define GPIO_PDA_ACTIVE_AF			0x1
 
 #if 0
