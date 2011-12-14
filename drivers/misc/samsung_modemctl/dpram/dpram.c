@@ -2316,7 +2316,7 @@ static int pdp_mux(struct pdp_info *dev, const void *data, size_t len   )
 		ret = dpram_write(&dpram_table[RAW_INDEX], tx_buf, hdr->len + 2);
 
 		if (ret < 0) {
-			printk(KERN_ERR "write_to_dpram() failed: %d\n", ret);
+			printk(KERN_ERR "write_to_dpram() failed: %d for device %d\n", ret, dev->id);
 			return ret;
 		}
 		buf += nbytes;
