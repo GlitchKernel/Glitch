@@ -27,7 +27,12 @@ else
     SLEEP_GOVERNOR=`cat ${GLITCH_DIR}/sleep_governor`
 fi
 
-CPUFREQ_PATH=/sys/devices/system/cpu/cpu0/cpufreq
+# use this path to set the governor itself.
+GOV_PATH=/sys/devices/system/cpu/cpu0/cpufreq
+
+# according to dmesg output, "per core conservative sysfs interface is deprecated"
+# so when we're setting governor-specific options, we need to use this path.
+CPUFREQ_PATH=/sys/devices/system/cpu/cpufreq
 
 (while [ $SCREENSTATE_SCALING_ACTIVE = "active" ]
 do
@@ -41,11 +46,11 @@ do
         # save the current awake gov for restoration later - someone may have changed it
         # we can do this since coming into this if statement is edge-sensitive, i/e: it
         # only happens when the state initially transitions to "sleeping"
-        AWAKE_GOVERNOR=`cat ${CPUFREQ_PATH}/scaling_governor`
+        AWAKE_GOVERNOR=`cat ${GOV_PATH}/scaling_governor`
         
         if [ ! $AWAKE_GOVERNOR = $SLEEP_GOVERNOR ]; then
 
-          echo $SLEEP_GOVERNOR > ${CPUFREQ_PATH}/scaling_governor
+          echo $SLEEP_GOVERNOR > ${GOV_PATH}/scaling_governor
         
           # gives the system time to apply our setting by 
           # creating subdirectories if needed, etc
@@ -131,10 +136,10 @@ do
     AWAKE=`cat /sys/power/wait_for_fb_wake`
     
     if [ $AWAKE = "awake" ]; then
-        CURRENT_GOV=`cat ${CPUFREQ_PATH}/scaling_governor`
+        CURRENT_GOV=`cat ${GOV_PATH}/scaling_governor`
         
         if [ ! $CURRENT_GOV = $AWAKE_GOVERNOR ]; then
-          echo $AWAKE_GOVERNOR > ${CPUFREQ_PATH}/scaling_governor        
+          echo $AWAKE_GOVERNOR > ${GOV_PATH}/scaling_governor        
           sleep 1
         fi
 
