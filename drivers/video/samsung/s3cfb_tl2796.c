@@ -852,7 +852,7 @@ static ssize_t gamma_table_store(struct device *dev, struct device_attribute *at
 		update_brightness(lcd_);
 	}
 	else
-		printk("Voodoo color: gamma table malformed: ignored\n");
+		printk("Voodoo color: gamma table malformed (point == %d, size == %d: ignored\n", point, lcd_->data->gamma_table_size);
 
 	return size;
 }
