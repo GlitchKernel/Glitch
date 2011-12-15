@@ -840,7 +840,7 @@ static ssize_t gamma_table_store(struct device *dev, struct device_attribute *at
 		point++;
 	}
 
-	if (point == lcd_->data->gamma_table_size)
+	if (point <= lcd_->data->gamma_table_size)
 	{
 		printk("Voodoo color: updating gamma table (%d points)\n", point);
 
