@@ -849,7 +849,7 @@ void request_phone_reset()
 
 static int onedram_get_semaphore(const char *func)
 {
-	int i, req_try = 100;
+	int i, req_try = 512; // was 100
 
 	const u16 cmd = INT_COMMAND(INT_MASK_CMD_SMP_REQ);
 	
@@ -864,7 +864,7 @@ static int onedram_get_semaphore(const char *func)
 			unreceived_semaphore = 0;
 			return 1;
 		}
-		if (i == 0)
+		if ((i & 0xff) == 0)  // was i == 0
 			*onedram_mailboxBA = cmd;
 		udelay(40);
 	}

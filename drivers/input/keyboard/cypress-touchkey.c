@@ -170,7 +170,7 @@ static int recovery_routine(struct cypress_touchkey_devdata *devdata)
 {
 	int ret = -1;
 	int retry = 10;
-	u8 data;
+	u8 data = 0;
 	int irq_eint;
 
 	if (unlikely(devdata->is_dead)) {
@@ -210,7 +210,7 @@ extern void touchpad_forced_release(void);
 
 static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 {
-	u8 data;
+	u8 data = 0xff;
 	int i;
 	int ret;
 	int scancode;
@@ -242,8 +242,14 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 				if (scancode < 0 || scancode >= devdata->pdata->keycode_cnt) {
 					dev_err(&devdata->client->dev, "%s: scancode is out of "
 						"range\n", __func__);
-					goto err;
-				}
+						ret = recovery_routine(devdata);
+            if (ret)
+            {
+              dev_err(&devdata->client->dev, "%s: touchkey recovery "
+                  "failed!\n", __func__);
+                  goto err;
+            }
+        }
 				if (scancode == 1)
 					touchpad_forced_release();
 				input_report_key(devdata->input_dev,
