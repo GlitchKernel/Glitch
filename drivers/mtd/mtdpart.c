@@ -264,14 +264,6 @@ static int part_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 	return part->master->unlock(part->master, ofs + part->offset, len);
 }
 
-static int part_is_locked(struct mtd_info *mtd, loff_t ofs, uint64_t len)
-{
-	struct mtd_part *part = PART(mtd);
-	if ((len + ofs) > mtd->size)
-		return -EINVAL;
-	return part->master->is_locked(part->master, ofs + part->offset, len);
-}
-
 static void part_sync(struct mtd_info *mtd)
 {
 	struct mtd_part *part = PART(mtd);
@@ -410,8 +402,6 @@ static struct mtd_part *add_one_partition(struct mtd_info *master,
 		slave->mtd.lock = part_lock;
 	if (master->unlock)
 		slave->mtd.unlock = part_unlock;
-	if (master->is_locked)
-		slave->mtd.is_locked = part_is_locked;
 	if (master->block_isbad)
 		slave->mtd.block_isbad = part_block_isbad;
 	if (master->block_markbad)

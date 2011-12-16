@@ -517,15 +517,15 @@ PVRSRVAllocDeviceMemBW(IMG_UINT32 ui32BridgeID,
 		return 0;
 	}
 
-
+	
 
 	bUseShareMemWorkaround = ((psAllocDeviceMemIN->ui32Attribs & PVRSRV_MEM_XPROC) != 0) ? IMG_TRUE : IMG_FALSE;
-	ui32ShareIndex = 7654321;
+	ui32ShareIndex = 7654321; 
 
 	if (bUseShareMemWorkaround)
 	{
-
-
+		
+		
 
 		psAllocDeviceMemOUT->eError =
 			BM_XProcWorkaroundFindNewBufferAndSetShareIndex(&ui32ShareIndex);
@@ -535,7 +535,7 @@ PVRSRVAllocDeviceMemBW(IMG_UINT32 ui32BridgeID,
 		}
 	}
 
-
+	
 	if(psAllocDeviceMemIN->pvPrivData)
 	{
 		if(!OSAccessOK(PVR_VERIFY_READ,
@@ -597,7 +597,7 @@ PVRSRVAllocDeviceMemBW(IMG_UINT32 ui32BridgeID,
 	psAllocDeviceMemOUT->sClientMemInfo.ui32Flags = psMemInfo->ui32Flags;
 	psAllocDeviceMemOUT->sClientMemInfo.uAllocSize = psMemInfo->uAllocSize;
 #if defined (SUPPORT_SID_INTERFACE)
-
+	
 #else
 	psAllocDeviceMemOUT->sClientMemInfo.hMappingInfo = psMemInfo->sMemBlk.hOSMemHandle;
 #endif
@@ -862,7 +862,7 @@ PVRSRVMapDeviceMemoryBW(IMG_UINT32 ui32BridgeID,
 	{
 		PVR_DPF((PVR_DBG_MESSAGE, "using the mem wrap workaround."));
 
-
+		
 
 
 
@@ -888,7 +888,7 @@ PVRSRVMapDeviceMemoryBW(IMG_UINT32 ui32BridgeID,
 								   0,
 								   &psDstKernelMemInfo,
 								   "" );
-
+		
 
 		BM_XProcWorkaroundUnsetShareIndex(psSrcKernelMemInfo->sShareMemWorkaround.ui32ShareIndex);
 		if(psMapDevMemOUT->eError != PVRSRV_OK)
@@ -906,7 +906,7 @@ PVRSRVMapDeviceMemoryBW(IMG_UINT32 ui32BridgeID,
 	}
 	else
 	{
-
+		
 		psMapDevMemOUT->eError = PVRSRVMapDeviceMemoryKM(psPerProc,
 														 psSrcKernelMemInfo,
 														 hDstDevMemHeap,
@@ -917,7 +917,7 @@ PVRSRVMapDeviceMemoryBW(IMG_UINT32 ui32BridgeID,
 		}
 	}
 
-
+	
 	psDstKernelMemInfo->sShareMemWorkaround = psSrcKernelMemInfo->sShareMemWorkaround;
 
 	OSMemSet(&psMapDevMemOUT->sDstClientMemInfo,

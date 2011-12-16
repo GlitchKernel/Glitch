@@ -315,7 +315,7 @@ void mmc_set_data_timeout(struct mmc_data *data, const struct mmc_card *card)
 			 * The limit is really 250 ms, but that is
 			 * insufficient for some crappy cards.
 			 */
-			limit_us = 800000;
+			limit_us = 300000;
 		else
 			limit_us = 100000;
 
@@ -1461,7 +1461,9 @@ int mmc_pm_notify(struct notifier_block *notify_block,
 		}
 		host->rescan_disable = 0;
 		spin_unlock_irqrestore(&host->lock, flags);
+#ifndef CONFIG_SAMSUNG_FASCINATE
 		if (!host->card || host->card->type != MMC_TYPE_SDIO)
+#endif
 			mmc_detect_change(host, 0);
 
 	}

@@ -123,7 +123,7 @@
 
 static inline int rt_policy(int policy)
 {
-	if (policy == SCHED_FIFO || policy == SCHED_RR)
+	if (unlikely(policy == SCHED_FIFO || policy == SCHED_RR))
 		return 1;
 	return 0;
 }
@@ -865,26 +865,6 @@ static inline u64 global_rt_runtime(void)
 static inline int task_current(struct rq *rq, struct task_struct *p)
 {
 	return rq->curr == p;
-}
-
-/*
- * Look for any tasks *anywhere* that are running nice 0 or better. We do
- * this lockless for overhead reasons since the occasional wrong result
- * is harmless.
- */
-int above_background_load(void)
-{
-        struct task_struct *cpu_curr;
-        unsigned long cpu;
-
-        for_each_online_cpu(cpu) {
-                cpu_curr = cpu_rq(cpu)->curr;
-                if (unlikely(!cpu_curr))
-                        continue;
-                if (PRIO_TO_NICE(cpu_curr->static_prio) < 1)
-                        return 1;
-        }
-        return 0;
 }
 
 #ifndef __ARCH_WANT_UNLOCKED_CTXSW
@@ -2495,7 +2475,7 @@ out_running:
 	if (p->sched_class->task_woken)
 		p->sched_class->task_woken(rq, p);
 
-	if (rq->idle_stamp) {
+	if (unlikely(rq->idle_stamp)) {
 		u64 delta = rq->clock - rq->idle_stamp;
 		u64 max = 2*sysctl_sched_migration_cost;
 
@@ -2588,9 +2568,8 @@ void sched_fork(struct task_struct *p, int clone_flags)
 		if (PRIO_TO_NICE(p->static_prio) < 0) {
 			p->static_prio = NICE_TO_PRIO(0);
 			p->normal_prio = p->static_prio;
+			set_load_weight(p);
 		}
-
-		set_load_weight(p);
 
 		/*
 		 * We don't need the reset flag anymore after the fork. It has
@@ -8366,11 +8345,6 @@ void sched_move_task(struct task_struct *tsk)
 		dequeue_task(rq, tsk, 0);
 	if (unlikely(running))
 		tsk->sched_class->put_prev_task(rq, tsk);
-
-#ifdef CONFIG_FAIR_GROUP_SCHED
-	if (tsk->sched_class->prep_move_group)
-		tsk->sched_class->prep_move_group(tsk, on_rq);
-#endif
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	if (tsk->sched_class->task_move_group)

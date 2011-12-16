@@ -98,9 +98,14 @@ static int start_this_handle(journal_t *journal, handle_t *handle)
 	}
 
 alloc_transaction:
-	if (!journal->j_running_transaction)
-		new_transaction = kzalloc_nofail(sizeof(*new_transaction),
-						GFP_NOFS);
+	if (!journal->j_running_transaction) {
+		new_transaction = kzalloc(sizeof(*new_transaction),
+						GFP_NOFS|__GFP_NOFAIL);
+		if (!new_transaction) {
+			ret = -ENOMEM;
+			goto out;
+		}
+	}
 
 	jbd_debug(3, "New handle %p going live.\n", handle);
 
@@ -708,7 +713,7 @@ done:
 		J_EXPECT_JH(jh, buffer_uptodate(jh2bh(jh)),
 			    "Possible IO failure.\n");
 		page = jh2bh(jh)->b_page;
-		offset = offset_in_page(jh2bh(jh)->b_data);
+		offset = ((unsigned long) jh2bh(jh)->b_data) & ~PAGE_MASK;
 		source = kmap_atomic(page, KM_USER0);
 		memcpy(jh->b_frozen_data, source+offset, jh2bh(jh)->b_size);
 		kunmap_atomic(source, KM_USER0);

@@ -16,11 +16,10 @@ static inline int drv_start(struct ieee80211_local *local)
 
 	might_sleep();
 
-	trace_drv_start(local);
 	local->started = true;
 	smp_mb();
 	ret = local->ops->start(&local->hw);
-	trace_drv_return_int(local, ret);
+	trace_drv_start(local, ret);
 	return ret;
 }
 
@@ -28,9 +27,8 @@ static inline void drv_stop(struct ieee80211_local *local)
 {
 	might_sleep();
 
-	trace_drv_stop(local);
 	local->ops->stop(&local->hw);
-	trace_drv_return_void(local);
+	trace_drv_stop(local);
 
 	/* sync away all work on the tasklet before clearing started */
 	tasklet_disable(&local->tasklet);
@@ -48,9 +46,8 @@ static inline int drv_add_interface(struct ieee80211_local *local,
 
 	might_sleep();
 
-	trace_drv_add_interface(local, vif_to_sdata(vif));
 	ret = local->ops->add_interface(&local->hw, vif);
-	trace_drv_return_int(local, ret);
+	trace_drv_add_interface(local, vif_to_sdata(vif), ret);
 	return ret;
 }
 
@@ -59,9 +56,8 @@ static inline void drv_remove_interface(struct ieee80211_local *local,
 {
 	might_sleep();
 
-	trace_drv_remove_interface(local, vif_to_sdata(vif));
 	local->ops->remove_interface(&local->hw, vif);
-	trace_drv_return_void(local);
+	trace_drv_remove_interface(local, vif_to_sdata(vif));
 }
 
 static inline int drv_config(struct ieee80211_local *local, u32 changed)
@@ -70,9 +66,8 @@ static inline int drv_config(struct ieee80211_local *local, u32 changed)
 
 	might_sleep();
 
-	trace_drv_config(local, changed);
 	ret = local->ops->config(&local->hw, changed);
-	trace_drv_return_int(local, ret);
+	trace_drv_config(local, changed, ret);
 	return ret;
 }
 
@@ -83,10 +78,9 @@ static inline void drv_bss_info_changed(struct ieee80211_local *local,
 {
 	might_sleep();
 
-	trace_drv_bss_info_changed(local, sdata, info, changed);
 	if (local->ops->bss_info_changed)
 		local->ops->bss_info_changed(&local->hw, &sdata->vif, info, changed);
-	trace_drv_return_void(local);
+	trace_drv_bss_info_changed(local, sdata, info, changed);
 }
 
 static inline u64 drv_prepare_multicast(struct ieee80211_local *local,
@@ -94,12 +88,10 @@ static inline u64 drv_prepare_multicast(struct ieee80211_local *local,
 {
 	u64 ret = 0;
 
-	trace_drv_prepare_multicast(local, mc_list->count);
-
 	if (local->ops->prepare_multicast)
 		ret = local->ops->prepare_multicast(&local->hw, mc_list);
 
-	trace_drv_return_u64(local, ret);
+	trace_drv_prepare_multicast(local, mc_list->count, ret);
 
 	return ret;
 }
@@ -111,21 +103,19 @@ static inline void drv_configure_filter(struct ieee80211_local *local,
 {
 	might_sleep();
 
-	trace_drv_configure_filter(local, changed_flags, total_flags,
-				   multicast);
 	local->ops->configure_filter(&local->hw, changed_flags, total_flags,
 				     multicast);
-	trace_drv_return_void(local);
+	trace_drv_configure_filter(local, changed_flags, total_flags,
+				   multicast);
 }
 
 static inline int drv_set_tim(struct ieee80211_local *local,
 			      struct ieee80211_sta *sta, bool set)
 {
 	int ret = 0;
-	trace_drv_set_tim(local, sta, set);
 	if (local->ops->set_tim)
 		ret = local->ops->set_tim(&local->hw, sta, set);
-	trace_drv_return_int(local, ret);
+	trace_drv_set_tim(local, sta, set, ret);
 	return ret;
 }
 
@@ -139,9 +129,8 @@ static inline int drv_set_key(struct ieee80211_local *local,
 
 	might_sleep();
 
-	trace_drv_set_key(local, cmd, sdata, sta, key);
 	ret = local->ops->set_key(&local->hw, cmd, &sdata->vif, sta, key);
-	trace_drv_return_int(local, ret);
+	trace_drv_set_key(local, cmd, sdata, sta, key, ret);
 	return ret;
 }
 
@@ -156,11 +145,10 @@ static inline void drv_update_tkip_key(struct ieee80211_local *local,
 	if (sta)
 		ista = &sta->sta;
 
-	trace_drv_update_tkip_key(local, sdata, conf, ista, iv32);
 	if (local->ops->update_tkip_key)
 		local->ops->update_tkip_key(&local->hw, &sdata->vif, conf,
 					    ista, iv32, phase1key);
-	trace_drv_return_void(local);
+	trace_drv_update_tkip_key(local, sdata, conf, ista, iv32);
 }
 
 static inline int drv_hw_scan(struct ieee80211_local *local,
@@ -171,9 +159,8 @@ static inline int drv_hw_scan(struct ieee80211_local *local,
 
 	might_sleep();
 
-	trace_drv_hw_scan(local, sdata, req);
 	ret = local->ops->hw_scan(&local->hw, &sdata->vif, req);
-	trace_drv_return_int(local, ret);
+	trace_drv_hw_scan(local, sdata, req, ret);
 	return ret;
 }
 
@@ -181,20 +168,18 @@ static inline void drv_sw_scan_start(struct ieee80211_local *local)
 {
 	might_sleep();
 
-	trace_drv_sw_scan_start(local);
 	if (local->ops->sw_scan_start)
 		local->ops->sw_scan_start(&local->hw);
-	trace_drv_return_void(local);
+	trace_drv_sw_scan_start(local);
 }
 
 static inline void drv_sw_scan_complete(struct ieee80211_local *local)
 {
 	might_sleep();
 
-	trace_drv_sw_scan_complete(local);
 	if (local->ops->sw_scan_complete)
 		local->ops->sw_scan_complete(&local->hw);
-	trace_drv_return_void(local);
+	trace_drv_sw_scan_complete(local);
 }
 
 static inline int drv_get_stats(struct ieee80211_local *local,
@@ -226,10 +211,9 @@ static inline int drv_set_rts_threshold(struct ieee80211_local *local,
 
 	might_sleep();
 
-	trace_drv_set_rts_threshold(local, value);
 	if (local->ops->set_rts_threshold)
 		ret = local->ops->set_rts_threshold(&local->hw, value);
-	trace_drv_return_int(local, ret);
+	trace_drv_set_rts_threshold(local, value, ret);
 	return ret;
 }
 
@@ -239,13 +223,12 @@ static inline int drv_set_coverage_class(struct ieee80211_local *local,
 	int ret = 0;
 	might_sleep();
 
-	trace_drv_set_coverage_class(local, value);
 	if (local->ops->set_coverage_class)
 		local->ops->set_coverage_class(&local->hw, value);
 	else
 		ret = -EOPNOTSUPP;
 
-	trace_drv_return_int(local, ret);
+	trace_drv_set_coverage_class(local, value, ret);
 	return ret;
 }
 
@@ -254,10 +237,9 @@ static inline void drv_sta_notify(struct ieee80211_local *local,
 				  enum sta_notify_cmd cmd,
 				  struct ieee80211_sta *sta)
 {
-	trace_drv_sta_notify(local, sdata, cmd, sta);
 	if (local->ops->sta_notify)
 		local->ops->sta_notify(&local->hw, &sdata->vif, cmd, sta);
-	trace_drv_return_void(local);
+	trace_drv_sta_notify(local, sdata, cmd, sta);
 }
 
 static inline int drv_sta_add(struct ieee80211_local *local,
@@ -268,11 +250,13 @@ static inline int drv_sta_add(struct ieee80211_local *local,
 
 	might_sleep();
 
-	trace_drv_sta_add(local, sdata, sta);
 	if (local->ops->sta_add)
 		ret = local->ops->sta_add(&local->hw, &sdata->vif, sta);
+	else if (local->ops->sta_notify)
+		local->ops->sta_notify(&local->hw, &sdata->vif,
+					STA_NOTIFY_ADD, sta);
 
-	trace_drv_return_int(local, ret);
+	trace_drv_sta_add(local, sdata, sta, ret);
 
 	return ret;
 }
@@ -283,11 +267,13 @@ static inline void drv_sta_remove(struct ieee80211_local *local,
 {
 	might_sleep();
 
-	trace_drv_sta_remove(local, sdata, sta);
 	if (local->ops->sta_remove)
 		local->ops->sta_remove(&local->hw, &sdata->vif, sta);
+	else if (local->ops->sta_notify)
+		local->ops->sta_notify(&local->hw, &sdata->vif,
+					STA_NOTIFY_REMOVE, sta);
 
-	trace_drv_return_void(local);
+	trace_drv_sta_remove(local, sdata, sta);
 }
 
 static inline int drv_conf_tx(struct ieee80211_local *local, u16 queue,
@@ -297,10 +283,9 @@ static inline int drv_conf_tx(struct ieee80211_local *local, u16 queue,
 
 	might_sleep();
 
-	trace_drv_conf_tx(local, queue, params);
 	if (local->ops->conf_tx)
 		ret = local->ops->conf_tx(&local->hw, queue, params);
-	trace_drv_return_int(local, ret);
+	trace_drv_conf_tx(local, queue, params, ret);
 	return ret;
 }
 
@@ -310,10 +295,9 @@ static inline u64 drv_get_tsf(struct ieee80211_local *local)
 
 	might_sleep();
 
-	trace_drv_get_tsf(local);
 	if (local->ops->get_tsf)
 		ret = local->ops->get_tsf(&local->hw);
-	trace_drv_return_u64(local, ret);
+	trace_drv_get_tsf(local, ret);
 	return ret;
 }
 
@@ -321,20 +305,18 @@ static inline void drv_set_tsf(struct ieee80211_local *local, u64 tsf)
 {
 	might_sleep();
 
-	trace_drv_set_tsf(local, tsf);
 	if (local->ops->set_tsf)
 		local->ops->set_tsf(&local->hw, tsf);
-	trace_drv_return_void(local);
+	trace_drv_set_tsf(local, tsf);
 }
 
 static inline void drv_reset_tsf(struct ieee80211_local *local)
 {
 	might_sleep();
 
-	trace_drv_reset_tsf(local);
 	if (local->ops->reset_tsf)
 		local->ops->reset_tsf(&local->hw);
-	trace_drv_return_void(local);
+	trace_drv_reset_tsf(local);
 }
 
 static inline int drv_tx_last_beacon(struct ieee80211_local *local)
@@ -343,10 +325,9 @@ static inline int drv_tx_last_beacon(struct ieee80211_local *local)
 
 	might_sleep();
 
-	trace_drv_tx_last_beacon(local);
 	if (local->ops->tx_last_beacon)
 		ret = local->ops->tx_last_beacon(&local->hw);
-	trace_drv_return_int(local, ret);
+	trace_drv_tx_last_beacon(local, ret);
 	return ret;
 }
 
@@ -357,17 +338,10 @@ static inline int drv_ampdu_action(struct ieee80211_local *local,
 				   u16 *ssn)
 {
 	int ret = -EOPNOTSUPP;
-
-	might_sleep();
-
-	trace_drv_ampdu_action(local, sdata, action, sta, tid, ssn);
-
 	if (local->ops->ampdu_action)
 		ret = local->ops->ampdu_action(&local->hw, &sdata->vif, action,
 					       sta, tid, ssn);
-
-	trace_drv_return_int(local, ret);
-
+	trace_drv_ampdu_action(local, sdata, action, sta, tid, ssn, ret);
 	return ret;
 }
 
@@ -375,14 +349,9 @@ static inline int drv_get_survey(struct ieee80211_local *local, int idx,
 				struct survey_info *survey)
 {
 	int ret = -EOPNOTSUPP;
-
-	trace_drv_get_survey(local, idx, survey);
-
 	if (local->ops->get_survey)
 		ret = local->ops->get_survey(&local->hw, idx, survey);
-
-	trace_drv_return_int(local, ret);
-
+	/* trace_drv_get_survey(local, idx, survey, ret); */
 	return ret;
 }
 
@@ -401,7 +370,6 @@ static inline void drv_flush(struct ieee80211_local *local, bool drop)
 	trace_drv_flush(local, drop);
 	if (local->ops->flush)
 		local->ops->flush(&local->hw, drop);
-	trace_drv_return_void(local);
 }
 
 static inline void drv_channel_switch(struct ieee80211_local *local,
@@ -409,9 +377,9 @@ static inline void drv_channel_switch(struct ieee80211_local *local,
 {
 	might_sleep();
 
-	trace_drv_channel_switch(local, ch_switch);
 	local->ops->channel_switch(&local->hw, ch_switch);
-	trace_drv_return_void(local);
+
+	trace_drv_channel_switch(local, ch_switch);
 }
 
 #endif /* __MAC80211_DRIVER_OPS */

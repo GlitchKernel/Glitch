@@ -234,10 +234,9 @@ static int menu_select(struct cpuidle_device *dev)
 {
 	struct menu_device *data = &__get_cpu_var(menu_devices);
 	int latency_req = pm_qos_request(PM_QOS_CPU_DMA_LATENCY);
-	unsigned int power_usage = -1;
 	int i;
 	int multiplier;
-        struct timespec t;
+	struct timespec t;
 
 	if (data->needs_update) {
 		menu_update(dev);
@@ -252,10 +251,9 @@ static int menu_select(struct cpuidle_device *dev)
 		return 0;
 
 	/* determine the expected residency time, round up */
-        t = ktime_to_timespec(tick_nohz_get_sleep_length());
+	t = ktime_to_timespec(tick_nohz_get_sleep_length());
 	data->expected_us =
-	    t.tv_sec * USEC_PER_SEC + t.tv_nsec / NSEC_PER_USEC;
-
+		t.tv_sec * USEC_PER_SEC + t.tv_nsec / NSEC_PER_USEC;
 
 	data->bucket = which_bucket(data->expected_us);
 
@@ -281,27 +279,19 @@ static int menu_select(struct cpuidle_device *dev)
 	if (data->expected_us > 5)
 		data->last_state_idx = CPUIDLE_DRIVER_STATE_START;
 
-	/*
-	 * Find the idle state with the lowest power while satisfying
-	 * our constraints.
-	 */
+
+	/* find the deepest idle state that satisfies our constraints */
 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
 		struct cpuidle_state *s = &dev->states[i];
 
-		if (s->flags & CPUIDLE_FLAG_IGNORE)
-			continue;
 		if (s->target_residency > data->predicted_us)
-			continue;
+			break;
 		if (s->exit_latency > latency_req)
-			continue;
+			break;
 		if (s->exit_latency * multiplier > data->predicted_us)
-			continue;
-
-		if (s->power_usage < power_usage) {
-			power_usage = s->power_usage;
-			data->last_state_idx = i;
-			data->exit_us = s->exit_latency;
-		}
+			break;
+		data->exit_us = s->exit_latency;
+		data->last_state_idx = i;
 	}
 
 	return data->last_state_idx;

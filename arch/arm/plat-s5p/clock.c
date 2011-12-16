@@ -88,6 +88,14 @@ struct clk clk_fout_vpll = {
 	.ctrlbit	= (1 << 31),
 };
 
+/* ARM clock */
+struct clk clk_arm = {
+	.name		= "armclk",
+	.id		= -1,
+	.rate		= 0,
+	.ctrlbit	= 0,
+};
+
 /* Possible clock sources for APLL Mux */
 static struct clk *clk_src_apll_list[] = {
 	[0] = &clk_fin_apll,
@@ -147,6 +155,7 @@ static struct clk *s5p_clks[] __initdata = {
 	&clk_fout_mpll,
 	&clk_fout_epll,
 	&clk_fout_vpll,
+	&clk_arm,
 	&clk_vpll,
 };
 

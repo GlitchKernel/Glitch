@@ -1,7 +1,7 @@
 /*
  * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
- * Copyright (C) 2002-2011 Aleph One Ltd.
+ * Copyright (C) 2002-2010 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
  * Created by Charles Manning <charles@aleph1.co.uk>
@@ -20,16 +20,16 @@
 #include "yaffs_trace.h"
 
 /* Function to manipulate block info */
-static inline struct yaffs_block_info *yaffs_get_block_info(struct yaffs_dev
-							      *dev, int blk)
+static Y_INLINE yaffs_BlockInfo *yaffs_GetBlockInfo(yaffs_Device * dev, int blk)
 {
-	if (blk < dev->internal_start_block || blk > dev->internal_end_block) {
-		yaffs_trace(YAFFS_TRACE_ERROR,
-			"**>> yaffs: get_block_info block %d is not valid",
-			blk);
-		BUG();
+	if (blk < dev->internalStartBlock || blk > dev->internalEndBlock) {
+		T(YAFFS_TRACE_ERROR,
+		  (TSTR
+		   ("**>> yaffs: getBlockInfo block %d is not valid" TENDSTR),
+		   blk));
+		YBUG();
 	}
-	return &dev->block_info[blk - dev->internal_start_block];
+	return &dev->blockInfo[blk - dev->internalStartBlock];
 }
 
 #endif

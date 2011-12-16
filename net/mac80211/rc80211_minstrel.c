@@ -67,6 +67,7 @@ rix_to_ndx(struct minstrel_sta_info *mi, int rix)
 	for (i = rix; i >= 0; i--)
 		if (mi->r[i].rix == rix)
 			break;
+	WARN_ON(i < 0);
 	return i;
 }
 

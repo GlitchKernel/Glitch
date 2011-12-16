@@ -700,6 +700,8 @@ listen_overflow:
 
 embryonic_reset:
 	NET_INC_STATS_BH(sock_net(sk), LINUX_MIB_EMBRYONICRSTS);
+	if (!(flg & TCP_FLAG_RST))
+		req->rsk_ops->send_reset(sk, skb);
 
 	inet_csk_reqsk_queue_drop(sk, req, prev);
 	return NULL;

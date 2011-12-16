@@ -28,9 +28,7 @@
 #include <linux/tick.h>
 #include <linux/utsname.h>
 #include <linux/uaccess.h>
-#include <linux/random.h>
 
-#include <asm/cacheflush.h>
 #include <asm/leds.h>
 #include <asm/processor.h>
 #include <asm/system.h>
@@ -40,11 +38,6 @@
 
 #ifdef CONFIG_MACH_ARIES
 #include <mach/regs-clock.h>
-#endif
-#ifdef CONFIG_CC_STACKPROTECTOR
-#include <linux/stackprotector.h>
-unsigned long __stack_chk_guard __read_mostly;
-EXPORT_SYMBOL(__stack_chk_guard);
 #endif
 
 static const char *processor_modes[] = {
@@ -95,9 +88,10 @@ __setup("hlt", hlt_setup);
 
 void arm_machine_restart(char mode, const char *cmd)
 {
-	/* Disable interrupts first */
-	local_irq_disable();
-	local_fiq_disable();
+	/*
+	 * Clean and disable cache, and turn off interrupts
+	 */
+	cpu_proc_fin();
 
 	/*
 	 * Tell the mm system that we are going to reboot -
@@ -109,15 +103,6 @@ void arm_machine_restart(char mode, const char *cmd)
 #ifdef CONFIG_MACH_ARIES
 	writel(0x12345678, S5P_INFORM5);  /* Turn off low power mode */
 #endif
-
-	/* Clean and invalidate caches */
-	flush_cache_all();
-
-	/* Turn off caching */
-	cpu_proc_fin();
-
-	/* Push out any further dirty data, and ensure cache is empty */
-	flush_cache_all();
 
 	/*
 	 * Now call the architecture specific reboot code.
@@ -171,6 +156,7 @@ void cpu_idle(void)
 	while (1) {
 		tick_nohz_stop_sched_tick(1);
 		leds_event(led_idle_start);
+		idle_notifier_call_chain(IDLE_START);
 		while (!need_resched()) {
 #ifdef CONFIG_HOTPLUG_CPU
 			if (cpu_is_offline(smp_processor_id()))
@@ -195,6 +181,7 @@ void cpu_idle(void)
 			}
 		}
 		leds_event(led_idle_end);
+		idle_notifier_call_chain(IDLE_END);
 		tick_nohz_restart_sched_tick();
 		preempt_enable_no_resched();
 		schedule();
@@ -521,10 +508,4 @@ unsigned long get_wchan(struct task_struct *p)
 			return frame.pc;
 	} while (count ++ < 16);
 	return 0;
-}
-
-unsigned long arch_randomize_brk(struct mm_struct *mm)
-{
-	unsigned long range_end = mm->brk + 0x02000000;
-	return randomize_range(mm->brk, range_end, 0) ? : mm->brk;
 }

@@ -648,8 +648,6 @@ static bool free_pages_prepare(struct page *page, unsigned int order)
 	int i;
 	int bad = 0;
 
-	unsigned long index = 1UL << order;
-
 	trace_mm_page_free_direct(page, order);
 	kmemcheck_free_shadow(page, order);
 
@@ -668,10 +666,6 @@ static bool free_pages_prepare(struct page *page, unsigned int order)
 		debug_check_no_obj_freed(page_address(page),
 					   PAGE_SIZE << order);
 	}
-
-	for (; index; --index)
-		sanitize_highpage(page + index - 1);
-
 	arch_free_page(page, order);
 	kernel_map_pages(page, 1 << order, 0);
 
@@ -1770,7 +1764,7 @@ __alloc_pages_may_oom(gfp_t gfp_mask, unsigned int order,
 	struct page *page;
 
 	/* Acquire the OOM killer lock for the zones in zonelist */
-	if (!try_set_zonelist_oom(zonelist, gfp_mask)) {
+	if (!try_set_zone_oom(zonelist, gfp_mask)) {
 		schedule_timeout_uninterruptible(1);
 		return NULL;
 	}
@@ -1791,9 +1785,6 @@ __alloc_pages_may_oom(gfp_t gfp_mask, unsigned int order,
 		/* The OOM killer will not help higher order allocs */
 		if (order > PAGE_ALLOC_COSTLY_ORDER)
 			goto out;
-    /* The OOM killer does not needlessly kill tasks for lowmem */
-    if (high_zoneidx < ZONE_NORMAL)
-      goto out;
 		/*
 		 * GFP_THISNODE contains __GFP_NORETRY and we never hit this.
 		 * Sanity check for bare calls of __GFP_THISNODE, not real OOM.
@@ -2037,6 +2028,7 @@ restart:
 	 */
 	alloc_flags = gfp_to_alloc_flags(gfp_mask);
 
+rebalance:
 	/* This is the last chance, in general, before the goto nopage. */
 	page = get_page_from_freelist(gfp_mask, nodemask, order, zonelist,
 			high_zoneidx, alloc_flags & ~ALLOC_NO_WATERMARKS,
@@ -2044,7 +2036,6 @@ restart:
 	if (page)
 		goto got_pg;
 
-rebalance:
 	/* Allocate without watermarks if the context allows */
 	if (alloc_flags & ALLOC_NO_WATERMARKS) {
 		page = __alloc_pages_high_priority(gfp_mask, order,
@@ -2099,23 +2090,15 @@ rebalance:
 			if (page)
 				goto got_pg;
 
-      if (!(gfp_mask & __GFP_NOFAIL)) {
-        /*
-         * The oom killer is not called for high-order
-         * allocations that may fail, so if no progress
-         * is being made, there are no other options and
-         * retrying is unlikely to help.
-         */
-        if (order > PAGE_ALLOC_COSTLY_ORDER)
-          goto nopage;
-        /*
-         * The oom killer is not called for lowmem
-         * allocations to prevent needlessly killing
-         * innocent tasks.
-         */
-        if (high_zoneidx < ZONE_NORMAL)
-          goto nopage;
-      }
+			/*
+			 * The OOM killer does not trigger for high-order
+			 * ~__GFP_NOFAIL allocations so if no progress is being
+			 * made, there are no other options and retrying is
+			 * unlikely to help.
+			 */
+			if (order > PAGE_ALLOC_COSTLY_ORDER &&
+						!(gfp_mask & __GFP_NOFAIL))
+				goto nopage;
 
 			goto restart;
 		}
@@ -4042,7 +4025,7 @@ static void __init setup_usemap(struct pglist_data *pgdat,
 		zone->pageblock_flags = alloc_bootmem_node(pgdat, usemapsize);
 }
 #else
-static inline void setup_usemap(struct pglist_data *pgdat,
+static void inline setup_usemap(struct pglist_data *pgdat,
 				struct zone *zone, unsigned long zonesize) {}
 #endif /* CONFIG_SPARSEMEM */
 

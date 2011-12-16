@@ -89,6 +89,11 @@ ieee80211_rx_h_michael_mic_verify(struct ieee80211_rx_data *rx)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
 	int authenticator = 1, wpa_test = 0;
+	int queue = rx->queue;
+
+	/* otherwise, TKIP is vulnerable to TID 0 vs. non-QoS replays */
+	if (rx->queue == NUM_RX_DATA_QUEUES - 1)
+		queue = 0;
 
 	/* No way to verify the MIC if the hardware stripped it */
 	if (status->flag & RX_FLAG_MMIC_STRIPPED)
@@ -130,8 +135,8 @@ ieee80211_rx_h_michael_mic_verify(struct ieee80211_rx_data *rx)
 	skb_trim(skb, skb->len - MICHAEL_MIC_LEN);
 
 	/* update IV in key information to be able to detect replays */
-	rx->key->u.tkip.rx[rx->queue].iv32 = rx->tkip_iv32;
-	rx->key->u.tkip.rx[rx->queue].iv16 = rx->tkip_iv16;
+	rx->key->u.tkip.rx[queue].iv32 = rx->tkip_iv32;
+	rx->key->u.tkip.rx[queue].iv16 = rx->tkip_iv16;
 
 	return RX_CONTINUE;
 }
@@ -183,8 +188,9 @@ static int tkip_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb)
 	skb_put(skb, TKIP_ICV_LEN);
 
 	hdr = (struct ieee80211_hdr *) skb->data;
-	return ieee80211_tkip_encrypt_data(tx->local->wep_tx_tfm,
-					   key, pos, len, hdr->addr2);
+	ieee80211_tkip_encrypt_data(tx->local->wep_tx_tfm,
+				    key, pos, len, hdr->addr2);
+	return 0;
 }
 
 
@@ -212,6 +218,11 @@ ieee80211_crypto_tkip_decrypt(struct ieee80211_rx_data *rx)
 	struct ieee80211_key *key = rx->key;
 	struct sk_buff *skb = rx->skb;
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+	int queue = rx->queue;
+
+	/* otherwise, TKIP is vulnerable to TID 0 vs. non-QoS replays */
+	if (rx->queue == NUM_RX_DATA_QUEUES - 1)
+		queue = 0;
 
 	hdrlen = ieee80211_hdrlen(hdr->frame_control);
 
@@ -238,7 +249,7 @@ ieee80211_crypto_tkip_decrypt(struct ieee80211_rx_data *rx)
 	res = ieee80211_tkip_decrypt_data(rx->local->wep_rx_tfm,
 					  key, skb->data + hdrlen,
 					  skb->len - hdrlen, rx->sta->sta.addr,
-					  hdr->addr1, hwaccel, rx->queue,
+					  hdr->addr1, hwaccel, queue,
 					  &rx->tkip_iv32,
 					  &rx->tkip_iv16);
 	if (res != TKIP_DECRYPT_OK || wpa_test)
@@ -435,7 +446,6 @@ ieee80211_crypto_ccmp_decrypt(struct ieee80211_rx_data *rx)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
 	u8 pn[CCMP_PN_LEN];
 	int data_len;
-	int queue;
 
 	hdrlen = ieee80211_hdrlen(hdr->frame_control);
 
@@ -453,10 +463,7 @@ ieee80211_crypto_ccmp_decrypt(struct ieee80211_rx_data *rx)
 
 	ccmp_hdr2pn(pn, skb->data + hdrlen);
 
-	queue = ieee80211_is_mgmt(hdr->frame_control) ?
-		NUM_RX_DATA_QUEUES : rx->queue;
-
-	if (memcmp(pn, key->u.ccmp.rx_pn[queue], CCMP_PN_LEN) <= 0) {
+	if (memcmp(pn, key->u.ccmp.rx_pn[rx->queue], CCMP_PN_LEN) <= 0) {
 		key->u.ccmp.replays++;
 		return RX_DROP_UNUSABLE;
 	}
@@ -473,7 +480,7 @@ ieee80211_crypto_ccmp_decrypt(struct ieee80211_rx_data *rx)
 			return RX_DROP_UNUSABLE;
 	}
 
-	memcpy(key->u.ccmp.rx_pn[queue], pn, CCMP_PN_LEN);
+	memcpy(key->u.ccmp.rx_pn[rx->queue], pn, CCMP_PN_LEN);
 
 	/* Remove CCMP header and MIC */
 	skb_trim(skb, skb->len - CCMP_MIC_LEN);

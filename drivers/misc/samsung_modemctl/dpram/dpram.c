@@ -2,6 +2,10 @@
 **
 ** COPYRIGHT(C) : Samsung Electronics Co.Ltd, 2006-2010 ALL RIGHTS RESERVED
 **
+** This program is free software; you can redistribute it and/or modify      
+** it under the terms of the GNU General Public License version 2 as         
+** published by the Free Software Foundation.
+**
 **                Onedram Device Driver
 **
 ****************************************************************************/
@@ -32,9 +36,6 @@
 #ifdef CONFIG_PROC_FS
 #include <linux/proc_fs.h>
 #endif	/* CONFIG_PROC_FS */
-
-//#include <linux/kernel_sec_common.h>
-
 
 /***************************************************************************/
 /*                              GPIO SETTING                               */
@@ -156,7 +157,6 @@ static DEFINE_MUTEX(pdp_lock);
 
 static inline struct pdp_info * pdp_get_dev(u8 id);
 static inline void check_pdp_table(char*, int);
-static int onedram_get_semaphore_for_init(const char *func);
 
 /*****************************************************************************/
 
@@ -211,8 +211,6 @@ static atomic_t onedram_lock;
 static int onedram_lock_with_semaphore(const char*);
 static void onedram_release_lock(const char*);
 static void dpram_drop_data(dpram_device_t *device);
-//hack!static int kernel_sec_dump_cp_handle2(void);
-
 
 static int requested_semaphore = 0;
 static int unreceived_semaphore = 0;
@@ -389,11 +387,10 @@ static inline int _memcmp(u8 *dest, u8 *src, int size)
 		return 1;
 	}
 
-	while (i < size) {
+	while (i++ < size) {
 		if (*(dest + i) != *(src + i)) {
 			return 1;
 		}
-		i++;
 	}
 
 	return 0;
@@ -855,10 +852,6 @@ static int onedram_get_semaphore(const char *func)
 	
 	if(dump_on) return -1;
 
-	if(phone_sync == 0) {
-		return onedram_get_semaphore_for_init(__func__);
-	}
-
 	for(i = 0; i < req_try; i++) {
 		if(*onedram_sem) {
 			unreceived_semaphore = 0;
@@ -908,7 +901,7 @@ static int onedram_get_semaphore_for_init(const char *func)
 			func, *onedram_sem,	gpio_get_value(GPIO_PHONE_ACTIVE)?"HIGH":"LOW ", unreceived_semaphore);
 
 #ifdef _ENABLE_ERROR_DEVICE
-	if(unreceived_semaphore > 12)
+	if(unreceived_semaphore > 10)
 		request_phone_reset();
 #endif
 
@@ -1231,9 +1224,6 @@ static int dpram_phone_ramdump_on(void)
 		*onedram_sem = 0x00;
 	}
 
-	// If it is configured to dump both AP and CP, reset both AP and CP here.
-	//!hackkernel_sec_dump_cp_handle2();	
-	
 	return 0;
 
 }
@@ -2006,7 +1996,7 @@ static irqreturn_t dpram_irq_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-//#define DPRAM_USES_DELAYED_PHONE_ACTIVE_IRQ
+#define DPRAM_USES_DELAYED_PHONE_ACTIVE_IRQ
 
 #ifdef DPRAM_USES_DELAYED_PHONE_ACTIVE_IRQ
 static void phone_active_delayed_work_handler(struct work_struct *ignored);
@@ -2032,57 +2022,21 @@ static irqreturn_t phone_active_irq_handler(int irq, void *dev_id)
 {
 	printk(KERN_ERR "[OneDRAM] PHONE_ACTIVE level: %s, sem: %d, phone_sync: %d\n", 
 			gpio_get_value(GPIO_PHONE_ACTIVE)?"HIGH":"LOW ", *onedram_sem, phone_sync);
-	
-	if(gpio_get_value(GPIO_PHONE_ACTIVE))
-		return IRQ_HANDLED;
-	
+
 #ifdef DPRAM_USES_DELAYED_PHONE_ACTIVE_IRQ
 		if(gpio_get_value(GPIO_PHONE_ACTIVE) == 0) {
 			schedule_delayed_work(&phone_active_delayed_work, 100);
 		}
-#else
-
-	if(!phone_sync) {
-		return IRQ_HANDLED;
-	}
-	
-	// Phone active irq is only fired when there is a problem (except the first 
-	// modem boot up). So let's just call delay function for an easy fix
-	// for ignoring the momentary drop..
-	mdelay(5);
-
-	if(gpio_get_value(GPIO_PHONE_ACTIVE)) {
-		printk(KERN_ERR "[ONEDRAM] Momentary Phone Active IRQ drop detected...Ignored!\n");
-		return IRQ_HANDLED;
-	}
+#endif
 
 #ifdef _ENABLE_ERROR_DEVICE
 	if((phone_sync) && (!gpio_get_value(GPIO_PHONE_ACTIVE)))
 		request_phone_reset();	
 #endif
-#endif /* DPRAM_USES_DELAYED_PHONE_ACTIVE_IRQ */
 
 	return IRQ_HANDLED;
 }
-/*!hack
-static int kernel_sec_dump_cp_handle2(void)
-{
- 	t_kernel_sec_mmu_info mmu_info;    
-    
-	printk("[kernel_sec_dump_cp_handle2] : Configure to restart AP and collect dump on restart...\n");
 
-#if 0
-    if( dpram_err_len )
-        kernel_sec_set_cause_strptr(dpram_err_buf, dpram_err_len);
-#endif    
-    
-	kernel_sec_set_upload_magic_number();
-	kernel_sec_get_mmu_reg_dump(&mmu_info);
-	kernel_sec_set_upload_cause(UPLOAD_CAUSE_CP_ERROR_FATAL);
-	kernel_sec_hw_reset(false);
-}       
-
-*/
 /* basic functions. */
 #ifdef _ENABLE_ERROR_DEVICE
 static struct file_operations dpram_err_ops = {
@@ -2646,10 +2600,8 @@ static int register_interrupt_handler(void)
 		return -1;
 	}
 
-#ifdef CONFIG_SAMSUNG_FASCINATE
 	enable_irq_wake(dpram_irq);
 	enable_irq_wake(phone_active_irq);
-#endif
 
 	return 0;
 }

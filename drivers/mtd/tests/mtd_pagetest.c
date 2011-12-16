@@ -310,7 +310,7 @@ static int crosstest(void)
 static int erasecrosstest(void)
 {
 	size_t read = 0, written = 0;
-	int err = 0, i, ebnum, ebnum2;
+	int err = 0, i, ebnum, ok = 1, ebnum2;
 	loff_t addr0;
 	char *readbuf = twopages;
 
@@ -357,7 +357,8 @@ static int erasecrosstest(void)
 	if (memcmp(writebuf, readbuf, pgsize)) {
 		printk(PRINT_PREF "verify failed!\n");
 		errcnt += 1;
-		return -1;
+		ok = 0;
+		return err;
 	}
 
 	printk(PRINT_PREF "erasing block %d\n", ebnum);
@@ -395,10 +396,10 @@ static int erasecrosstest(void)
 	if (memcmp(writebuf, readbuf, pgsize)) {
 		printk(PRINT_PREF "verify failed!\n");
 		errcnt += 1;
-		return -1;
+		ok = 0;
 	}
 
-	if (!err)
+	if (ok && !err)
 		printk(PRINT_PREF "erasecrosstest ok\n");
 	return err;
 }

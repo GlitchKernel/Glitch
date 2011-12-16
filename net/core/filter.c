@@ -292,7 +292,15 @@ load_b:
 			mem[f_k] = X;
 			continue;
 		default:
+
+#ifdef CONFIG_BUG
+			WARN_RATELIMIT(1, "Unknown code:%u jt:%u tf:%u k:%u\n",
+				       fentry->code, fentry->jt,
+				       fentry->jf, fentry->k);
+			#endif
+			#ifndef CONFIG_BUG
 			WARN_ON(1);
+			#endif
 			return 0;
 		}
 

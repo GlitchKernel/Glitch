@@ -188,10 +188,8 @@ static int show_file_hash(unsigned int value)
 static int show_dev_hash(unsigned int value)
 {
 	int match = 0;
-	struct list_head *entry;
+	struct list_head *entry = dpm_list.prev;
 
-	device_pm_lock();
-	entry = dpm_list.prev;
 	while (entry != &dpm_list) {
 		struct device * dev = to_device(entry);
 		unsigned int hash = hash_string(DEVSEED, dev_name(dev), DEVHASH);
@@ -201,7 +199,6 @@ static int show_dev_hash(unsigned int value)
 		}
 		entry = entry->prev;
 	}
-	device_pm_unlock();
 	return match;
 }
 

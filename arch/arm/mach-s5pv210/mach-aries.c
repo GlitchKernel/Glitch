@@ -2369,7 +2369,7 @@ static u8 t7_config[] = {GEN_POWERCONFIG_T7,
 static u8 t8_config[] = {GEN_ACQUISITIONCONFIG_T8,
 				7, 0, 5, 0, 0, 0, 9, 35};
 static u8 t9_config[] = {TOUCH_MULTITOUCHSCREEN_T9,
-				139, 0, 0, 19, 11, 0, 33, 40, 2, 1, 0, 3, 1,
+				139, 0, 0, 19, 11, 0, 33, 30, 2, 1, 0, 3, 1,
 				46, MXT224_MAX_MT_FINGERS, 5, 40, 10, 0, 0,
 				0, 0, 0, 0, 0, 0, 143, 40, 143, 80, 18};
 static u8 t18_config[] = {SPT_COMCONFIG_T18,

@@ -184,7 +184,6 @@ static struct clocksource *watchdog;
 static struct timer_list watchdog_timer;
 static DECLARE_WORK(watchdog_work, clocksource_watchdog_work);
 static DEFINE_SPINLOCK(watchdog_lock);
-static cycle_t watchdog_last;
 static int watchdog_running;
 
 static int clocksource_watchdog_kthread(void *data);
@@ -253,11 +252,6 @@ static void clocksource_watchdog(unsigned long data)
 	if (!watchdog_running)
 		goto out;
 
-	wdnow = watchdog->read(watchdog);
-	wd_nsec = clocksource_cyc2ns((wdnow - watchdog_last) & watchdog->mask,
-				     watchdog->mult, watchdog->shift);
-	watchdog_last = wdnow;
-
 	list_for_each_entry(cs, &watchdog_list, wd_list) {
 
 		/* Clocksource already marked unstable? */
@@ -267,19 +261,28 @@ static void clocksource_watchdog(unsigned long data)
 			continue;
 		}
 
+		local_irq_disable();
 		csnow = cs->read(cs);
+		wdnow = watchdog->read(watchdog);
+		local_irq_enable();
 
 		/* Clocksource initialized ? */
 		if (!(cs->flags & CLOCK_SOURCE_WATCHDOG)) {
 			cs->flags |= CLOCK_SOURCE_WATCHDOG;
-			cs->wd_last = csnow;
+			cs->wd_last = wdnow;
+			cs->cs_last = csnow;
 			continue;
 		}
 
-		/* Check the deviation from the watchdog clocksource. */
-		cs_nsec = clocksource_cyc2ns((csnow - cs->wd_last) &
+		wd_nsec = clocksource_cyc2ns((wdnow - cs->wd_last) & watchdog->mask,
+					     watchdog->mult, watchdog->shift);
+
+		cs_nsec = clocksource_cyc2ns((csnow - cs->cs_last) &
 					     cs->mask, cs->mult, cs->shift);
-		cs->wd_last = csnow;
+		cs->cs_last = csnow;
+		cs->wd_last = wdnow;
+
+		/* Check the deviation from the watchdog clocksource. */
 		if (abs(cs_nsec - wd_nsec) > WATCHDOG_THRESHOLD) {
 			clocksource_unstable(cs, cs_nsec - wd_nsec);
 			continue;
@@ -317,7 +320,6 @@ static inline void clocksource_start_watchdog(void)
 		return;
 	init_timer(&watchdog_timer);
 	watchdog_timer.function = clocksource_watchdog;
-	watchdog_last = watchdog->read(watchdog);
 	watchdog_timer.expires = jiffies + WATCHDOG_INTERVAL;
 	add_timer_on(&watchdog_timer, cpumask_first(cpu_online_mask));
 	watchdog_running = 1;
@@ -639,32 +641,6 @@ static void clocksource_enqueue(struct clocksource *cs)
 #define MAX_UPDATE_LENGTH 5 /* Seconds */
 
 /**
- * __clocksource_updatefreq_scale - Used update clocksource with new freq
- * @t:		clocksource to be registered
- * @scale:	Scale factor multiplied against freq to get clocksource hz
- * @freq:	clocksource frequency (cycles per second) divided by scale
- *
- * This should only be called from the clocksource->enable() method.
- *
- * This *SHOULD NOT* be called directly! Please use the
- * clocksource_updatefreq_hz() or clocksource_updatefreq_khz helper functions.
- */
-void __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq)
-{
-	/*
-	 * Ideally we want to use  some of the limits used in
-	 * clocksource_max_deferment, to provide a more informed
-	 * MAX_UPDATE_LENGTH. But for now this just gets the
-	 * register interface working properly.
-	 */
-	clocks_calc_mult_shift(&cs->mult, &cs->shift, freq,
-				      NSEC_PER_SEC/scale,
-				      MAX_UPDATE_LENGTH*scale);
-	cs->max_idle_ns = clocksource_max_deferment(cs);
-}
-EXPORT_SYMBOL_GPL(__clocksource_updatefreq_scale);
-
-/**
  * __clocksource_register_scale - Used to install new clocksources
  * @t:		clocksource to be registered
  * @scale:	Scale factor multiplied against freq to get clocksource hz
@@ -678,14 +654,21 @@ EXPORT_SYMBOL_GPL(__clocksource_updatefreq_scale);
 int __clocksource_register_scale(struct clocksource *cs, u32 scale, u32 freq)
 {
 
-	/* Intialize mult/shift and max_idle_ns */
-	__clocksource_updatefreq_scale(cs, scale, freq);
+	/*
+	 * Ideally we want to use  some of the limits used in
+	 * clocksource_max_deferment, to provide a more informed
+	 * MAX_UPDATE_LENGTH. But for now this just gets the
+	 * register interface working properly.
+	 */
+	clocks_calc_mult_shift(&cs->mult, &cs->shift, freq,
+				      NSEC_PER_SEC/scale,
+				      MAX_UPDATE_LENGTH*scale);
+	cs->max_idle_ns = clocksource_max_deferment(cs);
 
-	/* Add clocksource to the clcoksource list */
 	mutex_lock(&clocksource_mutex);
 	clocksource_enqueue(cs);
-	clocksource_select();
 	clocksource_enqueue_watchdog(cs);
+	clocksource_select();
 	mutex_unlock(&clocksource_mutex);
 	return 0;
 }

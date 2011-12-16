@@ -348,6 +348,8 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 		}
 	}
 
+	usb_gadget_disconnect(&dev->gadget);
+
 	printk(KERN_DEBUG "Registered gadget driver '%s'\n",
 			   driver->driver.name);
 

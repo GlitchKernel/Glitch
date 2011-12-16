@@ -45,7 +45,6 @@
 #include <linux/udp.h>
 #include <linux/inet.h>
 #include <linux/netfilter_ipv4.h>
-#include <net/inet_ecn.h>
 
 /* NOTE. Logic of IP defragmentation is parallel to corresponding IPv6
  * code now. If you change something here, _PLEASE_ update ipv6/reassembly.c
@@ -71,27 +70,10 @@ struct ipq {
 	__be32		daddr;
 	__be16		id;
 	u8		protocol;
-	u8		ecn; /* RFC3168 support */
 	int             iif;
 	unsigned int    rid;
 	struct inet_peer *peer;
 };
-
-#define IPFRAG_ECN_CLEAR  0x01 /* one frag had INET_ECN_NOT_ECT */
-#define IPFRAG_ECN_SET_CE 0x04 /* one frag had INET_ECN_CE */
-
-static inline u8 ip4_frag_ecn(u8 tos)
-{
-	tos = (tos & INET_ECN_MASK) + 1;
-	/*
-	 * After the last operation we have (in binary):
-	 * INET_ECN_NOT_ECT => 001
-	 * INET_ECN_ECT_1   => 010
-	 * INET_ECN_ECT_0   => 011
-	 * INET_ECN_CE      => 100
-	 */
-	return (tos & 2) ? 0 : tos;
-}
 
 static struct inet_frags ip4_frags;
 
@@ -158,7 +140,6 @@ static void ip4_frag_init(struct inet_frag_queue *q, void *a)
 
 	qp->protocol = arg->iph->protocol;
 	qp->id = arg->iph->id;
-	qp->ecn = ip4_frag_ecn(arg->iph->tos);
 	qp->saddr = arg->iph->saddr;
 	qp->daddr = arg->iph->daddr;
 	qp->user = arg->user;
@@ -337,7 +318,6 @@ static int ip_frag_reinit(struct ipq *qp)
 	qp->q.meat = 0;
 	qp->q.fragments = NULL;
 	qp->iif = 0;
-	qp->ecn = 0;
 
 	return 0;
 }
@@ -350,7 +330,6 @@ static int ip_frag_queue(struct ipq *qp, struct sk_buff *skb)
 	int flags, offset;
 	int ihl, end;
 	int err = -ENOENT;
-	u8 ecn;
 
 	if (qp->q.last_in & INET_FRAG_COMPLETE)
 		goto err;
@@ -362,7 +341,6 @@ static int ip_frag_queue(struct ipq *qp, struct sk_buff *skb)
 		goto err;
 	}
 
-	ecn = ip4_frag_ecn(ip_hdr(skb)->tos);
 	offset = ntohs(ip_hdr(skb)->frag_off);
 	flags = offset & ~IP_OFFSET;
 	offset &= IP_OFFSET;
@@ -488,7 +466,6 @@ static int ip_frag_queue(struct ipq *qp, struct sk_buff *skb)
 	}
 	qp->q.stamp = skb->tstamp;
 	qp->q.meat += skb->len;
-	qp->ecn |= ecn;
 	atomic_add(skb->truesize, &qp->q.net->mem);
 	if (offset == 0)
 		qp->q.last_in |= INET_FRAG_FIRST_IN;
@@ -599,17 +576,6 @@ static int ip_frag_reasm(struct ipq *qp, struct sk_buff *prev,
 	iph = ip_hdr(head);
 	iph->frag_off = 0;
 	iph->tot_len = htons(len);
-	/* RFC3168 5.3 Fragmentation support
-	 * If one fragment had INET_ECN_NOT_ECT,
-	 *	reassembled frame also has INET_ECN_NOT_ECT
-	 * Elif one fragment had INET_ECN_CE
-	 *	reassembled frame also has INET_ECN_CE
-	 */
-	if (qp->ecn & IPFRAG_ECN_CLEAR)
-		iph->tos &= ~INET_ECN_MASK;
-	else if (qp->ecn & IPFRAG_ECN_SET_CE)
-		iph->tos |= INET_ECN_CE;
-
 	IP_INC_STATS_BH(net, IPSTATS_MIB_REASMOKS);
 	qp->q.fragments = NULL;
 	return 0;

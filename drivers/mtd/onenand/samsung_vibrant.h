@@ -42,12 +42,12 @@ struct mtd_partition s3c_partition_info[] = {
 	{	
 		.name		= "system",
 		.offset		=  (132*SZ_256K),
-		.size		= (750*SZ_256K), //881
+		.size		= (1000*SZ_256K), //1131
 	},
 	{
 		.name		= "cache",
-		.offset		= (882*SZ_256K),
-		.size		= (320*SZ_256K), //1201
+		.offset		= (1132*SZ_256K),
+		.size		= (70*SZ_256K), //1201
 	},
 	{       /* we should consider moving this before the modem at the end
 	           that would allow us to change the partitions before without

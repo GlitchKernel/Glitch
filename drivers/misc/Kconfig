@@ -479,4 +479,11 @@ config PN544
 	help
 	  NXP PN544 Near Field Communication controller support.
 
+config SAMSUNG_PARAM
+	bool "Samsung Param Driver"
+	depends on MACH_ARIES
+	default n
+	help
+	  Driver for communication with Samsung's secondary bootloader
+
 endif # MISC_DEVICES

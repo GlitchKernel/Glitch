@@ -13,11 +13,11 @@ void set_fs_root(struct fs_struct *fs, struct path *path)
 {
 	struct path old_root;
 
-	spin_lock(&fs->lock);
+	write_lock(&fs->lock);
 	old_root = fs->root;
 	fs->root = *path;
 	path_get(path);
-	spin_unlock(&fs->lock);
+	write_unlock(&fs->lock);
 	if (old_root.dentry)
 		path_put(&old_root);
 }
@@ -30,11 +30,11 @@ void set_fs_pwd(struct fs_struct *fs, struct path *path)
 {
 	struct path old_pwd;
 
-	spin_lock(&fs->lock);
+	write_lock(&fs->lock);
 	old_pwd = fs->pwd;
 	fs->pwd = *path;
 	path_get(path);
-	spin_unlock(&fs->lock);
+	write_unlock(&fs->lock);
 
 	if (old_pwd.dentry)
 		path_put(&old_pwd);
@@ -51,7 +51,7 @@ void chroot_fs_refs(struct path *old_root, struct path *new_root)
 		task_lock(p);
 		fs = p->fs;
 		if (fs) {
-			spin_lock(&fs->lock);
+			write_lock(&fs->lock);
 			if (fs->root.dentry == old_root->dentry
 			    && fs->root.mnt == old_root->mnt) {
 				path_get(new_root);
@@ -64,7 +64,7 @@ void chroot_fs_refs(struct path *old_root, struct path *new_root)
 				fs->pwd = *new_root;
 				count++;
 			}
-			spin_unlock(&fs->lock);
+			write_unlock(&fs->lock);
 		}
 		task_unlock(p);
 	} while_each_thread(g, p);
@@ -87,10 +87,10 @@ void exit_fs(struct task_struct *tsk)
 	if (fs) {
 		int kill;
 		task_lock(tsk);
-		spin_lock(&fs->lock);
+		write_lock(&fs->lock);
 		tsk->fs = NULL;
 		kill = !--fs->users;
-		spin_unlock(&fs->lock);
+		write_unlock(&fs->lock);
 		task_unlock(tsk);
 		if (kill)
 			free_fs_struct(fs);
@@ -104,7 +104,7 @@ struct fs_struct *copy_fs_struct(struct fs_struct *old)
 	if (fs) {
 		fs->users = 1;
 		fs->in_exec = 0;
-		spin_lock_init(&fs->lock);
+		rwlock_init(&fs->lock);
 		fs->umask = old->umask;
 		read_lock(&old->lock);
 		fs->root = old->root;
@@ -126,10 +126,10 @@ int unshare_fs_struct(void)
 		return -ENOMEM;
 
 	task_lock(current);
-	spin_lock(&fs->lock);
+	write_lock(&fs->lock);
 	kill = !--fs->users;
 	current->fs = new_fs;
-	spin_unlock(&fs->lock);
+	write_unlock(&fs->lock);
 	task_unlock(current);
 
 	if (kill)
@@ -148,7 +148,7 @@ EXPORT_SYMBOL(current_umask);
 /* to be mentioned only in INIT_TASK */
 struct fs_struct init_fs = {
 	.users		= 1,
-	.lock		= __SPIN_LOCK_UNLOCKED(init_fs.lock),
+	.lock		= __RW_LOCK_UNLOCKED(init_fs.lock),
 	.umask		= 0022,
 };
 
@@ -161,14 +161,14 @@ void daemonize_fs_struct(void)
 
 		task_lock(current);
 
-		spin_lock(&init_fs.lock);
+		write_lock(&init_fs.lock);
 		init_fs.users++;
-		spin_unlock(&init_fs.lock);
+		write_unlock(&init_fs.lock);
 
-		spin_lock(&fs->lock);
+		write_lock(&fs->lock);
 		current->fs = &init_fs;
 		kill = !--fs->users;
-		spin_unlock(&fs->lock);
+		write_unlock(&fs->lock);
 
 		task_unlock(current);
 		if (kill)

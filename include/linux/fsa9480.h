@@ -38,4 +38,6 @@ struct fsa9480_platform_data {
 	void (*reset_cb) (void);
 };
 
+extern int fsa9480_get_dock_status(void);
+
 #endif /* _FSA9480_H_ */

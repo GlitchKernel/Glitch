@@ -18,6 +18,7 @@ delete("/system/etc/init.d/S90screenstate_scaling");
 delete("/system/etc/init.d/90screenstate_scaling");
 delete("/system/etc/init.d/98screenstate_scaling");
 delete("/system/etc/init.d/S98screenstate_scaling");
+delete("/system/etc/init.d/S99screenstate_scaling");
 package_extract_dir("script", "/tmp/script");
 set_perm(0, 0, 755, "/tmp/script/cleaningmodules");
 run_program("/tmp/script/cleaningmodules");

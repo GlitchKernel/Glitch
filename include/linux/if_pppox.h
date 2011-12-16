@@ -53,9 +53,10 @@ struct pppoe_addr{
  */ 
 #define PX_PROTO_OE    0 /* Currently just PPPoE */
 #define PX_PROTO_OL2TP 1 /* Now L2TP also */
-#define PX_PROTO_OLAC  2
-#define PX_PROTO_OPNS  3
-#define PX_MAX_PROTO   4
+#define PX_PROTO_DUMMY 2 /* Dummy inserted to match android userspace */
+#define PX_PROTO_OLAC  3
+#define PX_PROTO_OPNS  4
+#define PX_MAX_PROTO   5
 
 struct sockaddr_pppox { 
        sa_family_t     sa_family;            /* address family, AF_PPPOX */ 
@@ -155,21 +156,19 @@ struct pppoe_opt {
 };
 
 struct pppolac_opt {
-	__u32		local;
-	__u32		remote;
-	__u32		recv_sequence;
-	__u32		xmit_sequence;
-	atomic_t	sequencing;
-	int		(*backlog_rcv)(struct sock *sk_udp, struct sk_buff *skb);
+	__u32	local;
+	__u32	remote;
+	__u16	sequence;
+	__u8	sequencing;
+	int	(*backlog_rcv)(struct sock *sk_udp, struct sk_buff *skb);
 };
 
 struct pppopns_opt {
-	__u16		local;
-	__u16		remote;
-	__u32		recv_sequence;
-	__u32		xmit_sequence;
-	void		(*data_ready)(struct sock *sk_raw, int length);
-	int		(*backlog_rcv)(struct sock *sk_raw, struct sk_buff *skb);
+	__u16	local;
+	__u16	remote;
+	__u32	sequence;
+	void	(*data_ready)(struct sock *sk_raw, int length);
+	int	(*backlog_rcv)(struct sock *sk_raw, struct sk_buff *skb);
 };
 
 #include <net/sock.h>
