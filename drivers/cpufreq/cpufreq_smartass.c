@@ -533,6 +533,8 @@ static int cpufreq_governor_smartass(struct cpufreq_policy *new_policy,
 			return 0;
 		sysfs_remove_group(&new_policy->kobj,
 				&smartass_attr_group);
+				
+		sysfs_remove_group(cpufreq_global_kobject, &smartass_attr_group);
 
 		pm_idle = pm_idle_old;
 		del_timer(&this_smartass->timer);
