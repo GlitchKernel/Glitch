@@ -818,16 +818,7 @@ static struct regulator_init_data aries_buck3_data = {
 		.apply_uV	= 1,
 		.boot_on        = 1,
 		.always_on	= 1,
-		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-		                  REGULATOR_CHANGE_STATUS,
-		.state_mem      = {
-                        .uV     = 1800000,
-			.mode   = REGULATOR_MODE_NORMAL,
-			.disabled = 1,
-                },
 	},
-        .num_consumer_supplies  = ARRAY_SIZE(buck3_consumer),
-        .consumer_supplies      = buck3_consumer,
 };
 
 static struct regulator_init_data aries_buck4_data = {
