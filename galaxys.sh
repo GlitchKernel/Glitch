@@ -65,7 +65,9 @@ echo "building kernel"
 make -j8
 
 echo "creating boot.img"
-../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/galaxysmtd/ramdisk.img ../../../out/target/product/galaxysmtd/ramdisk-recovery.img
+#../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/galaxysmtd/ramdisk.img ../../../out/target/product/galaxysmtd/ramdisk-recovery.img
+
+../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage release/auto/root/galaxysmtd/ramdisk.img release/auto/root/galaxysmtd/ramdisk-recovery.img
 
 echo "launching packaging script"
 ./release/auto/doit.sh
