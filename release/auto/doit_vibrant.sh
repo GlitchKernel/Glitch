@@ -14,7 +14,7 @@ cd release && {
 
 mkdir -p ${TYPE} || exit 1
 
-REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
+REL=CM9${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 
 	rm -r system 2> /dev/null
 	mkdir  -p system/lib/hw || exit 1
@@ -30,7 +30,7 @@ REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 	cd release
 	cp S99screenstate_scaling system/etc/init.d/ || exit 1	
 	cp 000leakage system/etc/init.d/ || exit 1
-	cp lights.aries.so.BLN system/lib/hw/lights.aries.so || exit 1
+#	cp lights.aries.so.BLN system/lib/hw/lights.aries.so || exit 1
 	cp logcat_module system/etc/init.d/ || exit 1
 	mkdir -p system/bin
 	cp bin/* system/bin/
