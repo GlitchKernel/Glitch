@@ -24,27 +24,20 @@
  *
  ******************************************************************************/
 
-#ifndef SERVICES_HEADERS_H
-#define SERVICES_HEADERS_H
+#ifndef __REGPATHS_H__
+#define __REGPATHS_H__
 
-#ifdef DEBUG_RELEASE_BUILD
-#pragma optimize( "", off )
-#define DEBUG		1
-#endif
+#define POWERVR_REG_ROOT 	   			"Drivers\\Display\\PowerVR"
+#define POWERVR_CHIP_KEY				"\\SGX1\\"
 
-#include "img_defs.h"
-#include "services.h"
-#include "servicesint.h"
-#include "power.h"
-#include "resman.h"
-#include "queue.h"
-#include "srvkm.h"
-#include "kerneldisplay.h"
-#include "syscommon.h"
-#include "pvr_debug.h"
-#include "metrics.h"
-#include "osfunc.h"
-#include "refcount.h"
+#define POWERVR_EURASIA_KEY				"PowerVREurasia\\"
+
+#define POWERVR_SERVICES_KEY			"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\PowerVR\\"
+
+#define PVRSRV_REGISTRY_ROOT			POWERVR_EURASIA_KEY "HWSettings\\PVRSRVKM"
+
+
+#define MAX_REG_STRING_SIZE 128
+
 
 #endif 
-

@@ -1,23 +1,11 @@
-
 config PVR_SGX
 	tristate "PowerVR SGX support"
 	depends on ARCH_S5PV210
-	select PVR_OMAP_DSS2
 	help
 	  Enable this option to build support for the PowerVR SGX 3D core.
 
 	  To compile this driver as a module, choose M here:
-	  this will generate two modules, called pvrsrvkm and s3c_fb.
-
-choice
-	prompt "PowerVR SGX core"
-	depends on PVR_SGX
-	default PVR_SGXCORE_540
-
-config PVR_SGXCORE_540
-	bool "SGX 540"
-
-endchoice
+	  this will generate two modules, called pvrsrvkm and s3c_lcd.
 
 choice
 	prompt "PowerVR build type"
@@ -51,8 +39,7 @@ config PVR_DEBUG_MEMORY
 
 config PVR_DEBUG_BRIDGE_KM
 	bool "Collect bridge statistics"
-        depends on PVR_SGX
-#	depends on PVR_BUILD_DEBUG
+	depends on PVR_BUILD_DEBUG
 	default y
 
 config PVR_DEBUG_TRACE_BRIDGE_KM
@@ -104,23 +91,3 @@ config PVR_PDUMP
 	bool "Support for parameter dumping (Pdump)"
 	depends on PVR_SGX
 	default n
-
-choice
-	prompt "SGX DVFS mode"
-	depends on PVR_SGX
-	default SGX_DVFS_MODE_NONE
-
-config SGX_DVFS_MODE_NONE
-	bool "None"
-
-config SGX_DVFS_MODE_LINEAR
-	bool "Linear"
-
-config SGX_DVFS_MODE_OPTIMIZED
-	bool "Optimized"
-endchoice
-
-config SGX_DVFS_IDLE_TIMEOUT
-	int "DVFS idle timeout (us)"
-	depends on PVR_SGX
-	default 1000
