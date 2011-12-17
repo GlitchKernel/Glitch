@@ -10,7 +10,7 @@ setup ()
 
     KERNEL_DIR="$(dirname "$(readlink -f "$0")")"
     BUILD_DIR="$KERNEL_DIR/build"
-    MODULES=("drivers/net/wireless/bcm4329/bcm4329.ko" "fs/cifs/cifs.ko" "drivers/net/tun.ko")
+    MODULES=("fs/cifs/cifs.ko" "fs/fuse/fuse.ko" "drivers/net/tun.ko" "fs/nls/nls_utf8.ko")
 
     if [ x = "x$NO_CCACHE" ] && ccache -V &>/dev/null ; then
         CCACHE=ccache
@@ -22,7 +22,7 @@ setup ()
         CCACHE=""
     fi
 
-    CROSS_PREFIX="$ANDROID_TOOLCHAIN/arm-eabi-"
+    CROSS_PREFIX="$ANDROID_BUILD_TOP/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-"
 }
 
 build ()
