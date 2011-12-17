@@ -8,7 +8,7 @@
 echo "packaging it up"
 
 TYPE=$1
-[[ "$TYPE" == '' ]] && TYPE=i9k
+[[ "$TYPE" == '' ]] && TYPE=i9000-T959D
 
 cd release && {
 
