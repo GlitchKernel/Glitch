@@ -7,13 +7,7 @@ export CROSS_COMPILE=$CROSS_COMPILE_GLITCH
 export KBUILD_BUILD_VERSION="1"
 
 # kernel option changes
-OPTS="CONFIG_NETFILTER_XT_MATCH_MULTIPORT \
-CONFIG_SYN_COOKIES \
-CONFIG_IP_ADVANCED_ROUTER \
-CONFIG_NLS_UTF8 \
-CONFIG_TIMER_STATS \
-CONFIG_MODVERSIONS
-"
+OPTS=""
 OPTSOFF="CONFIG_MAGIC_SYSRQ \
 CONFIG_DEBUG_FS \
 CONFIG_DETECT_HUNG_TASK \
@@ -60,16 +54,6 @@ for o in $OPTSOFF; do
 echo "- ${o}"
 sed -i "s/^${o}=[y|m]$/\# ${o}\ is\ not\ set/" .config
 done
-
-if [ -f arch/arm/mach-s5pv210/mach-aries.c_backup ]
-then
-mv arch/arm/mach-s5pv210/mach-aries.c arch/arm/mach-s5pv210/mach-aries.c_telus
-mv arch/arm/mach-s5pv210/mach-aries.c_backup arch/arm/mach-s5pv210/mach-aries.c
-echo " "
-echo "Found mach-aries.c_backup from failed Telus building"
-echo "Switching files for clean build"
-echo " "
-fi
 
 echo "building kernel"
 make -j8

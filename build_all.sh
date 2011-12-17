@@ -6,9 +6,9 @@ verify_toolchain
 
 echo "building ALL variants of all kernels!"
 
-echo "building initramfs"
+#echo "building initramfs"
 
-./initramfs.sh
+#./initramfs.sh
 
 echo "Prepping for CDMA variant builds ... "
 ./443cdma.sh
@@ -24,5 +24,4 @@ echo "Building GSM variants .. "
 ./cappy.sh
 ./galaxys.sh
 ./vibrant.sh
-./telus.sh
 

@@ -63,16 +63,6 @@ echo "- ${o}"
 sed -i "s/^${o}=[y|m]$/\# ${o}\ is\ not\ set/" .config
 done
 
-if [ -f arch/arm/mach-s5pv210/mach-aries.c_backup ]
-then
-mv arch/arm/mach-s5pv210/mach-aries.c arch/arm/mach-s5pv210/mach-aries.c_telus
-mv arch/arm/mach-s5pv210/mach-aries.c_backup arch/arm/mach-s5pv210/mach-aries.c
-echo " "
-echo "Found mach-aries.c_backup from failed Telus building"
-echo "Switching files for clean build"
-echo " "
-fi
-
 echo "building kernel"
 make -j8
 
