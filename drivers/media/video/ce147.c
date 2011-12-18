@@ -2102,11 +2102,10 @@ static int ce147_set_capture_exif(struct v4l2_subdev *sd)
 #else /* Modify	NTTS1 */
 	unsigned char ce147_str_model[7] = "SC-02B\0";
 #endif
-#if 1
+#if 0
 	struct timeval curr_time;
 	struct rtc_time time;
 #endif
-
 	ce147_model_name[0] = 0x06;
 	ce147_model_name[1] = 0x09;
 
@@ -2118,7 +2117,7 @@ static int ce147_set_capture_exif(struct v4l2_subdev *sd)
 	memcpy(ce147_gps_processing + 2, state->gpsInfo.gps_processingmethod,
 			sizeof(state->gpsInfo.gps_processingmethod));
 
-#if 1
+#if 0
 	do_gettimeofday(&curr_time);
 	rtc_time_to_tm(curr_time.tv_sec, &time);
 
@@ -2162,14 +2161,15 @@ static int ce147_set_capture_exif(struct v4l2_subdev *sd)
 	ce147_regbuf_timestamp[5] = gps_timestamp.tm_min;
 	ce147_regbuf_timestamp[6] = gps_timestamp.tm_sec;
 
-	/*pr_debug("Exif Time YEAR: %ld, MONTH: %d, DAY: %d, "
+
+	pr_debug("Exif Time YEAR: %ld, MONTH: %d, DAY: %d, "
 			"HOUR: %d, MIN:	%d, SEC: %d\n",
 			state->exifTimeInfo->tm_year,
 			state->exifTimeInfo->tm_mon,
 			state->exifTimeInfo->tm_mday,
 			state->exifTimeInfo->tm_hour,
 			state->exifTimeInfo->tm_min,
-			state->exifTimeInfo->tm_sec);*/
+			state->exifTimeInfo->tm_sec);
 
 	ce147_regbuf_rot[0] = state->exif_orientation_info;
 
@@ -2553,6 +2553,7 @@ static int ce147_set_capture_start(struct v4l2_subdev *sd,
 	}
 	ce147_msg(&client->dev, "%s: buffering_capture - wait time %d ms\n",
 			__func__, err);
+
 
 	err = ce147_set_exif_ctrl(sd, state->exif_ctrl);
 	if (err < 0) {
@@ -2953,7 +2954,7 @@ static int ce147_set_effect(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 				__func__);
 		return -EIO;
 	}
-#if 1 /* remove batch */
+#if 0 /* remove batch */
 	err = ce147_get_batch_reflection_status(sd);
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: ce147_get_batch_"
@@ -3008,7 +3009,7 @@ static int ce147_set_saturation(struct v4l2_subdev *sd,
 				"set_saturation\n", __func__);
 		return -EIO;
 	}
-#if 1 /* remove batch */
+#if 0 /* remove batch */
 	err = ce147_get_batch_reflection_status(sd);
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: ce147_get_batch_"
@@ -3064,7 +3065,7 @@ static int ce147_set_contrast(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 				"set_contrast\n", __func__);
 		return -EIO;
 	}
-#if 1 /* remove batch */
+#if 0 /* remove batch */
 	err = ce147_get_batch_reflection_status(sd);
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: ce147_get_batch_"
@@ -3121,7 +3122,7 @@ static int ce147_set_sharpness(struct v4l2_subdev *sd,
 				"set_saturation\n", __func__);
 		return -EIO;
 	}
-#if 1 /* remove batch */
+#if 0 /* remove batch */
 	err = ce147_get_batch_reflection_status(sd);
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: ce147_get_batch_"
@@ -3825,7 +3826,7 @@ static int ce147_set_white_balance(struct v4l2_subdev *sd,
 				"white_balance\n", __func__);
 		return -EIO;
 	}
-#if 1 /* remove batch */
+#if 0 /* remove batch */
 	err = ce147_get_batch_reflection_status(sd);
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: ce147_get_batch_"
@@ -3906,7 +3907,7 @@ static int ce147_set_ev(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 					__func__, state->hd_preview_on);
 		return -EIO;
 	}
-#if 1 /* remove batch */
+#if 0 /* remove batch */
 	err = ce147_get_batch_reflection_status(sd);
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: ce147_get_batch_"
@@ -3957,7 +3958,7 @@ static int ce147_set_metering(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 				"set_photometry\n", __func__);
 		return -EIO;
 	}
-#if 1 /* remove batch */
+#if 0 /* remove batch */
 	err = ce147_get_batch_reflection_status(sd);
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: ce147_get_batch_"
@@ -4038,7 +4039,7 @@ static int ce147_set_iso(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 				__func__);
 		return -EIO;
 	}
-#if 1 /* remove batch */
+#if 0 /* remove batch */
 	err = ce147_get_batch_reflection_status(sd);
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: ce147_get_batch_"
@@ -5073,11 +5074,6 @@ static int ce147_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 
 	case V4L2_CID_MAIN_SW_PRM_MAJOR_VER:
 		ctrl->value = state->main_sw_prm.major;
-		err = 0;
-		break;
-
-	case V4L2_CID_ESD_INT: // To make Nexus S driver happy
-		ctrl->value = 0;
 		err = 0;
 		break;
 

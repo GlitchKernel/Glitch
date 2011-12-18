@@ -274,6 +274,14 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height = cam_frmsize.discrete.height;
 			dev_err(ctrl->dev, "vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", ctrl->cap->rotate, ctrl->cam->width, ctrl->cam->height);
+		} else if (device_id != 0 && vtmode != 1) {
+			ctrl->cam->window.left = 136;
+			ctrl->cam->window.top = 0;
+			ctrl->cam->window.width = 368;
+			ctrl->cam->window.height = 480;
+			ctrl->cam->width = cam_frmsize.discrete.width;
+			ctrl->cam->height = cam_frmsize.discrete.height;
+			dev_err(ctrl->dev, "%s, crop(368x480), vtmode = 0, device = front, cam->width = %d, cam->height = %d\n", __func__, ctrl->cam->width, ctrl->cam->height);
 		} else {		
 			ctrl->cam->window.left = 0;
 			ctrl->cam->window.top = 0;
@@ -282,60 +290,7 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 		}
 	}
 
-	cam_ctrl.id = V4L2_CID_CAMERA_ANTI_BANDING;
-	cam_ctrl.value = 1;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_ISO;
-	cam_ctrl.value = 0;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_BRIGHTNESS;
-	cam_ctrl.value = 4;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_FRAME_RATE;
-	cam_ctrl.value = 30;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_METERING;
-	cam_ctrl.value = 2;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_SET_GAMMA;
-	cam_ctrl.value = 0;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_SET_SLOW_AE;
-	cam_ctrl.value = 0;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_EFFECT;
-	cam_ctrl.value = 1;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_WHITE_BALANCE;
-	cam_ctrl.value = 1;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-
 	cam_ctrl.id = V4L2_CID_CAM_PREVIEW_ONOFF;
-	cam_ctrl.value = 1;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-
-	cam_ctrl.id = V4L2_CID_CAMERA_FOCUS_MODE;
-	cam_ctrl.value = 0;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_FACE_DETECTION;
-	cam_ctrl.value = 0;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_SHARPNESS;
-	cam_ctrl.value = 2;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_SATURATION;
-	cam_ctrl.value = 2;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_CONTRAST;
-	cam_ctrl.value = 2;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_BEAUTY_SHOT;
-	cam_ctrl.value = 0;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_ZOOM;
-	cam_ctrl.value = 0;
-	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-	cam_ctrl.id = V4L2_CID_CAMERA_BATCH_REFLECTION;
 	cam_ctrl.value = 1;
 	ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
 
@@ -1048,7 +1003,6 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	case V4L2_PIX_FMT_NV61:
 		size[0] = cap->fmt.width * cap->fmt.height;
 		size[1] = cap->fmt.width * cap->fmt.height;
-		size[3] = 16; /* Padding buffer */
 		break;
 	case V4L2_PIX_FMT_NV12:
 		size[0] = cap->fmt.width * cap->fmt.height;
@@ -1057,7 +1011,6 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	case V4L2_PIX_FMT_NV21:
 		size[0] = cap->fmt.width * cap->fmt.height;
 		size[1] = cap->fmt.width * cap->fmt.height/2;
-		size[3] = 16; /* Padding buffer */
 		break;
 	case V4L2_PIX_FMT_NV12T:
 		/* Tiled frame size calculations as per 4x2 tiles
@@ -1091,7 +1044,6 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 		size[0] = cap->fmt.width * cap->fmt.height;
 		size[1] = cap->fmt.width * cap->fmt.height >> 2;
 		size[2] = cap->fmt.width * cap->fmt.height >> 2;
-		size[3] = 16; /* Padding buffer */
 		break;
 
 	case V4L2_PIX_FMT_JPEG:
@@ -1627,6 +1579,14 @@ int fimc_streamon_capture(void *fh)
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height = cam_frmsize.discrete.height;
 			dev_err(ctrl->dev, "vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", cap->rotate, ctrl->cam->width, ctrl->cam->height);
+		} else if (device_id != 0 && vtmode != 1) {
+			ctrl->cam->window.left = 136;
+			ctrl->cam->window.top = 0;
+			ctrl->cam->window.width = 368;
+			ctrl->cam->window.height = 480;
+			ctrl->cam->width = cam_frmsize.discrete.width;
+			ctrl->cam->height =cam_frmsize.discrete.height;
+			dev_err(ctrl->dev, "%s, crop(368x480), vtmode = 0, device = front, cam->width = %d, cam->height = %d\n", __func__, ctrl->cam->width, ctrl->cam->height);
 		} else {
 			ctrl->cam->window.left = 0;
 			ctrl->cam->window.top = 0;
@@ -1669,6 +1629,11 @@ int fimc_streamon_capture(void *fh)
 
 		fimc_hwset_output_size(ctrl, cap->fmt.width, cap->fmt.height);
 
+		if ((device_id != 0) && (vtmode != 1)) {
+			ctrl->cap->rotate = 90;
+			dev_err(ctrl->dev, "%s, rotate 90", __func__);
+		}
+
 		fimc_hwset_output_scan(ctrl, &cap->fmt);
 		fimc_hwset_output_rot_flip(ctrl, cap->rotate, cap->flip);
 		rot = fimc_mapping_rot_flip(cap->rotate, cap->flip);
@@ -1705,15 +1670,6 @@ int fimc_streamon_capture(void *fh)
 					__func__);
 			return -EPERM;
 		}
-		cam_ctrl.id = V4L2_CID_CAM_JPEG_QUALITY;
-		cam_ctrl.value = 90;
-		ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-		cam_ctrl.id = V4L2_CID_CAMERA_EXIF_ORIENTATION;
-		cam_ctrl.value = 1;
-		ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
-		cam_ctrl.id = V4L2_CID_CAMERA_CAPTURE;
-		cam_ctrl.value = 0;
-		ret = subdev_call(ctrl, core, s_ctrl, &cam_ctrl);
 	}
 
 	ctrl->status = FIMC_STREAMON;
