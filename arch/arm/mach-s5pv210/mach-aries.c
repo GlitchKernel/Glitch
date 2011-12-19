@@ -291,7 +291,7 @@ static struct s3cfb_lcd s6e63m0 = {
 	.p_width = 52,
 	.p_height = 86,
 	.bpp = 24,
-	.freq = 66,
+	.freq = 68,
 
 	.timing = {
 		.h_fp = 16,
@@ -413,53 +413,45 @@ static struct s5p_media_device aries_media_devs[] = {
 #ifdef CONFIG_CPU_FREQ
 static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 	{
-		.freq	= 1700000,
-		.varm	= DVSARM1,
-		.vint	= {DVSINT1_LL, DVSINT1_ML, DVSINT1_HL},
-	}, {
-		.freq	= 1600000,
-		.varm	= DVSARM1,
-		.vint	= {DVSINT1_LL, DVSINT1_ML, DVSINT1_HL},
-	}, {
 		.freq	= 1500000,
 		.varm	= DVSARM1,
-		.vint	= {DVSINT2_LL, DVSINT2_ML, DVSINT2_HL},
+		.vint	= {DVSINT1_LL, DVSINT1_ML, DVSINT1_HL},
 	}, {
 		.freq	= 1440000,
-		.varm	= DVSARM1,
-		.vint	= {DVSINT3_LL, DVSINT3_ML, DVSINT3_HL},
+		.varm	= DVSARM2,
+		.vint	= {DVSINT2_LL, DVSINT2_ML, DVSINT2_HL},
 	}, {
 		.freq	= 1400000,
-		.varm	= DVSARM2,
-		.vint	= {DVSINT4_LL, DVSINT4_ML, DVSINT4_HL},
+		.varm	= DVSARM3,
+		.vint	= {DVSINT3_LL, DVSINT3_ML, DVSINT3_HL},
 	}, {
 		.freq	= 1300000,
-		.varm	= DVSARM3,
-		.vint	= {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
+		.varm	= DVSARM4,
+		.vint	= {DVSINT4_LL, DVSINT4_ML, DVSINT4_HL},
 	}, {
 		.freq	= 1200000,
-		.varm	= DVSARM4,
-		.vint	= {DVSINT6_LL, DVSINT6_ML, DVSINT6_HL},
+		.varm	= DVSARM5,
+		.vint	= {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
 	}, {
 		.freq	= 1000000,
-		.varm	= DVSARM5,
-		.vint	= {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
+		.varm	= DVSARM6,
+		.vint	= {DVSINT6_LL, DVSINT6_ML, DVSINT6_HL},
 	}, {
 		.freq	=  800000,
-		.varm	= DVSARM6,
-		.vint	= {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
+		.varm	= DVSARM7,
+		.vint	= {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
 	}, {
 		.freq	=  400000,
-		.varm	= DVSARM7,
-		.vint	= {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
+		.varm	= DVSARM8,
+		.vint	= {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
 	}, {
 		.freq	=  200000,
-		.varm	= DVSARM8,
-		.vint	= {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
+		.varm	= DVSARM9,
+		.vint	= {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
 	}, {
 		.freq	=  100000,
-		.varm	= DVSARM8,
-		.vint	= {DVSINT9_LL, DVSINT9_ML, DVSINT9_HL},
+		.varm	= DVSARM9,
+		.vint	= {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
 	},
 };
 static struct s5pv210_cpufreq_data smdkc110_cpufreq_plat = {
@@ -774,7 +766,7 @@ static struct regulator_init_data aries_buck2_data = {
 	.constraints	= {
 		.name		= "VDD_INT",
 		.min_uV		= 750000,
-		.max_uV		= 1500000,
+		.max_uV		= 1300000,
 		.apply_uV	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,

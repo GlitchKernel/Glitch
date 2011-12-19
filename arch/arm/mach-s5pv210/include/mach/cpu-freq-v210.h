@@ -38,9 +38,7 @@ enum perf_level {
 	L7,
 	L8,
 	L9,
-	L10,
-	L11,
-	MAX_PERF_LEVEL = L11,
+	MAX_PERF_LEVEL = L9,
 };
 
 #define SLEEP_FREQ      (800 * 1000) /* Use 800MHz when entering sleep */

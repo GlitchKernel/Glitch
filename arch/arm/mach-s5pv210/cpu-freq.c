@@ -51,35 +51,30 @@ static unsigned int backup_freq_level;
 static unsigned int mpll_freq; /* in MHz */
 static unsigned int apll_freq_max; /* in MHz */
 static DEFINE_MUTEX(set_freq_lock);
-#define GPU_OC 0
-#define SMOOTH_STEPS 1
+#define SMOOTH_STEPS 0
 
 /* frequency */
 
 static struct cpufreq_frequency_table freq_table[] = {
-	{L0, 1700*1000},
-	{L1, 1600*1000},
-	{L2, 1500*1000},
-	{L3, 1440*1000},
-	{L4, 1400*1000},
-	{L5, 1300*1000},
-	{L6, 1200*1000},
-	{L7, 1000*1000},
-	{L8, 800*1000},
-	{L9, 400*1000},
-	{L10, 200*1000},
-	{L11, 100*1000},
+	{L0, 1500*1000},
+	{L1, 1440*1000},
+	{L2, 1400*1000},
+	{L3, 1300*1000},
+	{L4, 1200*1000},
+	{L5, 1000*1000},
+	{L6, 800*1000},
+	{L7, 400*1000},
+	{L8, 200*1000},
+	{L9, 100*1000},
 	{0, CPUFREQ_TABLE_END},
 };
 
-extern int exp_UV_mV[12]; //Needed for uv
-unsigned int freq_uv_table[12][3] = {
+extern int exp_UV_mV[10]; //Needed for uv
+unsigned int freq_uv_table[10][3] = {
 	//freq, 	stock, current
-	{1700000,	1500,	1500},
-	{1600000,	1500,	1500},
 	{1500000,	1500,	1500},
 	{1440000,	1500,	1500},
-	{1400000,	1450,	1450},
+	{1400000,	1475,	1475},
 	{1300000,	1400,	1400},
 	{1200000,	1350,	1350},
 	{1000000,	1275,	1275},
@@ -91,48 +86,6 @@ unsigned int freq_uv_table[12][3] = {
 
 extern int leakage;
 
-#if defined(GPU_OC)
-unsigned int gpu[12][2] = {
-	//stock  current
-
-	//1700
-	{ 233, 233 },
-
-	//1600
-	{ 229, 229 },
-
-	//1500
-	{ 247, 247 },
-
-	//1440
-	{ 240, 240 },
-
-	//1400
-	{ 233, 233 },
-
-	//1300
-	{ 217, 217 },
-
-	//1200
-	{ 200, 200 },
-
-	//1000
-	{ 200, 200 },
-
-	//800
-	{ 200, 200 },
-
-	//400
-	{ 200, 200 },
-
-	//200
-	{ 200, 200 },
-
-	//100
-	{ 100, 100 }
-};
-#endif
-
 struct s5pv210_dvs_conf {
 	unsigned long       arm_volt;   /* uV */
 	unsigned long       int_volt[3];   /* uV */
@@ -140,7 +93,7 @@ struct s5pv210_dvs_conf {
 
 #ifdef CONFIG_DVFS_LIMIT
 static unsigned int g_dvfs_high_lock_token = 0;
-static unsigned int g_dvfs_high_lock_limit = 12;
+static unsigned int g_dvfs_high_lock_limit = 10;
 static unsigned int g_dvfslockval[DVFS_LOCK_TOKEN_NUM];
 //static DEFINE_MUTEX(dvfs_high_lock);
 #endif
@@ -156,119 +109,85 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 		.int_volt   = {DVSINT1_LL, DVSINT1_ML, DVSINT1_HL},
 		},
 	[L1] = {
-		.arm_volt   = DVSARM1,
+		.arm_volt   = DVSARM2,
 		.int_volt   = {DVSINT2_LL, DVSINT2_ML, DVSINT2_HL},
 	},
 	[L2] = {
-		.arm_volt   = DVSARM1,
+		.arm_volt   = DVSARM3,
 		.int_volt   = {DVSINT3_LL, DVSINT3_ML, DVSINT3_HL},
 	},
 	[L3] = {
-		.arm_volt   = DVSARM2,
+		.arm_volt   = DVSARM4,
 		.int_volt   = {DVSINT4_LL, DVSINT4_ML, DVSINT4_HL},
 	},
 	[L4] = { 
-		.arm_volt   = DVSARM3,
+		.arm_volt   = DVSARM5,
 		.int_volt   = {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
 	},
 	[L5] = {
-		.arm_volt   = DVSARM4,
+		.arm_volt   = DVSARM6,
 		.int_volt   = {DVSINT6_LL, DVSINT6_ML, DVSINT6_HL},
 	},
 	[L6] = {
-		.arm_volt   = DVSARM5,
+		.arm_volt   = DVSARM7,
 		.int_volt   = {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
 	},
 	[L7] = {
-		.arm_volt   = DVSARM6,
-		.int_volt   = {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
+		.arm_volt   = DVSARM8,
+		.int_volt   = {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
 	},
 	[L8] = {
-		.arm_volt   = DVSARM7,
-		.int_volt   = {DVSINT9_LL, DVSINT9_ML, DVSINT9_HL},
+		.arm_volt   = DVSARM9,
+		.int_volt   = {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
 	},
 	[L9] = {
-		.arm_volt   = DVSARM8,
-		.int_volt   = {DVSINT9_LL, DVSINT9_ML, DVSINT9_HL},
-	},
-	[L10] = {
 		.arm_volt   = DVSARM9,
-		.int_volt   = {DVSINT9_LL, DVSINT9_ML, DVSINT9_HL},
-	},
-	[L11] = {
-		.arm_volt   = DVSARM9,
-		.int_volt   = {DVSINT10_LL, DVSINT10_ML, DVSINT10_HL},
+		.int_volt   = {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
 	},
 };
 
 //Dividers for more lulz
-static u32 clkdiv_val[12][11] = {
+static u32 clkdiv_val[10][11] = {
 	/*{ APLL, A2M, HCLK_MSYS, PCLK_MSYS,
 	 * HCLK_DSYS, PCLK_DSYS, HCLK_PSYS, PCLK_PSYS, ONEDRAM,
 	 * MFC, G3D }
 	 */
-	//L0:1700
-	{0, 6.3, 6.3, 1.3, 3, 1, 4, 1, 3, 0.15, 0.15},
-	//L1:1600
-	{0, 6, 6, 1, 3, 1, 4, 1, 3, 0, 0},
-	//L2: 1500
+	//L0: 1500
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
-	//L3: 1440
+	//L1: 1440
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
-	//L4: 1400
+	//L2: 1400
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
-	/* L5 : [1300/200/200/100][166/83][133/66][200/200] */
+	/* L3 : [1300/200/200/100][166/83][133/66][200/200] */
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
-	/* L6 : [1200/200/200/100][166/83][133/66][200/200] */
+	/* L4 : [1200/200/200/100][166/83][133/66][200/200] */
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
-	/* L7 : [1000/200/200/100][166/83][133/66][200/200] */
+	/* L5 : [1000/200/200/100][166/83][133/66][200/200] */
 	{0, 4, 4, 1, 3, 1, 4, 1, 3, 0, 0},
-	/* L8 : [800/200/200/100][166/83][133/66][200/200] */
+	/* L6 : [800/200/200/100][166/83][133/66][200/200] */
 	{0, 3, 3, 1, 3, 1, 4, 1, 3, 0, 0}, 
-	/* L9: [400/200/200/100][166/83][133/66][200/200] */
+	/* L7: [400/200/200/100][166/83][133/66][200/200] */
 	{1, 3, 1, 1, 3, 1, 4, 1, 3, 0, 0},
-	/* L10 : [200/200/200/100][166/83][133/66][200/200] */
+	/* L8 : [200/200/200/100][166/83][133/66][200/200] */
 	{3, 3, 0, 1, 3, 1, 4, 1, 3, 0, 0},
-	/* L11 : [100/100/100/100][83/83][66/66][100/100] */
+	/* L9 : [100/100/100/100][83/83][66/66][100/100] */
 	{7, 7, 0, 0, 7, 0, 9, 0, 7, 0, 0},
 };
 
 //And even more clocks
 static struct s3c_freq clk_info[] = {
-	[L0] = {
-		.fclk       = 1700000,
-		.armclk     = 1700000,
-		.hclk_tns   = 0,
-		.hclk	    = 133000,
-		.pclk       = 66000,
-                .hclk_msys  = 232876,
-                .pclk_msys  = 100000,
-                .hclk_dsys  = 166750,
-                .pclk_dsys  = 83375,
-	 },
-	 [L1] = {
-                .fclk       = 1600000,
-                .armclk     = 1600000,
-                .hclk_tns   = 0,
-                .hclk       = 133000,
-                .pclk       = 66000,
-                .hclk_msys  = 228571,
-                .pclk_msys  = 100000,
-                .hclk_dsys  = 166750,
-                .pclk_dsys  = 83375,
-         },
-	 [L2] = {
+	 [L0] = {
                 .fclk       = 1500000,
                 .armclk     = 1500000,
                 .hclk_tns   = 0,
                 .hclk       = 133000,
                 .pclk       = 66000,
-                .hclk_msys  = 246667,
+                .hclk_msys  = 250000,
                 .pclk_msys  = 100000,
                 .hclk_dsys  = 166750,
                 .pclk_dsys  = 83375
          },
-	 [L3] = {
+	 [L1] = {
                 .fclk       = 1440000,
                 .armclk     = 1440000,
                 .hclk_tns   = 0,
@@ -279,7 +198,7 @@ static struct s3c_freq clk_info[] = {
                 .hclk_dsys  = 166750,
                 .pclk_dsys  = 83375,
         },
-	[L4] = {
+	[L2] = {
 		.fclk       = 1400000,
 		.armclk     = 1400000,
 		.hclk_tns   = 0,
@@ -290,7 +209,7 @@ static struct s3c_freq clk_info[] = {
 		.hclk_dsys  = 166750,
 		.pclk_dsys  = 83375,
 	},
-	[L5] = {	
+	[L3] = {	
 		.fclk       = 1300000,
 		.armclk     = 1300000,
 		.hclk_tns   = 0,
@@ -302,7 +221,7 @@ static struct s3c_freq clk_info[] = {
 		.pclk_dsys  = 83375,
 	},
 		
-	[L6] = {
+	[L4] = {
 		.fclk       = 1200000,
 		.armclk     = 1200000,
 		.hclk_tns   = 0,
@@ -313,7 +232,7 @@ static struct s3c_freq clk_info[] = {
 		.hclk_dsys  = 166750,
 		.pclk_dsys  = 83375,
 	},
-	[L7] = {
+	[L5] = {
 		.fclk       = 1000000,
 		.armclk     = 1000000,
 		.hclk_tns   = 0,
@@ -324,7 +243,7 @@ static struct s3c_freq clk_info[] = {
 		.hclk_dsys  = 166750,
 		.pclk_dsys  = 83375,
 	},
-	[L8] = {
+	[L6] = {
 		.fclk       = 800000,
 		.armclk     = 800000,
 		.hclk_tns   = 0,
@@ -335,7 +254,7 @@ static struct s3c_freq clk_info[] = {
 		.hclk_dsys  = 166750,
 		.pclk_dsys  = 83375,
 	},
-	[L9] = {
+	[L7] = {
 		.fclk       = 800000,
 		.armclk     = 400000,
 		.hclk_tns   = 0,
@@ -346,7 +265,7 @@ static struct s3c_freq clk_info[] = {
 		.hclk_dsys  = 166750,
 		.pclk_dsys  = 83375,
 	},
-	[L10] = {
+	[L8] = {
 		.fclk       = 800000,
 		.armclk     = 200000,
 		.hclk_tns   = 0,
@@ -357,7 +276,7 @@ static struct s3c_freq clk_info[] = {
 		.hclk_dsys  = 166750,
 		.pclk_dsys  = 83375,
 	},
-	[L11] = {
+	[L9] = {
 		.fclk       = 800000,
 		.armclk     = 100000,
 		.hclk_tns   = 0,
@@ -475,20 +394,16 @@ static void s5pv210_cpufreq_clksrcs_MPLL2APLL(unsigned int index,
 
 //Fixed up the 1200mhz overclock (Thanks netarchy!)
 	if (index == L0)
-		__raw_writel(PLL45XX_APLL_VAL_1700, S5P_APLL_CON);
-	else if (index == L1)
-		__raw_writel(PLL45XX_APLL_VAL_1600, S5P_APLL_CON);
-	else if (index == L2)
 		__raw_writel(PLL45XX_APLL_VAL_1500, S5P_APLL_CON);
-	else if(index == L3)
+	else if (index == L1)
 		__raw_writel(PLL45XX_APLL_VAL_1440, S5P_APLL_CON);
-	else if(index == L4)
+	else if (index == L2)
 		__raw_writel(PLL45XX_APLL_VAL_1400, S5P_APLL_CON);
-	else if(index == L5)
+	else if(index == L3)
 		__raw_writel(PLL45XX_APLL_VAL_1300, S5P_APLL_CON);
-	else if(index == L6)
+	else if(index == L4)
 		__raw_writel(PLL45XX_APLL_VAL_1200, S5P_APLL_CON);
-	else if(index == L7)
+	else if(index == L5)
 		__raw_writel(PLL45XX_APLL_VAL_1000, S5P_APLL_CON);
 	else
 		/* APLL FOUT becomes 800 Mhz */
@@ -727,52 +642,6 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 	}
 	cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_PRECHANGE);
 
-/* This is currently broken, will fix at somepoint.  */
-#if defined(GPU_OC) 
-switch(s3c_freqs.old.armclk) {
-		case 1700000:
-			s3c_freqs.old.hclk_msys = gpu[0][1];
-			break;
-		case 1600000:
-			s3c_freqs.old.hclk_msys = gpu[1][1];
-			break;
-		case 1500000:
-			s3c_freqs.old.hclk_msys = gpu[2][1];
-			break;
-		case 1440000:
-			s3c_freqs.old.hclk_msys = gpu[3][1];
-			break;
-		case 1400000:
-			s3c_freqs.old.hclk_msys = gpu[4][1];
-			break;
-		case 1300000:
-			s3c_freqs.old.hclk_msys = gpu[5][1];
-			break;
-		case 1200000:
-			s3c_freqs.old.hclk_msys = gpu[6][1];
-			break;
-		case 1000000:
-			s3c_freqs.old.hclk_msys = gpu[7][1];
-			break;
-		case 800000:
-			s3c_freqs.old.hclk_msys = gpu[8][1];
-			break;
-		case 400000:
-			s3c_freqs.old.hclk_msys = gpu[9][1];
-			break;
-		case 200000:
-			s3c_freqs.old.hclk_msys = gpu[10][1];
-			break;
-		case 100000:
-			s3c_freqs.old.hclk_msys = gpu[11][1];
-			break;
-		}
-		
-	/* Convert to khz */	
-	
-	s3c_freqs.old.hclk_msys *= 1000;
-	s3c_freqs.new.hclk_msys = gpu[index][1]*1000;
-#endif
 
 	if (s3c_freqs.new.fclk != s3c_freqs.old.fclk || first_run)
 		pll_changing = 1;
@@ -818,12 +687,8 @@ switch(s3c_freqs.old.armclk) {
 		 * that should be fixed before.
 		 */
 		reg = backup_dmc1_reg * s3c_freqs.new.hclk_msys;
-#ifdef GPU_OC
-		/* gpu[freq][1] is the actual hclk_msys. We want to use this in place of the static clk_info. */
-		reg /= gpu[backup_freq_level][1];
-#else
 		reg /= clk_info[backup_freq_level].hclk_msys;
-#endif
+
 		/*
 		 * When ARM_CLK is absed on APLL->MPLL,
 		 * hclk_msys becomes hclk_msys *= MPLL/APLL;
@@ -923,13 +788,9 @@ switch(s3c_freqs.old.armclk) {
 	 * then, the refresh rate should decrease
 	 * (by original refresh count * n) (n : clock rate)
 	 */
-#ifdef GPU_OC
-	reg = backup_dmc1_reg * gpu[index][1];
-	reg /= gpu[backup_freq_level][1];
-#else
 	reg = backup_dmc1_reg * clk_info[index].hclk_msys;
 	reg /= clk_info[backup_freq_level].hclk_msys;
-#endif
+
 	__raw_writel(reg & 0xFFFF, S5P_VA_DMC1 + 0x30);
 	cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_POSTCHANGE);
 
@@ -989,9 +850,9 @@ static int s5pv210_cpufreq_resume(struct cpufreq_policy *policy)
 
 	if (level == CPUFREQ_TABLE_END) { /* Not found */
 		pr_err("[%s:%d] clock speed does not match: "
-				"%d. Using L8 of 800MHz.\n",
+				"%d. Using L6 of 800MHz.\n",
 				__FILE__, __LINE__, rate);
-		level = L8;
+		level = L6;
 	}
 
 	memcpy(&s3c_freqs.old, &clk_info[level],
@@ -1047,9 +908,9 @@ static int __init s5pv210_cpufreq_driver_init(struct cpufreq_policy *policy)
 
 	if (level == CPUFREQ_TABLE_END) { /* Not found */
 		pr_err("[%s:%d] clock speed does not match: "
-				"%d. Using L8 of 800MHz.\n",
+				"%d. Using L6 of 800MHz.\n",
 				__FILE__, __LINE__, rate);
-		level = L8;
+		level = L6;
 	}
 
 	backup_dmc0_reg = __raw_readl(S5P_VA_DMC0 + 0x30) & 0xFFFF;
