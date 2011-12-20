@@ -3457,7 +3457,7 @@ static ssize_t incall_boost_hp_store( struct device *dev,
 
 void update_mic_gain(unsigned short gain)
 {
-	unsigned short val = wm8994_read(codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME );
+	unsigned short val = wm8994_read(wm8994_codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME );
 	val &= ~WM8994_IN1L_VOL_MASK;
 	val |= WM8994_IN1L_VU | gain;
 	wm8994_write(wm8994_codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME, val);
