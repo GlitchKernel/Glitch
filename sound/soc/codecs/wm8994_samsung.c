@@ -53,11 +53,8 @@
 #define HDMI_USE_AUDIO
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
+
 #define DECLARE_WM8994(codec) struct wm8994_priv *wm8994 = codec->drvdata;
-#else
-#define DECLARE_WM8994(codec) struct wm8994_priv *wm8994 = codec->private_data;
-#endif
 
 // call volume boost hack
 extern unsigned short incall_boost_rcv;
