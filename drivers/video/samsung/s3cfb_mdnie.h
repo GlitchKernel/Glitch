@@ -1,4 +1,3 @@
-
 /* linux/drivers/video/samsung/s3cfb_mdnie.h
  *
  * Header file for Samsung (MDNIE) driver
@@ -329,7 +328,30 @@
 #define SIG_MDNIE_VIDEO_COLD_MODE			3
 #define SIG_MDNIE_CAMERA_MODE				4
 #define SIG_MDNIE_NAVI						5
+#define SIG_MDNIE_DMB_MODE					6
+#define SIG_MDNIE_VT_MODE					7
+#define SIG_MDNIE_GALLERY_MODE				8
 
+
+#define CT00CM	0x0064	//MCM 0x0064=10000k 5B=9100K 43=6700K 3A=5500K
+
+#define CTHIGHVAL1		0x0138,0x8383, //CBCB
+#define CTHIGHVAL2		0x013C,0x8383, //CBCB
+#define CTHIGHVAL3		0x0140,0x8383, //CBCR
+#define CTHIGHVAL4		0x0144,0x8383, //CRCR
+#define CTHIGHVAL5		0x0148,0x8383, //CRCR
+
+#define CTHIGHVAL1C		0x0138,0x8888, //CBCB
+#define CTHIGHVAL2C		0x013C,0x8888, //CBCB
+#define CTHIGHVAL3C		0x0140,0x887E, //CBCR
+#define CTHIGHVAL4C		0x0144,0x7E7E, //CRCR
+#define CTHIGHVAL5C		0x0148,0x7E7E, //CRCR
+
+#define CTHIGHVAL1W		0x0138,0x7E7E, //CBCB
+#define CTHIGHVAL2W		0x013C,0x7E7E, //CBCB
+#define CTHIGHVAL3W		0x0140,0x7E88, //CBCR
+#define CTHIGHVAL4W		0x0144,0x8888, //CRCR
+#define CTHIGHVAL5W		0x0148,0x8888, //CRCR
 
 int s3c_mdnie_init(void);
 int s3c_mdnie_enable(void);
