@@ -291,7 +291,7 @@ static struct s3cfb_lcd s6e63m0 = {
 	.p_width = 52,
 	.p_height = 86,
 	.bpp = 24,
-	.freq = 66,
+	.freq = 68,
 
 	.timing = {
 		.h_fp = 16,
@@ -818,16 +818,7 @@ static struct regulator_init_data aries_buck3_data = {
 		.apply_uV	= 1,
 		.boot_on        = 1,
 		.always_on	= 1,
-		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-		                  REGULATOR_CHANGE_STATUS,
-		.state_mem      = {
-                        .uV     = 1800000,
-			.mode   = REGULATOR_MODE_NORMAL,
-			.disabled = 1,
-                },
 	},
-        .num_consumer_supplies  = ARRAY_SIZE(buck3_consumer),
-        .consumer_supplies      = buck3_consumer,
 };
 
 static struct regulator_init_data aries_buck4_data = {
@@ -1309,8 +1300,8 @@ static const int touch_keypad_code[] = {
 #if defined (CONFIG_SAMSUNG_GALAXYS) || defined (CONFIG_SAMSUNG_GALAXYSB)
 	KEY_MENU,
 	KEY_BACK,
-	0,
-	0
+	KEY_HOME,
+	KEY_SEARCH
 #else
 	KEY_MENU,
 	KEY_HOME,
@@ -1461,7 +1452,7 @@ static void sec_jack_set_micbias_state(bool on)
 
 static struct wm8994_platform_data wm8994_pdata = {
 	.ldo = GPIO_CODEC_LDO_EN,
-        .ear_sel = GPIO_EARPATH_SEL,
+        .ear_sel = -1,
 	.set_mic_bias = wm8994_set_mic_bias,
 };
 
@@ -2838,9 +2829,9 @@ static struct sec_jack_buttons_zone sec_jack_buttons_zones[] = {
 	},
 #else
 	{
-		/* 300 <= adc <=1000, stable zone */
+		/* 0 <= adc <=1000, stable zone */
 		.code		= KEY_MEDIA,
-		.adc_low	= 300,
+		.adc_low	= 0,
 		.adc_high	= 1000,
 	},
 #endif

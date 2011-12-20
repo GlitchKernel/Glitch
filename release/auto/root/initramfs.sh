@@ -22,7 +22,7 @@ else
 	phones[3]="fascinate"
 fi
 
-cd ../../../
+cd ../../../../../../
 
 for i in ${!phones[@]}; do
 	phone=${phones[$i]}
