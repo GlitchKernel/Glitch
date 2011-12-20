@@ -27,7 +27,7 @@ REL=CM9${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 	cd ../
 		find . -name "*.ko" -exec cp {} release/system/lib/modules/ \; 2>/dev/null || exit 1
 	cd release
-	cp S99screenstate_scaling system/etc/init.d/ || exit 1	
+	cp S99screenstate_scaling system/etc/init.d/ || exit 1
 	cp 000leakage system/etc/init.d/ || exit 1
 	cp logcat_module system/etc/init.d/ || exit 1
 	mkdir -p system/bin
