@@ -13,8 +13,8 @@
 #define __ASM_ARCH_VOLTAGES_H
 
 // these 2 are always the same
-#define ARMVOLT 1600000
-#define INTVOLT 1300000
+#define ARMVOLT 1500000
+#define INTVOLT 1250000
 
 // these are all the same, too!
 #define DVSARM1 1500000 //1500
@@ -38,7 +38,7 @@
 #define DVSINT3_HL  1200000 //1400
 #define DVSINT4_HL  1175000 //1300
 #define DVSINT5_HL  1150000 //1200
-#define DVSINT6_HL  1150000 //1000
+#define DVSINT6_HL  1125000 //1000
 #define DVSINT7_HL  1100000 //200, 400, 800
 #define DVSINT8_HL  1000000 //100
 //#endif
@@ -54,8 +54,8 @@
 #define DVSINT3_ML  1750000 //1400
 #define DVSINT4_ML  1150000 //1300
 #define DVSINT5_ML  1125000 //1200
-#define DVSINT6_ML  1125000 //1000
-#define DVSINT7_ML  1100000 //200, 400, 800
+#define DVSINT6_ML  1100000 //1000
+#define DVSINT7_ML  1075000 //200, 400, 800
 #define DVSINT8_ML  1000000 //100
 //#endif
 
