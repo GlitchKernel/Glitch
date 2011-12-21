@@ -1,24 +1,68 @@
 #!/bin/bash
 
+# Version of the toolchain you want to use
+VERSION=$1
+[[ "$VERSION" == '' ]] && VERSION=4.5-2011.12
+
 function verify_toolchain()
 {
-  echo "checking toolchains ... "
+  echo ""
+  echo "checking 4.4.3 and ${VERSION} toolchains ... "
+  echo ""
 
-  if [ ! -d android-toolchain-eabi ]; then
-    tarball="android-toolchain-eabi-linaro-4.5-2011.10-1-2011-10-21_15-21-26-linux-x86.tar.bz2"
-    if [ ! -f "$tarball" ]; then
-      wget -c http://androtransfer.com/uploads/"$tarball"
-    fi
-    tar -xjf "$tarball"
+  if [ ! -d ../glitch-toolchain/android-toolchain-eabi-${VERSION} ]; then
+
+# To use if you want only one toolchain at a time for building Glitch kernel
+	if test -d ../glitch-toolchain/; then
+echo "You have a Glitch toolchain directory already.. Cleaning"
+    rm -rf ../glitch-toolchain/*
+else
+
+echo "Glitch toolchain directory created"
+    mkdir ../glitch-toolchain/
+	fi
+
+# Downloading
+echo ""
+echo "Downloading the toolchain you asked for ... "
+echo ""
+    tarball="android-toolchain-eabi-${VERSION}-linux-x86.tar.bz2"
+		if [ ! -f "$tarball" ]; then
+ wget -c http://androtransfer.com/tk-glitch/toolchains/"$tarball"
+
+		fi
+echo ""
+echo "Decompressing into Glitch toolchain folder... "
+echo ""
+			if tar -C ../glitch-toolchain/ -xjf "$tarball"; then    
+    mv ../glitch-toolchain/android-toolchain-eabi ../glitch-toolchain/android-toolchain-eabi-${VERSION}
+
+else
+
+echo "############################################"
+echo "#  Something went wrong ! Trying again ... #"
+echo "############################################"
+    rm -rf ../glitch-toolchain/android-toolchain-eabi-${VERSION}
+    rm "$tarball"
+    source ./verify_toolchain.sh
+    verify_toolchain
+			fi
+if test -s "$tarball"; then
+echo "Cleaning downloaded file ... "
+    rm "$tarball"
+fi
+
   fi
 
   if [ ! -d ../../../prebuilt/linux-x86/toolchain/arm-eabi-4.4.3 ]; then
-    echo "Please install the CM7 build environment first."
+    echo "------------------------------------------------"
+    echo "Please install the CM9 build environment first !"
+    echo "------------------------------------------------"
     exit 1
   fi
 
-  export CROSS_COMPILE_GLITCH=`pwd`/android-toolchain-eabi/bin/arm-eabi-
+  export CROSS_COMPILE_GLITCH=../glitch-toolchain/android-toolchain-eabi-${VERSION}/bin/arm-eabi-
   export CROSS_COMPILE_443=../../../prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
   
-  echo "toolchains ok"
+  echo "Toolchains are ready for Glitch building ! :)"
 }
