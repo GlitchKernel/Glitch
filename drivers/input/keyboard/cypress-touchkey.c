@@ -214,7 +214,7 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 	int i;
 	int ret;
 	int scancode;
-	struct cypress_touchkey_devdata *devdata = touchkey_devdata;
+	struct cypress_touchkey_devdata *devdata = touchkey_devdata;	
 
 	ret = i2c_touchkey_read_byte(devdata, &data);
 	if (ret || (data & ESD_STATE_MASK)) {
@@ -275,7 +275,13 @@ err:
 static irqreturn_t touchkey_interrupt_handler(int irq, void *touchkey_devdata)
 {
 	struct cypress_touchkey_devdata *devdata = touchkey_devdata;
-
+  
+  if ( devdata != bl_devdata )
+  {
+    printk(KERN_DEBUG "%s: ignoring irq %d from some other device\n", __func__, irq );
+    return IRQ_NONE;
+  }
+  
 	if (devdata->is_powering_on) {
 		dev_dbg(&devdata->client->dev, "%s: ignoring spurious boot "
 					"interrupt\n", __func__);
@@ -699,7 +705,7 @@ static int cypress_touchkey_probe(struct i2c_client *client,
 	}
 
 	err = request_threaded_irq(client->irq, touchkey_interrupt_handler,
-				touchkey_interrupt_thread, IRQF_TRIGGER_FALLING,
+				touchkey_interrupt_thread, IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
 				DEVICE_NAME, devdata);
 	if (err) {
 		dev_err(dev, "%s: Can't allocate irq.\n", __func__);
