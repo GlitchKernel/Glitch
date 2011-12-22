@@ -51,15 +51,15 @@ static unsigned int backup_freq_level;
 static unsigned int mpll_freq; /* in MHz */
 static unsigned int apll_freq_max; /* in MHz */
 static DEFINE_MUTEX(set_freq_lock);
-#define SMOOTH_STEPS 0
+#define SMOOTH_STEPS 1
 
 /* frequency */
 
 static struct cpufreq_frequency_table freq_table[] = {
-	{L0, 1500*1000},
+	{L0, 1496*1000},
 	{L1, 1440*1000},
 	{L2, 1400*1000},
-	{L3, 1300*1000},
+	{L3, 1304*1000},
 	{L4, 1200*1000},
 	{L5, 1000*1000},
 	{L6, 800*1000},
@@ -72,10 +72,10 @@ static struct cpufreq_frequency_table freq_table[] = {
 extern int exp_UV_mV[10]; //Needed for uv
 unsigned int freq_uv_table[10][3] = {
 	//freq, 	stock, current
-	{1500000,	1500,	1500},
+	{1496000,	1500,	1500},
 	{1440000,	1500,	1500},
 	{1400000,	1475,	1475},
-	{1300000,	1400,	1400},
+	{1304000,	1400,	1400},
 	{1200000,	1350,	1350},
 	{1000000,	1275,	1275},
 	{800000,	1200,	1200},
@@ -223,12 +223,12 @@ static u32 clkdiv_val[10][11] = {
 //And even more clocks
 static struct s3c_freq clk_info[] = {
 	 [L0] = {
-                .fclk       = 1500000,
-                .armclk     = 1500000,
+                .fclk       = 1496000,
+                .armclk     = 1496000,
                 .hclk_tns   = 0,
                 .hclk       = 133000,
                 .pclk       = 66000,
-                .hclk_msys  = 250000,
+                .hclk_msys  = 249333,
                 .pclk_msys  = 100000,
                 .hclk_dsys  = 166750,
                 .pclk_dsys  = 83375
@@ -256,12 +256,12 @@ static struct s3c_freq clk_info[] = {
 		.pclk_dsys  = 83375,
 	},
 	[L3] = {	
-		.fclk       = 1300000,
-		.armclk     = 1300000,
+		.fclk       = 1304000,
+		.armclk     = 1304000,
 		.hclk_tns   = 0,
 		.hclk       = 133000,
 		.pclk       = 66000,
-		.hclk_msys  = 216667,
+		.hclk_msys  = 217333,
 		.pclk_msys  = 100000,
 		.hclk_dsys  = 166750,
 		.pclk_dsys  = 83375,
@@ -460,13 +460,13 @@ static void s5pv210_cpufreq_clksrcs_MPLL2APLL(unsigned int index,
 
 //Fixed up the 1200mhz overclock (Thanks netarchy!)
 	if (index == L0)
-		__raw_writel(PLL45XX_APLL_VAL_1500, S5P_APLL_CON);
+		__raw_writel(PLL45XX_APLL_VAL_1496, S5P_APLL_CON);
 	else if (index == L1)
 		__raw_writel(PLL45XX_APLL_VAL_1440, S5P_APLL_CON);
 	else if (index == L2)
 		__raw_writel(PLL45XX_APLL_VAL_1400, S5P_APLL_CON);
 	else if(index == L3)
-		__raw_writel(PLL45XX_APLL_VAL_1300, S5P_APLL_CON);
+		__raw_writel(PLL45XX_APLL_VAL_1304, S5P_APLL_CON);
 	else if(index == L4)
 		__raw_writel(PLL45XX_APLL_VAL_1200, S5P_APLL_CON);
 	else if(index == L5)

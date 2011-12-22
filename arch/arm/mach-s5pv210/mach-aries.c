@@ -291,7 +291,10 @@ static struct s3cfb_lcd s6e63m0 = {
 	.p_width = 52,
 	.p_height = 86,
 	.bpp = 24,
+#ifdef CONFIG_FB_S3C_UNLOCKED_REFRESH
 	.freq = 68,
+#else
+	.freq = 60,
 
 	.timing = {
 		.h_fp = 16,
