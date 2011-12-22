@@ -46,4 +46,5 @@ obj-$(CONFIG_SAMSUNG_MODEMCTL) += samsung_modemctl/
 obj-$(CONFIG_SAMSUNG_PARAM)	+= param/
 obj-$(CONFIG_CUSTOM_VOLTAGE) 	+= custom_voltage.o
 obj-$(CONFIG_LIVE_OC)		+= live_oc.o
+obj-$(CONFIG_BLX)    		+= blx.o
 # obj-$(CONFIG_CPU_DIDLE) 	+= deep_idle.o
