@@ -67,3 +67,4 @@ obj-$(CONFIG_S5PV210_SETUP_CSIS)	+= setup-csis.o
 
 obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
 obj-$(CONFIG_CPU_FREQ)		+= dev-cpufreq.o
+obj-$(CONFIG_CPU_DIDLE)    	+= didle.o
