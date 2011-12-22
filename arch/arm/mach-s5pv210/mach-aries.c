@@ -295,7 +295,7 @@ static struct s3cfb_lcd s6e63m0 = {
 	.freq = 68,
 #else
 	.freq = 60,
-
+#endif
 	.timing = {
 		.h_fp = 16,
 		.h_bp = 16,
