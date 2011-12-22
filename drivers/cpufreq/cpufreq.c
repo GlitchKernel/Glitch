@@ -653,6 +653,21 @@ static ssize_t show_scaling_setspeed(struct cpufreq_policy *policy, char *buf)
 	return policy->governor->show_setspeed(policy, buf);
 }
 
+#ifdef CONFIG_CUSTOM_VOLTAGE
+extern ssize_t customvoltage_armvolt_read(struct device * dev, struct device_attribute * attr, char * buf);
+extern ssize_t customvoltage_armvolt_write(struct device * dev, struct device_attribute * attr, const char * buf, size_t size);
+
+/* sysfs interface for UV control */
+static ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
+	return customvoltage_armvolt_read(NULL, NULL, buf);
+}
+
+static ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
+                                       const char *buf, size_t count) {
+	return customvoltage_armvolt_write(NULL, NULL, buf, count);
+}
+#endif
+
 static ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
 	return sprintf(buf, "%d %d %d %d %d %d %d %d %d %d\n", exp_UV_mV[0], exp_UV_mV[1], exp_UV_mV[2], exp_UV_mV[3], exp_UV_mV[4], exp_UV_mV[5], exp_UV_mV[6], exp_UV_mV[7], exp_UV_mV[8], exp_UV_mV[9]);
 
