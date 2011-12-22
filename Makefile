@@ -357,10 +357,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks \
-		   -mfpu=neon \
-		   -march=armv5te \
-		   -mtune=cortex-a8
+		   -fno-delete-null-pointer-checks $(GLITCHFLAGS)
 		   
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 
