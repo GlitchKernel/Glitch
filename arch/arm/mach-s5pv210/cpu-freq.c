@@ -80,11 +80,9 @@ unsigned int freq_uv_table[10][3] = {
 	{100000,	950,	950}
 };
 
-extern int leakage;
-
 struct s5pv210_dvs_conf {
 	unsigned long       arm_volt;   /* uV */
-	unsigned long       int_volt[3];   /* uV */
+	unsigned long       int_volt;   /* uV */
 };
 
 #ifdef CONFIG_DVFS_LIMIT
@@ -94,83 +92,49 @@ static unsigned int g_dvfslockval[DVFS_LOCK_TOKEN_NUM];
 //static DEFINE_MUTEX(dvfs_high_lock);
 #endif
 
+
 #ifdef CONFIG_CUSTOM_VOLTAGE
 unsigned long arm_volt_max = 1600000;
 unsigned long int_volt_max = 1300000;
-// added more voltage levels for the added frequencies
-static struct s5pv210_dvs_conf dvs_conf[] = {
-	[L0] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1250000,
-	},
-	[L1] = {
-		.arm_volt   = 1500000,
-		.int_volt   = 1225000,
-	},
-	[L2] = {
-		.arm_volt   = 1475000,
-		.int_volt   = 1200000,
-	},
-	[L3] = {
-		.arm_volt   = 1400000,
-		.int_volt   = 1175000,
-	},
-	[L4] = { 
-		.arm_volt   = 1350000,
-		.int_volt   = 1150000,
-	},
-	[L5] = {
-		.arm_volt   = 1275000,
-		.int_volt   = 1125000,
-	},
-	[L6] = {
-		.arm_volt   = 1200000,
-		.int_volt   = 1100000,
-	},
-	[L7] = {
-		.arm_volt   = 1050000,
-		.int_volt   = 1100000,
-	},
-};
 #else
- const unsigned long arm_volt_max = ARMVOLT;
- const unsigned long int_volt_max = INTVOLT;
+const unsigned long arm_volt_max = 1600000;
+const unsigned long int_volt_max = 1300000;
+#endif
 // added more voltage levels for the added frequencies
 static struct s5pv210_dvs_conf dvs_conf[] = {
 	[L0] = {
 		.arm_volt   = DVSARM1,
-		.int_volt   = {DVSINT1_LL, DVSINT1_ML, DVSINT1_HL},
+		.int_volt   = DVSINT1,
 	},
 	[L1] = {
 		.arm_volt   = DVSARM2,
-		.int_volt   = {DVSINT2_LL, DVSINT2_ML, DVSINT2_HL},
+		.int_volt   = DVSINT2,
 	},
 	[L2] = {
 		.arm_volt   = DVSARM3,
-		.int_volt   = {DVSINT3_LL, DVSINT3_ML, DVSINT3_HL},
+		.int_volt   = DVSINT3,
 	},
 	[L3] = {
 		.arm_volt   = DVSARM4,
-		.int_volt   = {DVSINT4_LL, DVSINT4_ML, DVSINT4_HL},
+		.int_volt   = DVSINT4,
 	},
 	[L4] = { 
 		.arm_volt   = DVSARM5,
-		.int_volt   = {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
+		.int_volt   = DVSINT5,
 	},
 	[L5] = {
 		.arm_volt   = DVSARM6,
-		.int_volt   = {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
+		.int_volt   = DVSINT5,
 	},
 	[L6] = {
 		.arm_volt   = DVSARM7,
-		.int_volt   = {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
+		.int_volt   = DVSINT5,
 	},
 	[L7] = {
 		.arm_volt   = DVSARM8,
-		.int_volt   = {DVSINT6_LL, DVSINT6_ML, DVSINT6_HL},
+		.int_volt   = DVSINT6,
 	},
 };
-#endif
 
 //Dividers for more lulz
 static u32 clkdiv_val[8][11] = {
@@ -627,7 +591,7 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 		
 	arm_volt = (dvs_conf[index].arm_volt - (exp_UV_mV[index]*1000));
 
-	int_volt = dvs_conf[index].int_volt[leakage];
+	int_volt = dvs_conf[index].int_volt;
 
 	/* New clock information update */
 	memcpy(&s3c_freqs.new, &clk_info[index],
@@ -1211,9 +1175,7 @@ static int __init s5pv210_cpufreq_probe(struct platform_device *pdev)
 			while (freq_table[j].frequency != CPUFREQ_TABLE_END) {
 				if (freq_table[j].frequency == pdata->volt[i].freq) {
 					dvs_conf[j].arm_volt = pdata->volt[i].varm;
-					dvs_conf[j].int_volt[0] = pdata->volt[i].vint[0];
-					dvs_conf[j].int_volt[1] = pdata->volt[i].vint[1];
-					dvs_conf[j].int_volt[2] = pdata->volt[i].vint[2];
+					dvs_conf[j].int_volt = pdata->volt[i].vint;
 					break;
 				}
 				j++;

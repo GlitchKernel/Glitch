@@ -35,8 +35,6 @@
 int exp_UV_mV[8];
 extern unsigned int freq_uv_table[8][3];
 int enabled_freqs[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
-int leakage = 1; // medium by default
-void update_leakage(unsigned int);
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -666,7 +664,7 @@ static ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
                                        const char *buf, size_t count) {
 	return customvoltage_armvolt_write(NULL, NULL, buf, count);
 }
-#endif
+#else
 
 static ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
 	return sprintf(buf, "%d %d %d %d %d %d %d %d\n", exp_UV_mV[0], exp_UV_mV[1], exp_UV_mV[2], exp_UV_mV[3], exp_UV_mV[4], exp_UV_mV[5], exp_UV_mV[6], exp_UV_mV[7]);
@@ -685,6 +683,7 @@ static ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 	else
 		return count;
 }
+#endif
 
 static ssize_t show_frequency_voltage_table(struct cpufreq_policy *policy,
 						char *buf) {
@@ -731,29 +730,6 @@ static ssize_t store_states_enabled_table(struct cpufreq_policy *policy, const c
 		return count;
 }
 
-static ssize_t store_kern_leakage( struct cpufreq_policy* policy, const char* buf, int count )
-{
-  unsigned int ret = -EINVAL;
-  unsigned int leak = 2;
-  
-  ret = sscanf( buf, "%d", &leak );
-  
-  if ( ret != 1 ) return -EINVAL;
-  
-  if ( leak >=0 && leak <= 2 )
-  {
-    leakage = leak;
-    update_leakage(leak);
-  }
-  
-  return ret;
-}
-
-static ssize_t show_kern_leakage(struct cpufreq_policy *policy, char *buf)
-{
-  return sprintf( buf, "%d\n", leakage );  
-}
-
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
 cpufreq_freq_attr_ro(cpuinfo_max_freq);
@@ -771,7 +747,6 @@ cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(UV_mV_table);
 cpufreq_freq_attr_rw(states_enabled_table);
-cpufreq_freq_attr_rw(kern_leakage);
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -788,7 +763,6 @@ static struct attribute *default_attrs[] = {
 	&UV_mV_table.attr,
 	&frequency_voltage_table.attr,
 	&states_enabled_table.attr,
-	&kern_leakage.attr,
 	NULL
 };
 

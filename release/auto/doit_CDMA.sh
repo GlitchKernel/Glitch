@@ -22,13 +22,11 @@ REL=CM9${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M)-OLDMODEM.zip
 	mkdir  -p system/etc/glitch-config || exit 1
 	echo "active" > system/etc/glitch-config/screenstate_scaling || exit 1
 	echo "conservative" > system/etc/glitch-config/sleep_governor || exit 1
-	echo "medium" > system/etc/glitch-config/leakage || exit 1
 	cp logger.module system/lib/modules/logger.ko
 	cd ../
 		find . -name "*.ko" -exec cp {} release/system/lib/modules/ \; 2>/dev/null || exit 1
 	cd release
 	cp S99screenstate_scaling system/etc/init.d/ || exit 1
-	cp 000leakage system/etc/init.d/ || exit 1
 	cp logcat_module system/etc/init.d/ || exit 1
 	mkdir -p system/bin
 	cp bin/* system/bin/
