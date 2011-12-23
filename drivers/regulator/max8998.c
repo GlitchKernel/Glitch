@@ -84,7 +84,7 @@ static const struct voltage_map_desc ldo1617_voltage_map_desc = {
 	.min = 1600,	.step = 100,	.max = 3600,
 };
 static const struct voltage_map_desc buck12_voltage_map_desc = {
-	.min = 750,	.step = 25,	.max = 1525,
+	.min = 750,	.step = 25,	.max = 1600,
 };
 static const struct voltage_map_desc buck3_voltage_map_desc = {
 	.min = 1600,	.step = 100,	.max = 3600,

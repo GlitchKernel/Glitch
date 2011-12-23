@@ -416,45 +416,37 @@ static struct s5p_media_device aries_media_devs[] = {
 #ifdef CONFIG_CPU_FREQ
 static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 	{
-		.freq	= 1500000,
+		.freq	= 1400000,
 		.varm	= DVSARM1,
 		.vint	= {DVSINT1_LL, DVSINT1_ML, DVSINT1_HL},
 	}, {
-		.freq	= 1440000,
+		.freq	= 1304000,
 		.varm	= DVSARM2,
 		.vint	= {DVSINT2_LL, DVSINT2_ML, DVSINT2_HL},
 	}, {
-		.freq	= 1400000,
+		.freq	= 1200000,
 		.varm	= DVSARM3,
 		.vint	= {DVSINT3_LL, DVSINT3_ML, DVSINT3_HL},
 	}, {
-		.freq	= 1300000,
+		.freq	= 1000000,
 		.varm	= DVSARM4,
 		.vint	= {DVSINT4_LL, DVSINT4_ML, DVSINT4_HL},
 	}, {
-		.freq	= 1200000,
+		.freq	=  800000,
 		.varm	= DVSARM5,
 		.vint	= {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
 	}, {
-		.freq	= 1000000,
-		.varm	= DVSARM6,
-		.vint	= {DVSINT6_LL, DVSINT6_ML, DVSINT6_HL},
-	}, {
-		.freq	=  800000,
-		.varm	= DVSARM7,
-		.vint	= {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
-	}, {
 		.freq	=  400000,
-		.varm	= DVSARM8,
-		.vint	= {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
+		.varm	= DVSARM6,
+		.vint	= {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
 	}, {
 		.freq	=  200000,
-		.varm	= DVSARM9,
-		.vint	= {DVSINT7_LL, DVSINT7_ML, DVSINT7_HL},
+		.varm	= DVSARM7,
+		.vint	= {DVSINT5_LL, DVSINT5_ML, DVSINT5_HL},
 	}, {
 		.freq	=  100000,
-		.varm	= DVSARM9,
-		.vint	= {DVSINT8_LL, DVSINT8_ML, DVSINT8_HL},
+		.varm	= DVSARM8,
+		.vint	= {DVSINT6_LL, DVSINT6_ML, DVSINT6_HL},
 	},
 };
 static struct s5pv210_cpufreq_data smdkc110_cpufreq_plat = {
