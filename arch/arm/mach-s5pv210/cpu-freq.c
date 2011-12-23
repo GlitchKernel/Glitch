@@ -67,16 +67,16 @@ static struct cpufreq_frequency_table freq_table[] = {
 	{0, CPUFREQ_TABLE_END},
 };
 
-extern int exp_UV_mV[10]; //Needed for uv
-unsigned int freq_uv_table[10][3] = {
+extern int exp_UV_mV[8]; //Needed for uv
+unsigned int freq_uv_table[8][3] = {
 	//freq, 	stock, current
-	{1400000,	1500,	1500},
-	{1304000,	1500,	1500},
-	{1200000,	1500,	1500},
-	{1000000,	1300,	1300},
-	{800000,	1225,	1225},
-	{400000,	1100,	1100},
-	{200000,	1000,	1000},
+	{1400000,	1450,	1450},
+	{1304000,	1400,	1400},
+	{1200000,	1350,	1350},
+	{1000000,	1275,	1275},
+	{800000,	1200,	1200},
+	{400000,	1050,	1050},
+	{200000,	950,	950},
 	{100000,	950,	950}
 };
 
@@ -87,17 +87,17 @@ struct s5pv210_dvs_conf {
 
 #ifdef CONFIG_DVFS_LIMIT
 static unsigned int g_dvfs_high_lock_token = 0;
-static unsigned int g_dvfs_high_lock_limit = 9;
+static unsigned int g_dvfs_high_lock_limit = 8;
 static unsigned int g_dvfslockval[DVFS_LOCK_TOKEN_NUM];
 //static DEFINE_MUTEX(dvfs_high_lock);
 #endif
 
 
 #ifdef CONFIG_CUSTOM_VOLTAGE
-unsigned long arm_volt_max = 1600000;
+unsigned long arm_volt_max = 1500000;
 unsigned long int_volt_max = 1300000;
 #else
-const unsigned long arm_volt_max = 1600000;
+const unsigned long arm_volt_max = 1500000;
 const unsigned long int_volt_max = 1300000;
 #endif
 // added more voltage levels for the added frequencies
