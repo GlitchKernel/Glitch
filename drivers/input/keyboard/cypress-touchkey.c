@@ -112,7 +112,7 @@ static int i2c_touchkey_write_byte(struct cypress_touchkey_devdata *devdata,
 {
 	int ret;
 	int retry = 2;
-    unsigned long flags;
+   // unsigned long flags;
 
 	//down(&i2c_sem);
 
@@ -213,7 +213,7 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 	u8 data = 0xff;
 	int i;
 	int ret;
-	int scancode;
+	int scancode = 0xff;
 	struct cypress_touchkey_devdata *devdata = touchkey_devdata;	
 
 	ret = i2c_touchkey_read_byte(devdata, &data);
