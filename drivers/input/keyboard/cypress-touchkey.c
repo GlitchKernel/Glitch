@@ -46,7 +46,7 @@
 
 int bl_on = 0;
 static DECLARE_MUTEX(enable_sem);
-static DECLARE_MUTEX(i2c_sem);
+//static DECLARE_MUTEX(i2c_sem);
 
 struct cypress_touchkey_devdata *bl_devdata;
 
@@ -85,7 +85,7 @@ static int i2c_touchkey_read_byte(struct cypress_touchkey_devdata *devdata,
 	int ret;
 	int retry = 2;
 
-	down(&i2c_sem);
+	//down(&i2c_sem);
 
 	while (true) {
 		ret = i2c_smbus_read_byte(devdata->client);
@@ -102,7 +102,7 @@ static int i2c_touchkey_read_byte(struct cypress_touchkey_devdata *devdata,
 		msleep(10);
 	}
 
-	up(&i2c_sem);
+	//up(&i2c_sem);
 
 	return ret;
 }
@@ -114,7 +114,7 @@ static int i2c_touchkey_write_byte(struct cypress_touchkey_devdata *devdata,
 	int retry = 2;
     unsigned long flags;
 
-	down(&i2c_sem);
+	//down(&i2c_sem);
 
 	while (true) {
 		ret = i2c_smbus_write_byte(devdata->client, val);
@@ -130,7 +130,7 @@ static int i2c_touchkey_write_byte(struct cypress_touchkey_devdata *devdata,
 		msleep(10);
 	}
 
-	up(&i2c_sem);
+	//up(&i2c_sem);
 
 	return ret;
 }
@@ -269,6 +269,8 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 	bl_set_timeout();
 	
 err:
+  enable_irq(irq);
+  
 	return IRQ_HANDLED;
 }
 
@@ -287,6 +289,8 @@ static irqreturn_t touchkey_interrupt_handler(int irq, void *touchkey_devdata)
 					"interrupt\n", __func__);
 		return IRQ_HANDLED;
 	}
+	
+	disable_irq_nosync(irq);
 
 	return IRQ_WAKE_THREAD;
 }
@@ -705,8 +709,9 @@ static int cypress_touchkey_probe(struct i2c_client *client,
 	}
 
 	err = request_threaded_irq(client->irq, touchkey_interrupt_handler,
-				touchkey_interrupt_thread, IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+				touchkey_interrupt_thread, IRQF_TRIGGER_FALLING,
 				DEVICE_NAME, devdata);
+				
 	if (err) {
 		dev_err(dev, "%s: Can't allocate irq.\n", __func__);
 		goto err_req_irq;
