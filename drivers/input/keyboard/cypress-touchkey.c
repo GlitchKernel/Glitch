@@ -266,7 +266,7 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 		}
 	}
 	
-	dev_err(&devdata->client->dev, "%s: scancode = 0x%x, data = 0x%x\n", scancode, data);
+	dev_err(&devdata->client->dev, "%s: scancode = 0x%x, data = 0x%x\n", __func__, scancode, data);
 	
 	bl_set_timeout();
 	
