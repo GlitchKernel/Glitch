@@ -240,8 +240,8 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 			if (devdata->has_legacy_keycode) {
 				scancode = (data & SCANCODE_MASK) - 1;
 				if (scancode < 0 || scancode >= devdata->pdata->keycode_cnt) {
-					dev_err(&devdata->client->dev, "%s: scancode is out of "
-						"range\n", __func__);
+					dev_err(&devdata->client->dev, "%s: scancode 0x%x is out of "
+						"range\n", __func__, scancode);
 						ret = recovery_routine(devdata);
             if (ret)
             {
@@ -269,7 +269,7 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 	bl_set_timeout();
 	
 err:
-  enable_irq(irq);
+  
   
 	return IRQ_HANDLED;
 }
@@ -290,7 +290,7 @@ static irqreturn_t touchkey_interrupt_handler(int irq, void *touchkey_devdata)
 		return IRQ_HANDLED;
 	}
 	
-	disable_irq_nosync(irq);
+	//disable_irq_nosync(irq);
 
 	return IRQ_WAKE_THREAD;
 }
