@@ -124,7 +124,7 @@ static int inet_csk_diag_fill(struct sock *sk,
 
 #if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
 	if (r->idiag_family == AF_INET6) {
-		struct ipv6_pinfo *np = inet6_sk(sk);
+		const struct ipv6_pinfo *np = inet6_sk(sk);
 
 		ipv6_addr_copy((struct in6_addr *)r->id.idiag_src,
 			       &np->rcv_saddr);
@@ -425,7 +425,7 @@ static int inet_diag_bc_run(const void *bc, int len,
 			bc += op->no;
 		}
 	}
-	return (len == 0);
+	return len == 0;
 }
 
 static int valid_cc(const void *bc, int len, int cc)

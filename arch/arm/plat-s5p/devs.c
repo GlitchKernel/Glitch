@@ -39,8 +39,7 @@
 #include <plat/media.h>
 #include <plat/jpeg.h>
 #include <mach/media.h>
-
-#include <../../../drivers/video/samsung/s3cfb.h>
+#include <s3cfb.h>
 
 /* Android Gadget */
 // Ugly hack to inject device serial into /proc/cmdline
@@ -60,8 +59,8 @@ void __init s3c_usb_set_serial(void)
 /* RTC */
 static struct resource s5p_rtc_resource[] = {
 	[0] = {
-		.start = S5P_PA_RTC,
-		.end   = S5P_PA_RTC + 0xff,
+		.start = S3C_PA_RTC,
+		.end   = S3C_PA_RTC + 0xff,
 		.flags = IORESOURCE_MEM,
 	},
 	[1] = {
@@ -83,33 +82,12 @@ struct platform_device s5p_device_rtc = {
 	.resource         = s5p_rtc_resource,
 };
 
-/* Keypad interface */
-static struct resource s3c_keypad_resource[] = {
-	[0] = {
-		.start = S3C_PA_KEYPAD,
-		.end   = S3C_PA_KEYPAD + S3C_SZ_KEYPAD - 1,
-		.flags = IORESOURCE_MEM,
-	},
-	[1] = {
-		.start = IRQ_KEYPAD,
-		.end   = IRQ_KEYPAD,
-		.flags = IORESOURCE_IRQ,
-	}
-};
-
-struct platform_device s3c_device_keypad = {
-	.name             = "s3c-keypad",
-	.id               = -1,
-	.num_resources    = ARRAY_SIZE(s3c_keypad_resource),
-	.resource         = s3c_keypad_resource,
-};
-
 #ifdef CONFIG_S5P_ADC
 /* ADCTS */
 static struct resource s3c_adc_resource[] = {
 	[0] = {
-		.start = S3C_PA_ADC,
-		.end   = S3C_PA_ADC + SZ_4K - 1,
+		.start = SAMSUNG_PA_ADC,
+		.end   = SAMSUNG_PA_ADC + SZ_4K - 1,
 		.flags = IORESOURCE_MEM,
 	},
 	[1] = {
@@ -451,48 +429,6 @@ struct platform_device s3c_device_ipc = {
 	.num_resources	= ARRAY_SIZE(s3c_ipc_resource),
 	.resource	= s3c_ipc_resource,
 };
-static struct resource s3c_csis_resource[] = {
-	[0] = {
-		.start	= S5P_PA_CSIS,
-		.end	= S5P_PA_CSIS + S5P_SZ_CSIS - 1,
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] = {
-		.start	= IRQ_MIPICSI,
-		.end	= IRQ_MIPICSI,
-		.flags	= IORESOURCE_IRQ,
-	},
-};
-
-struct platform_device s3c_device_csis = {
-	.name		= "s3c-csis",
-	.id		= 0,
-	.num_resources	= ARRAY_SIZE(s3c_csis_resource),
-	.resource	= s3c_csis_resource,
-};
-
-static struct s3c_platform_csis default_csis_data __initdata = {
-	.srclk_name	= "mout_mpll",
-	.clk_name	= "sclk_csis",
-	.clk_rate	= 166000000,
-};
-
-void __init s3c_csis_set_platdata(struct s3c_platform_csis *pd)
-{
-	struct s3c_platform_csis *npd;
-
-	if (!pd)
-		pd = &default_csis_data;
-
-	npd = kmemdup(pd, sizeof(struct s3c_platform_csis), GFP_KERNEL);
-	if (!npd)
-		printk(KERN_ERR "%s: no memory for platform data\n", __func__);
-
-	npd->cfg_gpio = s3c_csis_cfg_gpio;
-	npd->cfg_phy_global = s3c_csis_cfg_phy_global;
-
-	s3c_device_csis.dev.platform_data = npd;
-}
 #endif
 
 /* JPEG controller  */

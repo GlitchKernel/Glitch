@@ -45,8 +45,8 @@
 #define DEVICE_NAME "cypress-touchkey"
 
 int bl_on = 0;
-static DECLARE_MUTEX(enable_sem);
-static DECLARE_MUTEX(i2c_sem);
+static DEFINE_SEMAPHORE(enable_sem);
+static DEFINE_SEMAPHORE(i2c_sem);
 
 struct cypress_touchkey_devdata *bl_devdata;
 

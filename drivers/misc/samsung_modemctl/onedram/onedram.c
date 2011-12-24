@@ -43,6 +43,8 @@
 #define ONEDRAM_REG_OFFSET 0xFFF800
 #define ONEDRAM_REG_SIZE 0x800
 
+static DEFINE_MUTEX(onedram_mutex);
+
 struct onedram_reg_mapped {
 	u32 sem;
 	u32 reserved1[7];
@@ -563,12 +565,13 @@ static int onedram_mmap(struct file *filp, struct vm_area_struct *vma)
 	return 0;
 }
 
-static int onedram_ioctl(struct inode *inode, struct file *filp,
-		unsigned int cmd, unsigned long arg)
+static long onedram_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
-	struct cdev *cdev = inode->i_cdev;
+	struct cdev *cdev = filp->f_dentry->d_inode->i_cdev;
 	struct onedram *od = container_of(cdev, struct onedram, cdev);
 	int r;
+
+	mutex_lock(&onedram_mutex);
 
 	switch (cmd) {
 	case ONEDRAM_GET_AUTH:
@@ -585,6 +588,8 @@ static int onedram_ioctl(struct inode *inode, struct file *filp,
 		break;
 	}
 
+	mutex_unlock(&onedram_mutex);
+
 	return r;
 }
 
@@ -598,7 +603,7 @@ static const struct file_operations onedram_fops = {
 	.open = onedram_open,
 	.release = onedram_release,
 	.mmap = onedram_mmap,
-	.ioctl = onedram_ioctl,
+	.unlocked_ioctl = onedram_ioctl,
 };
 
 static int _register_chrdev(struct onedram *od)

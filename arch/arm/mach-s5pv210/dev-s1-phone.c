@@ -34,7 +34,7 @@ static void onedram_cfg_gpio(void)
 {
 	s3c_gpio_cfgpin(GPIO_nINT_ONEDRAM_AP, S3C_GPIO_SFN(GPIO_nINT_ONEDRAM_AP_AF));
 	s3c_gpio_setpull(GPIO_nINT_ONEDRAM_AP, S3C_GPIO_PULL_UP);
-	set_irq_type(GPIO_nINT_ONEDRAM_AP, IRQ_TYPE_LEVEL_LOW);
+	irq_set_irq_type(GPIO_nINT_ONEDRAM_AP, IRQ_TYPE_LEVEL_LOW);
 }
 
 static struct onedram_platform_data onedram_data = {
@@ -145,11 +145,11 @@ static void modemctl_cfg_gpio(void)
 #endif
 	s3c_gpio_cfgpin(gpio_phone_active, S3C_GPIO_SFN(0xF));
 	s3c_gpio_setpull(gpio_phone_active, S3C_GPIO_PULL_NONE);
-	set_irq_type(gpio_phone_active, IRQ_TYPE_EDGE_BOTH);
+	irq_set_irq_type(gpio_phone_active, IRQ_TYPE_EDGE_BOTH);
 
 	s3c_gpio_cfgpin(gpio_sim_ndetect, S3C_GPIO_SFN(0xF));
 	s3c_gpio_setpull(gpio_sim_ndetect, S3C_GPIO_PULL_NONE);
-	set_irq_type(gpio_sim_ndetect, IRQ_TYPE_EDGE_BOTH);
+	irq_set_irq_type(gpio_sim_ndetect, IRQ_TYPE_EDGE_BOTH);
 }
 
 static int __init p1_init_phone_interface(void)

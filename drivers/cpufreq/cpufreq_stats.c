@@ -252,10 +252,6 @@ static int cpufreq_stats_create_table(struct cpufreq_policy *policy,
 	spin_lock(&cpufreq_stats_lock);
 	stat->last_time = get_jiffies_64();
 	stat->last_index = freq_table_get_index(stat, policy->cur);
-#ifdef CONFIG_LIVE_OC
-	if (stat->last_index == -1)
-		stat->last_index = 0;
-#endif
 	spin_unlock(&cpufreq_stats_lock);
 	cpufreq_cpu_put(data);
 	return 0;
@@ -369,8 +365,7 @@ static int __cpuinit cpufreq_stat_cpu_callback(struct notifier_block *nfb,
 }
 
 /* priority=1 so this will get called before cpufreq_remove_dev */
-static struct notifier_block cpufreq_stat_cpu_notifier __refdata =
-{
+static struct notifier_block cpufreq_stat_cpu_notifier __refdata = {
 	.notifier_call = cpufreq_stat_cpu_callback,
 	.priority = 1,
 };
@@ -422,35 +417,6 @@ static void __exit cpufreq_stats_exit(void)
 		cpufreq_stats_free_sysfs(cpu);
 	}
 }
-
-#ifdef CONFIG_LIVE_OC
-void cpufreq_stats_reset(void)
-{
-    unsigned int cpu;
-
-    cpufreq_unregister_notifier(&notifier_policy_block,
-				CPUFREQ_POLICY_NOTIFIER);
-    cpufreq_unregister_notifier(&notifier_trans_block,
-				CPUFREQ_TRANSITION_NOTIFIER);
-    unregister_hotcpu_notifier(&cpufreq_stat_cpu_notifier);
-    for_each_online_cpu(cpu) {
-	cpufreq_stats_free_table(cpu);
-    }
-
-    cpufreq_register_notifier(&notifier_policy_block,
-			      CPUFREQ_POLICY_NOTIFIER);
-    
-    cpufreq_register_notifier(&notifier_trans_block,
-			      CPUFREQ_TRANSITION_NOTIFIER);
-    register_hotcpu_notifier(&cpufreq_stat_cpu_notifier);
-    for_each_online_cpu(cpu) {
-	cpufreq_update_policy(cpu);
-    }
-    
-    return;
-}
-EXPORT_SYMBOL(cpufreq_stats_reset);
-#endif
 
 MODULE_AUTHOR("Zou Nan hai <nanhai.zou@intel.com>");
 MODULE_DESCRIPTION("'cpufreq_stats' - A driver to export cpufreq stats "

@@ -677,5 +677,5 @@ module_exit(kr3dh_exit);
 MODULE_AUTHOR("Samsung");
 MODULE_DESCRIPTION("KR3DH 3 axis accelerometer driver");
 MODULE_LICENSE("GPL");
-MODULE_VERSION(KR3DH_VERSION);
+MODULE_VERSION("1.0.0");
 

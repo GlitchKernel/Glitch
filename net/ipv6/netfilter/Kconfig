@@ -137,10 +137,10 @@ config IP6_NF_MATCH_RT
 # The targets
 config IP6_NF_TARGET_HL
 	tristate '"HL" hoplimit target support'
-	depends on NETFILTER_ADVANCED
+	depends on NETFILTER_ADVANCED && IP6_NF_MANGLE
 	select NETFILTER_XT_TARGET_HL
 	---help---
-	This is a backwards-compat option for the user's convenience
+	This is a backwards-compatible option for the user's convenience
 	(e.g. when running oldconfig). It selects
 	CONFIG_NETFILTER_XT_TARGET_HL.
 
@@ -173,6 +173,18 @@ config IP6_NF_TARGET_REJECT
 	  than silently being dropped.
 
 	  To compile it as a module, choose M here.  If unsure, say N.
+
+config IP6_NF_TARGET_REJECT_SKERR
+	bool "Force socket error when rejecting with icmp*"
+	depends on IP6_NF_TARGET_REJECT
+	default n
+	help
+          This option enables turning a "--reject-with icmp*" into a matching
+          socket error also.
+	  The REJECT target normally allows sending an ICMP message. But it
+          leaves the local socket unaware of any ingress rejects.
+
+	  If unsure, say N.
 
 config IP6_NF_MANGLE
 	tristate "Packet mangling"

@@ -79,6 +79,7 @@
 #include <plat/mfc.h>
 #include <plat/iic.h>
 #include <plat/pm.h>
+#include <plat/s5p-time.h>
 
 #include <plat/sdhci.h>
 #include <plat/fimc.h>
@@ -95,7 +96,6 @@
 #include <linux/max17040_battery.h>
 #include <linux/mfd/max8998.h>
 #include <linux/switch.h>
-#include <mach/voltages.h>
 
 #ifdef CONFIG_KERNEL_DEBUG_SEC
 #include <linux/kernel_sec_common.h>
@@ -138,10 +138,6 @@ struct wifi_mem_prealloc {
 	void *mem_ptr;
 	unsigned long size;
 };
-
-
-
-
 
 static int aries_notifier_call(struct notifier_block *this,
 					unsigned long code, void *_cmd)
@@ -291,11 +287,8 @@ static struct s3cfb_lcd s6e63m0 = {
 	.p_width = 52,
 	.p_height = 86,
 	.bpp = 24,
-#ifdef CONFIG_FB_S3C_UNLOCKED_REFRESH
-	.freq = 68,
-#else
 	.freq = 60,
-#endif
+
 	.timing = {
 		.h_fp = 16,
 		.h_bp = 16,
@@ -314,18 +307,18 @@ static struct s3cfb_lcd s6e63m0 = {
 	},
 };
 
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (11264 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (5000 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (11264 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (12288 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (9900 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (12288 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (32768 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (32768 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (S5PV210_LCD_WIDTH * \
 					     S5PV210_LCD_HEIGHT * 4 * \
-						(CONFIG_FB_S3C_NR_BUFFERS + \
-						(CONFIG_FB_S3C_NUM_OVLY_WIN * \
-						CONFIG_FB_S3C_NUM_BUF_OVLY_WIN)))
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (4096 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_PMEM (2048 * SZ_1K)
+					     (CONFIG_FB_S3C_NR_BUFFERS + \
+						 (CONFIG_FB_S3C_NUM_OVLY_WIN * \
+						  CONFIG_FB_S3C_NUM_BUF_OVLY_WIN)))
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (8192 * SZ_1K)
+#define  S5PV210_ANDROID_PMEM_MEMSIZE_PMEM (5550 * SZ_1K)
 #define  S5PV210_ANDROID_PMEM_MEMSIZE_PMEM_GPU1 (3000 * SZ_1K)
 #define  S5PV210_ANDROID_PMEM_MEMSIZE_PMEM_ADSP (1500 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_TEXTSTREAM (3000 * SZ_1K)
@@ -416,39 +409,28 @@ static struct s5p_media_device aries_media_devs[] = {
 #ifdef CONFIG_CPU_FREQ
 static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 	{
-		.freq	= 1400000,
-		.varm	= DVSARM1,
-		.vint	= DVSINT1,
-	}, {
-		.freq	= 1304000,
-		.varm	= DVSARM2,
-		.vint	= DVSINT2,
-	}, {
-		.freq	= 1200000,
-		.varm	= DVSARM3,
-		.vint	= DVSINT3,
-	}, {
 		.freq	= 1000000,
-		.varm	= DVSARM4,
-		.vint	= DVSINT4,
+		.varm	= 1275000,
+		.vint	= 1100000,
 	}, {
 		.freq	=  800000,
-		.varm	= DVSARM5,
-		.vint	= DVSINT5,
+		.varm	= 1200000,
+		.vint	= 1100000,
 	}, {
 		.freq	=  400000,
-		.varm	= DVSARM6,
-		.vint	= DVSINT5,
+		.varm	= 1050000,
+		.vint	= 1100000,
 	}, {
 		.freq	=  200000,
-		.varm	= DVSARM7,
-		.vint	= DVSINT5,
+		.varm	=  950000,
+		.vint	= 1100000,
 	}, {
 		.freq	=  100000,
-		.varm	= DVSARM8,
-		.vint	= DVSINT6,
+		.varm	=  950000,
+		.vint	= 1000000,
 	},
 };
+
 static struct s5pv210_cpufreq_data smdkc110_cpufreq_plat = {
 	.volt	= smdkc110_cpufreq_volt,
 	.size	= ARRAY_SIZE(smdkc110_cpufreq_volt),
@@ -459,17 +441,11 @@ static struct regulator_consumer_supply ldo3_consumer[] = {
 	REGULATOR_SUPPLY("pd_io", "s3c-usbgadget")
 };
 
-static struct regulator_consumer_supply ldo4_consumer[] = {
-	REGULATOR_SUPPLY("v_adc", NULL),
-};
-
-static struct regulator_consumer_supply ldo5_consumer[] = {
 #ifndef CONFIG_SAMSUNG_FASCINATE
+static struct regulator_consumer_supply ldo5_consumer[] = {
 	REGULATOR_SUPPLY("vmmc", NULL),
-#else
-  REGULATOR_SUPPLY("vtf", NULL),
-#endif
 };
+#endif
 
 static struct regulator_consumer_supply ldo7_consumer[] = {
 	{	.supply	= "vlcd", },
@@ -516,10 +492,6 @@ static struct regulator_consumer_supply buck2_consumer[] = {
 	{	.supply	= "vddint", },
 };
 
-static struct regulator_consumer_supply buck3_consumer[] = {
-	REGULATOR_SUPPLY("vdd_ram", NULL),
-};
-
 static struct regulator_consumer_supply buck4_consumer[] = {
 	{	.supply	= "cam_isp_core", },
 };
@@ -555,21 +527,15 @@ static struct regulator_init_data aries_ldo3_data = {
 static struct regulator_init_data aries_ldo4_data = {
 	.constraints	= {
 		.name		= "VADC_3.3V",
-		.min_uV		= 3300000, //3300000
-		.max_uV		= 3300000, //3300000
+		.min_uV		= 3300000,
+		.max_uV		= 3300000,
 		.apply_uV	= 1,
-		.boot_on        = 1,
 		.always_on	= 1,
-		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-				  REGULATOR_CHANGE_STATUS,
-		.state_mem      = {
-			.uV     = 3300000,
-			.mode   = REGULATOR_MODE_NORMAL,
+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+		.state_mem	= {
 			.disabled = 1,
 		},
 	},
-        .num_consumer_supplies  = ARRAY_SIZE(ldo4_consumer),
-        .consumer_supplies      = ldo4_consumer,
 };
 
 #ifndef CONFIG_SAMSUNG_FASCINATE
@@ -723,15 +689,12 @@ static struct regulator_init_data aries_ldo16_data = {
 static struct regulator_init_data aries_ldo17_data = {
 	.constraints	= {
 		.name		= "VCC_3.0V_LCD",
-		.min_uV		= 3000000, //3000000
-		.max_uV		= 3000000, //3000000
+		.min_uV		= 3000000,
+		.max_uV		= 3000000,
 		.apply_uV	= 1,
 		.always_on	= 0,
-		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-				  REGULATOR_CHANGE_STATUS,
+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-                        .uV     = 3000000,
-                        .mode   = REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
 	},
@@ -743,12 +706,12 @@ static struct regulator_init_data aries_buck1_data = {
 	.constraints	= {
 		.name		= "VDD_ARM",
 		.min_uV		= 750000,
-		.max_uV		= 1600000,
+		.max_uV		= 1500000,
 		.apply_uV	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= ARMBOOT,
+			.uV	= 1250000,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -761,12 +724,12 @@ static struct regulator_init_data aries_buck2_data = {
 	.constraints	= {
 		.name		= "VDD_INT",
 		.min_uV		= 750000,
-		.max_uV		= 1300000,
+		.max_uV		= 1500000,
 		.apply_uV	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= INTBOOT,
+			.uV	= 1100000,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -778,10 +741,9 @@ static struct regulator_init_data aries_buck2_data = {
 static struct regulator_init_data aries_buck3_data = {
 	.constraints	= {
 		.name		= "VCC_1.8V",
-		.min_uV		= 1800000, //1800000
-		.max_uV		= 1800000, //1800000
+		.min_uV		= 1800000,
+		.max_uV		= 1800000,
 		.apply_uV	= 1,
-		.boot_on        = 1,
 		.always_on	= 1,
 	},
 };
@@ -923,11 +885,17 @@ static struct max8998_platform_data max8998_pdata = {
 	.regulators     = aries_regulators,
 	.charger        = &aries_charger,
 	/* Preloads must be in increasing order of voltage value */
-	.buck1_preload	= {950000, 1050000, 1200000, 1275000},
-	.buck2_preload	= {1000000, 1100000},
-	.set1_gpio	= GPIO_BUCK_1_EN_A,
-	.set2_gpio	= GPIO_BUCK_1_EN_B,
-	.set3_gpio	= GPIO_BUCK_2_EN,
+	.buck1_voltage4	= 950000,
+	.buck1_voltage3	= 1050000,
+	.buck1_voltage2	= 1200000,
+	.buck1_voltage1	= 1275000,
+	.buck2_voltage2	= 1000000,
+	.buck2_voltage1	= 1100000,
+	.buck1_set1	= GPIO_BUCK_1_EN_A,
+	.buck1_set2	= GPIO_BUCK_1_EN_B,
+	.buck2_set3	= GPIO_BUCK_2_EN,
+	.buck1_default_idx = 1,
+	.buck2_default_idx = 0,
 };
 
 struct platform_device sec_device_dpram = {
@@ -1091,7 +1059,7 @@ static struct i2c_gpio_platform_data i2c4_platdata = {
 	.scl_is_output_only	= 0,
 };
 
-static struct platform_device s3c_device_i2c4 = {
+static struct platform_device aries_s3c_device_i2c4 = {
 	.name			= "i2c-gpio",
 	.id			= 4,
 	.dev.platform_data	= &i2c4_platdata,
@@ -1106,7 +1074,7 @@ static struct i2c_gpio_platform_data i2c5_platdata = {
 	.scl_is_output_only	= 0,
 };
 
-static struct platform_device s3c_device_i2c5 = {
+static struct platform_device aries_s3c_device_i2c5 = {
 	.name			= "i2c-gpio",
 	.id			= 5,
 	.dev.platform_data	= &i2c5_platdata,
@@ -1121,7 +1089,7 @@ static struct i2c_gpio_platform_data i2c6_platdata = {
 	.scl_is_output_only     = 0,
 };
 
-static struct platform_device s3c_device_i2c6 = {
+static struct platform_device aries_s3c_device_i2c6 = {
 	.name			= "i2c-gpio",
 	.id			= 6,
 	.dev.platform_data      = &i2c6_platdata,
@@ -1136,7 +1104,7 @@ static  struct  i2c_gpio_platform_data  i2c7_platdata = {
 	.scl_is_output_only     = 0,
 };
 
-static struct platform_device s3c_device_i2c7 = {
+static struct platform_device aries_s3c_device_i2c7 = {
 	.name			= "i2c-gpio",
 	.id			= 7,
 	.dev.platform_data	= &i2c7_platdata,
@@ -1254,8 +1222,8 @@ static void touch_keypad_onoff(int onoff)
 		msleep(25);
 }
 
-static void touch_keypad_gpio_sleep(int onoff){
-	if(onoff == TOUCHKEY_ON)
+static void touch_keypad_gpio_sleep(int onoff) {
+	if (onoff == TOUCHKEY_ON)
 		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT1);
 	else
 		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT0);
@@ -1265,6 +1233,7 @@ static const int touch_keypad_code[] = {
 #if defined (CONFIG_SAMSUNG_GALAXYS) || defined (CONFIG_SAMSUNG_GALAXYSB)
 	KEY_MENU,
 	KEY_BACK,
+	/* Unofficial support for the Telus Fascinate - same internals as I9000 */
 	KEY_HOME,
 	KEY_SEARCH
 #else
@@ -1330,7 +1299,7 @@ static struct gpio_event_direct_entry aries_keypad_key_map[] = {
 static struct gpio_event_input_info aries_keypad_key_info = {
 	.info.func = gpio_event_input_func,
 	.info.no_suspend = true,
-	.debounce_time.tv.nsec = 5 * NSEC_PER_MSEC,
+	.debounce_time.tv64 = 5 * NSEC_PER_MSEC,
 	.type = EV_KEY,
 	.keymap = aries_keypad_key_map,
 	.keymap_size = ARRAY_SIZE(aries_keypad_key_map)
@@ -2272,7 +2241,7 @@ static struct s3c_platform_camera s5ka3dfx = {
 static struct s3c_platform_fimc fimc_plat_lsi = {
 	.srclk_name	= "mout_mpll",
 	.clk_name	= "sclk_fimc",
-	.lclk_name	= "sclk_fimc_lclk",
+	.lclk_name	= "fimc",
 	.clk_rate	= 166750000,
 	.default_cam	= CAMERA_PAR_A,
 	.camera		= {
@@ -2297,7 +2266,7 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 
 static struct i2c_board_info i2c_devs4[] __initdata = {
 	{
-		I2C_BOARD_INFO("wm8994", (0x34>>1)),
+		I2C_BOARD_INFO("wm8994-samsung", (0x34>>1)),
 		.platform_data = &wm8994_pdata,
 	},
 };
@@ -2557,10 +2526,10 @@ static void gp2a_gpio_init(void)
 	if (ret)
 		printk(KERN_ERR "Failed to request gpio gp2a power supply.\n");
 
-#if 0// def CONFIG_SAMSUNG_FASCINATE
+#ifdef CONFIG_SAMSUNG_FASCINATE
         s3c_gpio_cfgpin(GPIO_PS_VOUT, S3C_GPIO_SFN(GPIO_PS_VOUT_AF));
         s3c_gpio_setpull(GPIO_PS_VOUT, S3C_GPIO_PULL_NONE);
-        set_irq_type(IRQ_EINT1, IRQ_TYPE_EDGE_BOTH);
+        irq_set_irq_type(IRQ_EINT1, IRQ_TYPE_EDGE_BOTH);
         gp2a_pdata.p_irq = gpio_to_irq(GPIO_PS_VOUT);
         gp2a_pdata.p_out = GPIO_PS_VOUT;
 #endif
@@ -4616,7 +4585,11 @@ void s3c_config_sleep_gpio(void)
 {
 	/* setting the alive mode registers */
 	s3c_gpio_cfgpin(S5PV210_GPH0(1), S3C_GPIO_INPUT);
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_setpull(S5PV210_GPH0(1), S3C_GPIO_PULL_DOWN);
+#else
 	s3c_gpio_setpull(S5PV210_GPH0(1), S3C_GPIO_PULL_NONE);
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH0(3), S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(S5PV210_GPH0(3), S3C_GPIO_PULL_NONE);
@@ -4630,16 +4603,36 @@ void s3c_config_sleep_gpio(void)
 	s3c_gpio_setpull(S5PV210_GPH0(5), S3C_GPIO_PULL_NONE);
 	gpio_set_value(S5PV210_GPH0(5), 0);
 
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_cfgpin(S5PV210_GPH1(0), S3C_GPIO_OUTPUT);
+#else
 	s3c_gpio_cfgpin(S5PV210_GPH1(0), S3C_GPIO_INPUT);
+#endif
 	s3c_gpio_setpull(S5PV210_GPH1(0), S3C_GPIO_PULL_DOWN);
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	gpio_set_value(S5PV210_GPH1(0), 0);
+#endif
 
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_cfgpin(S5PV210_GPH1(1), S3C_GPIO_INPUT);
+	s3c_gpio_setpull(S5PV210_GPH1(1), S3C_GPIO_PULL_DOWN);
+#else
 	s3c_gpio_cfgpin(S5PV210_GPH1(1), S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(1), S3C_GPIO_PULL_NONE);
 	gpio_set_value(S5PV210_GPH1(1), 0);
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH1(2), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(2), S3C_GPIO_PULL_DOWN);
 
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_cfgpin(S5PV210_GPH1(4), S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(S5PV210_GPH1(4), S3C_GPIO_PULL_NONE);
+	gpio_set_value(S5PV210_GPH1(4), 0);
+
+	s3c_gpio_cfgpin(S5PV210_GPH1(5), S3C_GPIO_INPUT);
+	s3c_gpio_setpull(S5PV210_GPH1(5), S3C_GPIO_PULL_DOWN);
+#else
 	s3c_gpio_cfgpin(S5PV210_GPH1(4), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(4), S3C_GPIO_PULL_DOWN);
 
@@ -4649,6 +4642,8 @@ void s3c_config_sleep_gpio(void)
 
 	s3c_gpio_cfgpin(S5PV210_GPH1(6), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(6), S3C_GPIO_PULL_DOWN);
+
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH1(7), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(7), S3C_GPIO_PULL_NONE);
@@ -4667,13 +4662,21 @@ void s3c_config_sleep_gpio(void)
 
 	s3c_gpio_cfgpin(S5PV210_GPH2(3), S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(S5PV210_GPH2(3), S3C_GPIO_PULL_NONE);
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	gpio_set_value(S5PV210_GPH2(3), 1);
+#else
 	gpio_set_value(S5PV210_GPH2(3), 0);
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH3(0), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH3(0), S3C_GPIO_PULL_UP);
 
 	s3c_gpio_cfgpin(S5PV210_GPH3(3), S3C_GPIO_INPUT);
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_setpull(S5PV210_GPH3(3), S3C_GPIO_PULL_UP);
+#else
 	s3c_gpio_setpull(S5PV210_GPH3(3), S3C_GPIO_PULL_DOWN);
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH3(4), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH3(4), S3C_GPIO_PULL_DOWN);
@@ -4849,11 +4852,81 @@ int __init aries_init_wifi_mem(void)
 
 	return -ENOMEM;
 }
+
+/* Customized Locale table : OPTIONAL feature */
+#define WLC_CNTRY_BUF_SZ	4
+typedef struct cntry_locales_custom {
+	char iso_abbrev[WLC_CNTRY_BUF_SZ];
+	char custom_locale[WLC_CNTRY_BUF_SZ];
+	int  custom_locale_rev;
+} cntry_locales_custom_t;
+
+static cntry_locales_custom_t aries_wifi_translate_custom_table[] = {
+/* Table should be filled out based on custom platform regulatory requirement */
+	{"",   "XY", 4},  /* universal */
+	{"US", "US", 69}, /* input ISO "US" to : US regrev 69 */
+	{"CA", "US", 69}, /* input ISO "CA" to : US regrev 69 */
+	{"EU", "EU", 5},  /* European union countries */
+	{"AT", "EU", 5},
+	{"BE", "EU", 5},
+	{"BG", "EU", 5},
+	{"CY", "EU", 5},
+	{"CZ", "EU", 5},
+	{"DK", "EU", 5},
+	{"EE", "EU", 5},
+	{"FI", "EU", 5},
+	{"FR", "EU", 5},
+	{"DE", "EU", 5},
+	{"GR", "EU", 5},
+	{"HU", "EU", 5},
+	{"IE", "EU", 5},
+	{"IT", "EU", 5},
+	{"LV", "EU", 5},
+	{"LI", "EU", 5},
+	{"LT", "EU", 5},
+	{"LU", "EU", 5},
+	{"MT", "EU", 5},
+	{"NL", "EU", 5},
+	{"PL", "EU", 5},
+	{"PT", "EU", 5},
+	{"RO", "EU", 5},
+	{"SK", "EU", 5},
+	{"SI", "EU", 5},
+	{"ES", "EU", 5},
+	{"SE", "EU", 5},
+	{"GB", "EU", 5},  /* input ISO "GB" to : EU regrev 05 */
+	{"IL", "IL", 0},
+	{"CH", "CH", 0},
+	{"TR", "TR", 0},
+	{"NO", "NO", 0},
+	{"KR", "XY", 3},
+	{"AU", "XY", 3},
+	{"CN", "XY", 3},  /* input ISO "CN" to : XY regrev 03 */
+	{"TW", "XY", 3},
+	{"AR", "XY", 3},
+	{"MX", "XY", 3}
+};
+
+static void *aries_wifi_get_country_code(char *ccode)
+{
+	int size = ARRAY_SIZE(aries_wifi_translate_custom_table);
+	int i;
+
+	if (!ccode)
+		return NULL;
+
+	for (i = 0; i < size; i++)
+		if (strcmp(ccode, aries_wifi_translate_custom_table[i].iso_abbrev) == 0)
+			return &aries_wifi_translate_custom_table[i];
+	return &aries_wifi_translate_custom_table[0];
+}
+
 static struct wifi_platform_data wifi_pdata = {
 	.set_power		= wlan_power_en,
 	.set_reset		= wlan_reset_en,
 	.set_carddetect		= wlan_carddetect_en,
 	.mem_prealloc		= aries_mem_prealloc,
+	.get_country_code	= aries_wifi_get_country_code,
 };
 
 static struct platform_device sec_device_wifi = {
@@ -4876,7 +4949,7 @@ static struct platform_device *aries_devices[] __initdata = {
 #ifdef CONFIG_FIQ_DEBUGGER
 	&s5pv210_device_fiqdbg_uart2,
 #endif
-	&s5pc110_device_onenand,
+	&s5p_device_onenand,
 #ifdef CONFIG_RTC_DRV_S3C
 	&s5p_device_rtc,
 #endif
@@ -4921,10 +4994,10 @@ static struct platform_device *aries_devices[] __initdata = {
 #if defined(CONFIG_S3C_DEV_I2C2)
 	&s3c_device_i2c2,
 #endif
-	&s3c_device_i2c4,
-	&s3c_device_i2c5,  /* accel sensor */
-	&s3c_device_i2c6,
-	&s3c_device_i2c7,
+	&aries_s3c_device_i2c4,
+	&aries_s3c_device_i2c5,  /* accel sensor */
+	&aries_s3c_device_i2c6,
+	&aries_s3c_device_i2c7,
 #if defined(CONFIG_SAMSUNG_GALAXYS) || defined (CONFIG_SAMSUNG_GALAXYSB)
 	&s3c_device_i2c8,  /* si470x: fm radio */
 #endif
@@ -4999,7 +5072,7 @@ static struct platform_device *aries_devices[] __initdata = {
 	&sec_device_btsleep,
 	&ram_console_device,
 	&sec_device_wifi,
-
+	&samsung_asoc_dma,
 };
 
 static void __init aries_map_io(void)
@@ -5008,9 +5081,13 @@ static void __init aries_map_io(void)
 	s3c24xx_init_clocks(24000000);
 	s5pv210_gpiolib_init();
 	s3c24xx_init_uarts(aries_uartcfgs, ARRAY_SIZE(aries_uartcfgs));
-	s5p_reserve_bootmem(aries_media_devs, ARRAY_SIZE(aries_media_devs));
+	#ifndef CONFIG_S5P_HIGH_RES_TIMERS
+		s5p_set_timer_source(S5P_PWM3, S5P_PWM4);
+	#endif
+	s5p_reserve_bootmem(aries_media_devs,
+		ARRAY_SIZE(aries_media_devs), S5P_RANGE_MFC);
 #ifdef CONFIG_MTD_ONENAND
-	s5pc110_device_onenand.name = "s5pc110-onenand";
+	s5p_device_onenand.name = "s5pc110-onenand";
 #endif
 }
 
@@ -5025,16 +5102,13 @@ static void __init aries_fixup(struct machine_desc *desc,
 {
 	mi->bank[0].start = 0x30000000;
 	mi->bank[0].size = 80 * SZ_1M;
-	mi->bank[0].node = 0;
 
 	mi->bank[1].start = 0x40000000;
 	mi->bank[1].size = 256 * SZ_1M;
-	mi->bank[1].node = 1;
 
 	mi->bank[2].start = 0x50000000;
 	/* 1M for ram_console buffer */
 	mi->bank[2].size = 127 * SZ_1M;
-	mi->bank[2].node = 2;
 	mi->nr_banks = 3;
 
 	ram_console_start = mi->bank[2].start + mi->bank[2].size;
@@ -5144,19 +5218,17 @@ static void flush_console(void)
 
 	printk("\n");
 	pr_emerg("Restarting %s\n", linux_banner);
-	if (!try_acquire_console_sem()) {
-		release_console_sem();
+	if (!is_console_locked())
 		return;
-	}
 
 	mdelay(50);
 
 	local_irq_disable();
-	if (try_acquire_console_sem())
+	if (console_trylock())
 		pr_emerg("flush_console: console was locked! busting!\n");
 	else
 		pr_emerg("flush_console: console was locked!\n");
-	release_console_sem();
+	console_unlock();
 }
 
 static void aries_pm_restart(char mode, const char *cmd)
@@ -5184,7 +5256,7 @@ static void __init aries_machine_init(void)
 	platform_add_devices(aries_devices, ARRAY_SIZE(aries_devices));
 
 	/* smb380 */
-	/* platform_device_register(&s3c_device_i2c5); */
+	/* platform_device_register(&aries_s3c_device_i2c5); */
 
 	/* Find out S5PC110 chip version */
 	_hw_version_check();
@@ -5413,10 +5485,7 @@ void usb_host_phy_off(void)
 EXPORT_SYMBOL(usb_host_phy_off);
 #endif
 
-MACHINE_START(SMDKC110, "SMDKC110")
-	/* Maintainer: Kukjin Kim <kgene.kim@samsung.com> */
-	.phys_io	= S3C_PA_UART & 0xfff00000,
-	.io_pg_offst	= (((u32)S3C_VA_UART) >> 18) & 0xfffc,
+MACHINE_START(ARIES, "aries")
 	.boot_params	= S5P_PA_SDRAM + 0x100,
 	.fixup		= aries_fixup,
 	.init_irq	= s5pv210_init_irq,
@@ -5427,17 +5496,6 @@ MACHINE_START(SMDKC110, "SMDKC110")
 #else
 	.timer		= &s3c24xx_timer,
 #endif
-MACHINE_END
-
-MACHINE_START(ARIES, "aries")
-	.phys_io	= S3C_PA_UART & 0xfff00000,
-	.io_pg_offst	= (((u32)S3C_VA_UART) >> 18) & 0xfffc,
-	.boot_params	= S5P_PA_SDRAM + 0x100,
-	.fixup		= aries_fixup,
-	.init_irq	= s5pv210_init_irq,
-	.map_io		= aries_map_io,
-	.init_machine	= aries_machine_init,
-	.timer		= &s5p_systimer,
 MACHINE_END
 
 void s3c_setup_uart_cfg_gpio(unsigned char port)

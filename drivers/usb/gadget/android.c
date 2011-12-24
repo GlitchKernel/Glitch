@@ -150,7 +150,6 @@ static struct usb_device_descriptor device_desc = {
 
 static struct usb_configuration android_config_driver = {
 	.label		= "android",
-	.bind		= android_bind_config,
 	.unbind		= android_unbind_config,
 	.bConfigurationValue = 1,
 	.bmAttributes	= USB_CONFIG_ATT_ONE | USB_CONFIG_ATT_SELFPOWER,
@@ -833,7 +832,8 @@ static ssize_t enable_store(struct device *pdev, struct device_attribute *attr,
 		cdev->desc.bDeviceClass = device_desc.bDeviceClass;
 		cdev->desc.bDeviceSubClass = device_desc.bDeviceSubClass;
 		cdev->desc.bDeviceProtocol = device_desc.bDeviceProtocol;
-		usb_add_config(cdev, &android_config_driver);
+		usb_add_config(cdev, &android_config_driver,
+					android_bind_config);
 		usb_gadget_connect(cdev->gadget);
 		dev->enabled = true;
 	} else if (!enabled && dev->enabled) {
@@ -1033,7 +1033,6 @@ static struct usb_composite_driver android_usb_driver = {
 	.name		= "android_usb",
 	.dev		= &device_desc,
 	.strings	= dev_strings,
-	.bind		= android_bind,
 	.unbind		= android_usb_unbind,
 };
 
@@ -1150,7 +1149,7 @@ static int __init init(void)
 	composite_driver.setup = android_setup;
 	composite_driver.disconnect = android_disconnect;
 
-	return usb_composite_register(&android_usb_driver);
+	return usb_composite_probe(&android_usb_driver, android_bind);
 }
 module_init(init);
 

@@ -4081,6 +4081,9 @@ static struct wireless_dev *wl_alloc_wdev(struct device *sdiofunc_dev)
 #endif				/* !WL_POWERSAVE_DISABLED */
 	wdev->wiphy->flags |= WIPHY_FLAG_NETNS_OK |
 		WIPHY_FLAG_4ADDR_AP |
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 39)
+		WIPHY_FLAG_SUPPORTS_SEPARATE_DEFAULT_KEYS |
+#endif
 		WIPHY_FLAG_4ADDR_STATION;
 
 	WL_DBG(("Registering custom regulatory)\n"));
@@ -4684,7 +4687,9 @@ wl_bss_roaming_done(struct wl_priv *wl, struct net_device *ndev,
 	wl_update_bss_info(wl, ndev);
 	wl_update_pmklist(ndev, wl->pmk_list, err);
 	cfg80211_roamed(ndev,
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 39)
 		NULL,
+#endif
 		curbssid,
 		conn_info->req_ie, conn_info->req_ie_len,
 		conn_info->resp_ie, conn_info->resp_ie_len, GFP_KERNEL);

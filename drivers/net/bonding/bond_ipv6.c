@@ -70,13 +70,6 @@ static void bond_na_send(struct net_device *slave_dev,
 	};
 	struct sk_buff *skb;
 
-	/* The Ethernet header is built in ndisc_send_skb(), not
-	 * ndisc_build_skb(), so we cannot insert a VLAN tag.  Only an
-	 * out-of-line tag inserted by the hardware will work.
-	 */
-	if (vlan_id && !(slave_dev->features & NETIF_F_HW_VLAN_TX))
-		return;
-
 	icmp6h.icmp6_router = router;
 	icmp6h.icmp6_solicited = 0;
 	icmp6h.icmp6_override = 1;
@@ -95,6 +88,11 @@ static void bond_na_send(struct net_device *slave_dev,
 	}
 
 	if (vlan_id) {
+		/* The Ethernet header is not present yet, so it is
+		 * too early to insert a VLAN tag.  Force use of an
+		 * out-of-line tag here and let dev_hard_start_xmit()
+		 * insert it if the slave hardware can't.
+		 */
 		skb = __vlan_hwaccel_put_tag(skb, vlan_id);
 		if (!skb) {
 			pr_err("failed to insert VLAN tag\n");
@@ -185,6 +183,8 @@ static int bond_inet6addr_event(struct notifier_block *this,
 		}
 
 		list_for_each_entry(vlan, &bond->vlan_list, vlan_list) {
+			if (!bond->vlgrp)
+				continue;
 			vlan_dev = vlan_group_get_device(bond->vlgrp,
 							 vlan->vlan_id);
 			if (vlan_dev == event_dev) {

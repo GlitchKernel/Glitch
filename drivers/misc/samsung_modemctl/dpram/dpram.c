@@ -22,6 +22,7 @@
 #include <linux/platform_device.h>
 #include <linux/uaccess.h>
 #include <linux/mm.h>
+#include <linux/sched.h>
 #include <linux/tty.h>
 #include <linux/tty_driver.h>
 #include <linux/tty_flip.h>
@@ -2158,7 +2159,7 @@ static int multipdp_ioctl(struct inode *inode, struct file *file,
 
 static struct file_operations multipdp_fops = {
 	.owner =	THIS_MODULE,
-	.ioctl =	multipdp_ioctl,
+	.unlocked_ioctl =	multipdp_ioctl,
 	.llseek =	no_llseek,
 };
 
@@ -2530,11 +2531,11 @@ static void init_hw_setting(void)
 	/* initial pin settings - dpram driver control */
 	s3c_gpio_cfgpin(GPIO_PHONE_ACTIVE, S3C_GPIO_SFN(GPIO_PHONE_ACTIVE_AF));
 	s3c_gpio_setpull(GPIO_PHONE_ACTIVE, S3C_GPIO_PULL_NONE); 
-	set_irq_type(IRQ_PHONE_ACTIVE, IRQ_TYPE_EDGE_BOTH);
+	irq_set_irq_type(IRQ_PHONE_ACTIVE, IRQ_TYPE_EDGE_BOTH);
 
 	s3c_gpio_cfgpin(GPIO_ONEDRAM_INT_N, S3C_GPIO_SFN(GPIO_ONEDRAM_INT_N_AF));
 	s3c_gpio_setpull(GPIO_ONEDRAM_INT_N, S3C_GPIO_PULL_NONE); 
-	set_irq_type(IRQ_ONEDRAM_INT_N, IRQ_TYPE_EDGE_FALLING);
+	irq_set_irq_type(IRQ_ONEDRAM_INT_N, IRQ_TYPE_EDGE_FALLING);
 
 	if (gpio_is_valid(GPIO_PHONE_ON)) {
 		if (gpio_request(GPIO_PHONE_ON, "dpram/GPIO_PHONE_ON"))

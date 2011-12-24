@@ -32,7 +32,7 @@
  */
 #define VIAFB_NUM_I2C		5
 static struct via_i2c_stuff via_i2c_par[VIAFB_NUM_I2C];
-struct viafb_dev *i2c_vdev;  /* Passed in from core */
+static struct viafb_dev *i2c_vdev;  /* Passed in from core */
 
 static void via_i2c_setscl(void *data, int state)
 {
@@ -202,14 +202,13 @@ static int create_i2c_bus(struct i2c_adapter *adapter,
 	algo->setscl = via_i2c_setscl;
 	algo->getsda = via_i2c_getsda;
 	algo->getscl = via_i2c_getscl;
-	algo->udelay = 40;
-	algo->timeout = 20;
+	algo->udelay = 10;
+	algo->timeout = 2;
 	algo->data = adap_cfg;
 
 	sprintf(adapter->name, "viafb i2c io_port idx 0x%02x",
 		adap_cfg->ioport_index);
 	adapter->owner = THIS_MODULE;
-	adapter->id = 0x01FFFF;
 	adapter->class = I2C_CLASS_DDC;
 	adapter->algo_data = algo;
 	if (pdev)

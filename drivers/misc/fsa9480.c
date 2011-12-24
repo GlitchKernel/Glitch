@@ -291,27 +291,11 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 			if (pdata->deskdock_cb)
 				pdata->deskdock_cb(FSA9480_ATTACHED);
 
-#if defined(CONFIG_MACH_ARIES)
-#if defined(CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_FASCINATE)
-                        ret = i2c_smbus_write_byte_data(client,
-                                        FSA9480_REG_MANSW1, SW_AUDIO);
-                        if (ret < 0)
-                                dev_err(&client->dev,
-                                        "%s: err %d\n", __func__, ret);
-#else
-                        ret = i2c_smbus_write_byte_data(client,
-                                        FSA9480_REG_MANSW1, SW_VAUDIO);
-                        if (ret < 0)
-                                dev_err(&client->dev,
-                                        "%s: err %d\n", __func__, ret);
-#endif
-#else
 			ret = i2c_smbus_write_byte_data(client,
 					FSA9480_REG_MANSW1, SW_DHOST);
 			if (ret < 0)
 				dev_err(&client->dev,
 					"%s: err %d\n", __func__, ret);
-#endif
 
 			ret = i2c_smbus_read_byte_data(client,
 					FSA9480_REG_CTRL);
@@ -329,34 +313,6 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 			if (pdata->cardock_cb)
 				pdata->cardock_cb(FSA9480_ATTACHED);
 			dock_status = 1;
-
-#if defined(CONFIG_MACH_ARIES)
-#if defined(CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_FASCINATE)
-                        ret = i2c_smbus_write_byte_data(client,
-                                        FSA9480_REG_MANSW1, SW_AUDIO);
-
-                        if (ret < 0)
-                                dev_err(&client->dev,
-                                        "%s: err %d\n", __func__, ret);
-#else
-                        ret = i2c_smbus_write_byte_data(client,
-                                        FSA9480_REG_MANSW1, SW_VAUDIO);
-                        if (ret < 0)
-                                dev_err(&client->dev,
-                                        "%s: err %d\n", __func__, ret);
-#endif
-                        ret = i2c_smbus_read_byte_data(client,
-                                        FSA9480_REG_CTRL);
-                        if (ret < 0)
-                                dev_err(&client->dev,
-                                        "%s: err %d\n", __func__, ret);
-
-                        ret = i2c_smbus_write_byte_data(client,
-                                FSA9480_REG_CTRL, ret & ~CON_MANUAL_SW);
-                        if (ret < 0)
-                                dev_err(&client->dev,
-                                        "%s: err %d\n", __func__, ret);
-#endif
 		}
 	/* Detached */
 	} else {
@@ -399,20 +355,6 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 			if (pdata->cardock_cb)
 				pdata->cardock_cb(FSA9480_DETACHED);
 			dock_status = 0;
-
-#if defined(CONFIG_MACH_ARIES)
-                        ret = i2c_smbus_read_byte_data(client,
-                                        FSA9480_REG_CTRL);
-                        if (ret < 0)
-                                dev_err(&client->dev,
-                                        "%s: err %d\n", __func__, ret);
-
-                        ret = i2c_smbus_write_byte_data(client,
-                                        FSA9480_REG_CTRL, ret | CON_MANUAL_SW);
-                        if (ret < 0)
-                                dev_err(&client->dev,
-                                        "%s: err %d\n", __func__, ret);
-#endif
 		}
 	}
 
@@ -580,24 +522,9 @@ static int __devexit fsa9480_remove(struct i2c_client *client)
 }
 
 #ifdef CONFIG_PM
-static int fsa9480_suspend(struct i2c_client *client)
-{
-	struct fsa9480_usbsw *usbsw = i2c_get_clientdata(client);
-    int ret;
-
-	/* mask interrupts */
-	ret = i2c_smbus_write_word_data(client, FSA9480_REG_INT1_MASK, 0x1fff);
-
-	return 0;
-}
-
 static int fsa9480_resume(struct i2c_client *client)
 {
 	struct fsa9480_usbsw *usbsw = i2c_get_clientdata(client);
-    int ret;
-
-	/* unmask attach/detach only */
-	ret = i2c_smbus_write_word_data(client, FSA9480_REG_INT1_MASK, 0x1ffc);
 
 	/* device detection */
 	fsa9480_detect_dev(usbsw);
@@ -624,7 +551,6 @@ static struct i2c_driver fsa9480_i2c_driver = {
 	},
 	.probe = fsa9480_probe,
 	.remove = __devexit_p(fsa9480_remove),
-    .suspend = fsa9480_suspend,
 	.resume = fsa9480_resume,
 	.id_table = fsa9480_id,
 };

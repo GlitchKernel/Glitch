@@ -6,7 +6,7 @@
 
     Chip details at:
 
-    <http://www.analog.com/UploadedFiles/Data_Sheets/779263102ADM1026_a.pdf>
+    <http://www.onsemi.com/PowerSolutions/product.do?id=ADM1026>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -175,7 +175,7 @@ static u16 ADM1026_REG_TEMP_OFFSET[] = { 0x1e, 0x6e, 0x6f };
  * these macros are called: arguments may be evaluated more than once.
  */
 
-/* IN are scaled acording to built-in resistors.  These are the
+/* IN are scaled according to built-in resistors.  These are the
  *   voltages corresponding to 3/4 of full scale (192 or 0xc0)
  *   NOTE: The -12V input needs an additional factor to account
  *      for the Vref pullup resistor.

@@ -22,10 +22,6 @@
 #include <linux/slab.h>
 #include <linux/time.h>
 
-#ifdef CONFIG_BLX
-#include <linux/blx.h>
-#endif
-
 #define MAX17040_VCELL_MSB	0x02
 #define MAX17040_VCELL_LSB	0x03
 #define MAX17040_SOC_MSB	0x04
@@ -208,11 +204,7 @@ static void max17040_get_status(struct i2c_client *client)
 		chip->status = POWER_SUPPLY_STATUS_DISCHARGING;
 	}
 
-#ifdef CONFIG_BLX
-	if (chip->soc >= get_charginglimit())	
-#else
 	if (chip->soc > MAX17040_BATTERY_FULL)
-#endif
 		chip->status = POWER_SUPPLY_STATUS_FULL;
 }
 

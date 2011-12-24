@@ -84,26 +84,15 @@ struct genl_info {
 	void *			user_ptr[2];
 };
 
-#ifdef CONFIG_NET_NS
 static inline struct net *genl_info_net(struct genl_info *info)
 {
-	return info->_net;
+	return read_pnet(&info->_net);
 }
 
 static inline void genl_info_net_set(struct genl_info *info, struct net *net)
 {
-	info->_net = net;
+	write_pnet(&info->_net, net);
 }
-#else
-static inline struct net *genl_info_net(struct genl_info *info)
-{
-	return &init_net;
-}
-
-static inline void genl_info_net_set(struct genl_info *info, struct net *net)
-{
-}
-#endif
 
 /**
  * struct genl_ops - generic netlink operations
@@ -206,7 +195,8 @@ static inline int genlmsg_end(struct sk_buff *skb, void *hdr)
  */
 static inline void genlmsg_cancel(struct sk_buff *skb, void *hdr)
 {
-	nlmsg_cancel(skb, hdr - GENL_HDRLEN - NLMSG_HDRLEN);
+	if (hdr)
+		nlmsg_cancel(skb, hdr - GENL_HDRLEN - NLMSG_HDRLEN);
 }
 
 /**
@@ -270,7 +260,7 @@ static inline int genlmsg_reply(struct sk_buff *skb, struct genl_info *info)
 
 /**
  * gennlmsg_data - head of message payload
- * @gnlh: genetlink messsage header
+ * @gnlh: genetlink message header
  */
 static inline void *genlmsg_data(const struct genlmsghdr *gnlh)
 {

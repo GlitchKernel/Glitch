@@ -17,15 +17,15 @@ export CPU_VER CPU_MAJOR CPU_MINOR CPU_REV
 # The various CONFIG_XILINX cpu features options are integers 0/1/2...
 # rather than bools y/n
 
-# Work out HW multipler support.  This is icky.
-# 1. Spartan2 has no HW multiplers.
+# Work out HW multipler support. This is tricky.
+# 1. Spartan2 has no HW multipliers.
 # 2. MicroBlaze v3.x always uses them, except in Spartan 2
 # 3. All other FPGa/CPU ver combos, we can trust the CONFIG_ settings
 ifeq (,$(findstring spartan2,$(CONFIG_XILINX_MICROBLAZE0_FAMILY)))
   ifeq ($(CPU_MAJOR),3)
     CPUFLAGS-1 += -mno-xl-soft-mul
   else
-    # USE_HW_MUL can be 0, 1, or 2, defining a heirarchy of HW Mul support.
+    # USE_HW_MUL can be 0, 1, or 2, defining a hierarchy of HW Mul support.
     CPUFLAGS-$(subst 1,,$(CONFIG_XILINX_MICROBLAZE0_USE_HW_MUL)) += -mxl-multiply-high
     CPUFLAGS-$(CONFIG_XILINX_MICROBLAZE0_USE_HW_MUL) += -mno-xl-soft-mul
   endif
@@ -42,11 +42,8 @@ KBUILD_CFLAGS += -ffixed-r31 $(CPUFLAGS-1) $(CPUFLAGS-2)
 LDFLAGS		:=
 LDFLAGS_vmlinux	:=
 
-LIBGCC := $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
-
 head-y := arch/microblaze/kernel/head.o
 libs-y += arch/microblaze/lib/
-libs-y += $(LIBGCC)
 core-y += arch/microblaze/kernel/
 core-y += arch/microblaze/mm/
 core-y += arch/microblaze/platform/

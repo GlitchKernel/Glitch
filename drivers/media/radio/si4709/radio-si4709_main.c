@@ -36,7 +36,9 @@
 /*file operatons*/
 static int Si4709_open (struct inode *, struct file *);
 static int Si4709_release (struct inode *, struct file *);
-static int Si4709_ioctl(struct inode *, struct file *, unsigned int,  unsigned long);
+static int Si4709_ioctl(struct file *, unsigned int,  unsigned long);
+
+static DEFINE_MUTEX(Si4709_mutex);
 
 /*ISR*/
 static irqreturn_t Si4709_isr( int irq, void *unused );
@@ -47,7 +49,7 @@ static struct file_operations Si4709_fops =
 {
     .owner = THIS_MODULE,
     .open = Si4709_open,
-    .ioctl = Si4709_ioctl,
+    .unlocked_ioctl = Si4709_ioctl,
     .release = Si4709_release,
 };
 
@@ -83,22 +85,25 @@ static int Si4709_release (struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static int Si4709_ioctl(struct inode *inode, struct file *filp, 
-				unsigned int ioctl_cmd,  unsigned long arg)
+static int Si4709_ioctl(struct file *filp, unsigned int ioctl_cmd,  unsigned long arg)
 {
 	int ret = 0;
 	void __user *argp = (void __user *)arg;   
 
+	mutex_lock(&Si4709_mutex);
+
 	if( _IOC_TYPE(ioctl_cmd) != Si4709_IOC_MAGIC )
 	{
 		debug("Inappropriate ioctl 1 0x%x",ioctl_cmd);
-		return -ENOTTY;
+		ret = -ENOTTY;
+		goto exit;
 	}
 
 	if( _IOC_NR(ioctl_cmd) > Si4709_IOC_NR_MAX )
 	{
 		debug("Inappropriate ioctl 2 0x%x",ioctl_cmd);	
-		return -ENOTTY;
+		ret = -ENOTTY;
+		goto exit;
 	}
 
 	switch (ioctl_cmd)
@@ -567,6 +572,8 @@ static int Si4709_ioctl(struct inode *inode, struct file *filp,
 			break;
 	}
 
+exit:
+	mutex_unlock(&Si4709_mutex);
 	return ret;
 }
 
@@ -725,7 +732,7 @@ void debug_ioctls(void)
    s3c_gpio_cfgpin(GPIO_FM_INT, S3C_GPIO_SFN(0xF));
    s3c_gpio_setpull(GPIO_FM_INT, S3C_GPIO_PULL_NONE);
 
-	set_irq_type(FM_IRQ_INT, IRQ_TYPE_EDGE_FALLING);    
+	irq_set_irq_type(FM_IRQ_INT, IRQ_TYPE_EDGE_FALLING);    
 	
    /*KGVS: Configuring the GPIO_FM_INT in mach-jupiter.c*/
 	if( (ret = request_irq(FM_IRQ_INT, Si4709_isr, IRQF_DISABLED , "Si4709", NULL )) )

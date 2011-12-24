@@ -13,7 +13,6 @@
 #include <linux/rtc.h>
 #include <linux/completion.h>
 #include <media/v4l2-device.h>
-#include <media/v4l2-i2c-drv.h>
 #include <media/ce147_platform.h>
 
 #ifdef CONFIG_VIDEO_SAMSUNG_V4L2
@@ -44,7 +43,7 @@
 
 /* Default resolution & pixelformat. plz ref ce147_platform.h */
 #define	DEFAULT_PIX_FMT		V4L2_PIX_FMT_UYVY	/* YUV422 */
-#define	DEFUALT_MCLK		24000000
+#define	DEFAULT_MCLK		24000000
 #define	POLL_TIME_MS		10
 
 /* Camera ISP command */
@@ -161,6 +160,7 @@ enum af_operation_status {
 	AF_NONE = 0,
 	AF_START,
 	AF_CANCEL,
+	AF_INITIAL,
 };
 
 enum ce147_frame_size {
@@ -329,7 +329,6 @@ struct ce147_state {
 	struct v4l2_streamparm strm;
 	struct ce147_gps_info gpsInfo;
 	struct mutex ctrl_lock;
-	struct completion af_complete;
 	enum ce147_runmode runmode;
 	enum ce147_oprmode oprmode;
 	int framesize_index;
@@ -366,13 +365,10 @@ struct ce147_state {
 
 static int condition;
 
-static const struct v4l2_fmtdesc capture_fmts[] = {
+static const struct v4l2_mbus_framefmt capture_fmts[] = {
 	{
-		.index		= 0,
-		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
-		.flags		= FORMAT_FLAGS_COMPRESSED,
-		.description	= "JPEG	+ Postview",
-		.pixelformat	= V4L2_PIX_FMT_JPEG,
+		.code		= V4L2_MBUS_FMT_FIXED,
+		.colorspace	= V4L2_COLORSPACE_JPEG,
 	},
 };
 
@@ -4160,6 +4156,25 @@ static int ce147_set_face_lock(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int ce147_finish_auto_focus(struct v4l2_subdev *sd)
+{
+	int err;
+	struct ce147_state *state = to_state(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+#if defined(CONFIG_ARIES_NTT) || defined(CONFIG_SAMSUNG_FASCINATE)
+	if (!state->disable_aeawb_lock) {
+		err = ce147_set_awb_lock(sd, 1);
+		if (err < 0) {
+			dev_err(&client->dev, "%s: failed: ce147_set_awb_lock, err %d\n",__func__, err);
+					return -EIO;
+		}
+	}
+#endif
+
+	state->af_status = AF_NONE;
+	return 0;
+}
+
 static int ce147_start_auto_focus(struct v4l2_subdev *sd,
 					struct v4l2_control *ctrl)
 {
@@ -4184,8 +4199,7 @@ static int ce147_start_auto_focus(struct v4l2_subdev *sd,
 	/* start af */
 	err = ce147_i2c_write_multi(client, CMD_START_AUTO_FOCUS_SEARCH,
 			ce147_buf_set_af, ce147_len_set_af);
-	state->af_status = AF_START;
-	INIT_COMPLETION(state->af_complete);
+	state->af_status = AF_INITIAL;
 
 	if (err < 0) {
 		dev_err(&client->dev, "%s: failed: i2c_write for "
@@ -4221,10 +4235,6 @@ static int ce147_stop_auto_focus(struct v4l2_subdev *sd)
 
 	state->af_status = AF_CANCEL;
 
-	mutex_unlock(&state->ctrl_lock);
-	wait_for_completion(&state->af_complete);
-	mutex_lock(&state->ctrl_lock);
-
 	return err;
 }
 
@@ -4234,88 +4244,43 @@ static int ce147_get_auto_focus_status(struct v4l2_subdev *sd,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct ce147_state *state = to_state(sd);
 	unsigned char ce147_buf_get_af_status[1] = { 0x00 };
-	int count;
 	int err;
 
 	ce147_msg(&client->dev, "%s\n", __func__);
 
-	if (state->af_status == AF_NONE) {
-		dev_err(&client->dev,
+	if (state->af_status == AF_INITIAL) {
+		dev_dbg(&client->dev, "%s: Check AF Result\n", __func__);
+		if (state->af_status == AF_NONE) {
+			dev_dbg(&client->dev,
 				"%s: auto focus never started, returning 0x2\n",
 				__func__);
-		pr_debug("%s: AUTO_FOCUS_CANCELLED\n", __func__);
+			ctrl->value = AUTO_FOCUS_CANCELLED;
+			return 0;
+		}
+	} else if (state->af_status == AF_CANCEL) {
+		dev_dbg(&client->dev,
+			"%s: AF is cancelled while doing\n", __func__);
 		ctrl->value = AUTO_FOCUS_CANCELLED;
+		ce147_finish_auto_focus(sd);
 		return 0;
 	}
 
-	/* status check	whether AF searching is	successful or not */
-	for (count = 0;	count < 600; count++) {
-		mutex_unlock(&state->ctrl_lock);
-		msleep(10);
-		mutex_lock(&state->ctrl_lock);
-
-		if (state->af_status == AF_CANCEL) {
-			dev_err(&client->dev,
-				"%s: AF is cancelled while doing\n", __func__);
-			ctrl->value = AUTO_FOCUS_CANCELLED;
-			goto out;
-		}
-
-		ce147_buf_get_af_status[0] = 0xFF;
-		err = ce147_i2c_read_multi(client,
-				CMD_CHECK_AUTO_FOCUS_SEARCH, NULL, 0,
-				ce147_buf_get_af_status, 1);
-		if (err < 0) {
-			dev_err(&client->dev, "%s: failed: i2c_read "
-					"for auto_focus\n", __func__);
-			return -EIO;
-		}
-		if (ce147_buf_get_af_status[0] == 0x05)
-			continue;
-		if (ce147_buf_get_af_status[0] == 0x00
-				|| ce147_buf_get_af_status[0] == 0x02
-				|| ce147_buf_get_af_status[0] == 0x04)
-			break;
-
-#if defined(CONFIG_ARIES_NTT) /* Modify	NTTS1 */
-		if ((ctrl->value == 2) && !state->disable_aeawb_lock) {
-			err = ce147_set_awb_lock(sd, 1);
-			if (err < 0) {
-				dev_err(&client->dev, "%s: failed: "
-						"ce147_set_awb_lock, err %d\n",
-						__func__, err);
-				return -EIO;
-			}
-		}
-#endif
+	ce147_buf_get_af_status[0] = 0xFF;
+	err = ce147_i2c_read_multi(client,
+			CMD_CHECK_AUTO_FOCUS_SEARCH, NULL, 0,
+			ce147_buf_get_af_status, 1);
+	if (err < 0) {
+		dev_err(&client->dev, "%s: failed: i2c_read "
+				"for auto_focus\n", __func__);
+		return -EIO;
 	}
 
-	ctrl->value = FOCUS_MODE_AUTO_DEFAULT;
-
-	if (ce147_buf_get_af_status[0] == 0x02) {
-		ctrl->value = AUTO_FOCUS_DONE;
-	} else {
-		ce147_set_focus_mode(sd, ctrl);
-		ctrl->value = AUTO_FOCUS_FAILED;
-		goto out;
+	if (ce147_buf_get_af_status[0] != 0x02 && ce147_buf_get_af_status[0] != 0x05) {
+	        ce147_set_focus_mode(sd, ctrl);
 	}
+
+	ctrl->value = ce147_buf_get_af_status[0];
 	ce147_msg(&client->dev, "%s: done\n", __func__);
-
-#ifdef CONFIG_SAMSUNG_FASCINATE
-	if ((ctrl->value == AUTO_FOCUS_DONE) && !state->disable_aeawb_lock) {
-		err = ce147_set_awb_lock(sd, 1);
-		if (err < 0) {
-			dev_err(&client->dev, "%s: failed: ce147_set_awb_lock, err %d\n",__func__, err);
-					return -EIO;
-		}
-	}
-#endif
-
-out:
-	state->af_status = AF_NONE;
-	complete(&state->af_complete);
-
-	/* pr_debug("ce147_get_auto_focus_status is called"); */
 	return 0;
 }
 
@@ -4557,7 +4522,7 @@ static int ce147_s_crystal_freq(struct v4l2_subdev *sd, u32 freq, u32 flags)
 	return err;
 }
 
-static int ce147_g_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
+static int ce147_g_mbus_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt)
 {
 	int err = 0;
 
@@ -4572,25 +4537,28 @@ static int ce147_set_framesize_index(struct v4l2_subdev *sd,
  * pixel_format -> to be handled in the	upper layer
  *
  * */
-static int ce147_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
+static int ce147_s_mbus_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt)
 {
 	int err = 0;
 	struct ce147_state *state = to_state(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int framesize_index = -1;
 
-	if (fmt->fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG
-			&& fmt->fmt.pix.colorspace != V4L2_COLORSPACE_JPEG) {
+	if (fmt->code == V4L2_MBUS_FMT_FIXED &&
+		fmt->colorspace != V4L2_COLORSPACE_JPEG) {
 		dev_err(&client->dev, "%s: mismatch in pixelformat and "
 				"colorspace\n", __func__);
 		return -EINVAL;
 	}
 
-	state->pix.width = fmt->fmt.pix.width;
-	state->pix.height = fmt->fmt.pix.height;
-	state->pix.pixelformat = fmt->fmt.pix.pixelformat;
+	state->pix.width = fmt->width;
+	state->pix.height = fmt->height;
+	if (fmt->colorspace == V4L2_COLORSPACE_JPEG)
+		state->pix.pixelformat = V4L2_PIX_FMT_JPEG;
+	else
+		state->pix.pixelformat = 0; /* is this used anywhere? */
 
-	if (fmt->fmt.pix.colorspace == V4L2_COLORSPACE_JPEG)
+	if (fmt->colorspace == V4L2_COLORSPACE_JPEG)
 		state->oprmode = CE147_OPRMODE_IMAGE;
 	else
 		state->oprmode = CE147_OPRMODE_VIDEO;
@@ -4666,31 +4634,33 @@ static int ce147_enum_frameintervals(struct v4l2_subdev *sd,
 	return err;
 }
 
-static int ce147_enum_fmt(struct v4l2_subdev *sd, struct v4l2_fmtdesc *fmtdesc)
+static int ce147_enum_mbus_fmt(struct v4l2_subdev *sd, unsigned int index,
+				  enum v4l2_mbus_pixelcode *code)
 {
 	int num_entries;
 
-	num_entries = sizeof(capture_fmts) / sizeof(struct v4l2_fmtdesc);
+	num_entries = sizeof(capture_fmts) / sizeof(struct v4l2_mbus_framefmt);
 
-	if (fmtdesc->index >= num_entries)
+	if (index >= num_entries)
 		return -EINVAL;
 
-	memset(fmtdesc, 0, sizeof(*fmtdesc));
-	memcpy(fmtdesc, &capture_fmts[fmtdesc->index], sizeof(*fmtdesc));
+	*code = capture_fmts[index].code;
 
 	return 0;
 }
 
-static int ce147_try_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
+static int ce147_try_mbus_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt)
 {
 	int num_entries;
 	int i;
 
-	num_entries = sizeof(capture_fmts) / sizeof(struct v4l2_fmtdesc);
+	num_entries = sizeof(capture_fmts) / sizeof(struct v4l2_mbus_framefmt);
 
 	for (i = 0; i < num_entries; i++) {
-		if (capture_fmts[i].pixelformat == fmt->fmt.pix.pixelformat)
+		if (capture_fmts[i].code == fmt->code &&
+		    capture_fmts[i].colorspace == fmt->colorspace) {
 			return 0;
+		}
 	}
 
 	return -EINVAL;
@@ -4953,7 +4923,7 @@ static int ce147_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		ctrl->value = state->sa_status;
 		break;
 
-	case V4L2_CID_CAMERA_AUTO_FOCUS_RESULT:
+	case V4L2_CID_CAMERA_AUTO_FOCUS_RESULT_FIRST:
 		err = ce147_get_auto_focus_status(sd, ctrl);
 		break;
 
@@ -5294,12 +5264,12 @@ static int ce147_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		err = 0;
 		break;
 
-#if defined(CONFIG_ARIES_NTT) || defined(CONFIG_SAMSUNG_FASCINATE) /* Modify	NTTS1 */
-	case V4L2_CID_CAMERA_AE_AWB_DISABLE_LOCK:
+	case V4L2_CID_CAMERA_FINISH_AUTO_FOCUS:
+#if defined(CONFIG_SAMSUNG_FASCINATE)
 		state->disable_aeawb_lock = ctrl->value;
-		err = 0;
-		break;
 #endif
+		err = ce147_finish_auto_focus(sd);
+		break;
 
 	case V4L2_CID_CAM_FW_VER:
 		err = ce147_get_fw_data(sd);
@@ -5554,54 +5524,8 @@ static int ce147_init(struct v4l2_subdev *sd, u32 val)
 	return 0;
 }
 
-/*
- * s_config subdev ops
- * With camera device, we need to re-initialize every single opening time
- * therefor, it is not necessary to be initialized on probe time.
- * except for version checking
- * NOTE: version checking is optional
- */
-static int ce147_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
-{
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct ce147_state *state = to_state(sd);
-	struct ce147_platform_data *pdata;
-
-	pdata =	client->dev.platform_data;
-
-	if (!pdata) {
-		dev_err(&client->dev, "%s: no platform data\n", __func__);
-		return -ENODEV;
-	}
-
-	/*
-	 * Assign default format and resolution
-	 * Use configured default information in platform data
-	 * or without them, use default information in driver
-	 */
-	if (!(pdata->default_width && pdata->default_height)) {
-		/* TODO: assign driver default resolution */
-	} else {
-		state->pix.width = pdata->default_width;
-		state->pix.height = pdata->default_height;
-	}
-
-	if (!pdata->pixelformat)
-		state->pix.pixelformat = DEFAULT_PIX_FMT;
-	else
-		state->pix.pixelformat = pdata->pixelformat;
-
-	if (!pdata->freq)
-		state->freq = DEFUALT_MCLK;	/* 24MHz default */
-	else
-		state->freq = pdata->freq;
-
-	return 0;
-}
-
 static const struct v4l2_subdev_core_ops ce147_core_ops = {
 	.init		= ce147_init,		/* initializing API */
-	.s_config	= ce147_s_config,	/* Fetch platform data */
 	.queryctrl	= ce147_queryctrl,
 	.querymenu	= ce147_querymenu,
 	.g_ctrl		= ce147_g_ctrl,
@@ -5611,12 +5535,12 @@ static const struct v4l2_subdev_core_ops ce147_core_ops = {
 
 static const struct v4l2_subdev_video_ops ce147_video_ops = {
 	.s_crystal_freq		= ce147_s_crystal_freq,
-	.g_fmt			= ce147_g_fmt,
-	.s_fmt			= ce147_s_fmt,
+	.g_mbus_fmt			= ce147_g_mbus_fmt,
+	.s_mbus_fmt			= ce147_s_mbus_fmt,
 	.enum_framesizes	= ce147_enum_framesizes,
 	.enum_frameintervals	= ce147_enum_frameintervals,
-	.enum_fmt		= ce147_enum_fmt,
-	.try_fmt		= ce147_try_fmt,
+	.enum_mbus_fmt		= ce147_enum_mbus_fmt,
+	.try_mbus_fmt		= ce147_try_mbus_fmt,
 	.g_parm			= ce147_g_parm,
 	.s_parm			= ce147_s_parm,
 };
@@ -5636,13 +5560,13 @@ static int ce147_probe(struct i2c_client *client,
 {
 	struct ce147_state *state;
 	struct v4l2_subdev *sd;
+	struct ce147_platform_data *pdata =	client->dev.platform_data;
 
 	state = kzalloc(sizeof(struct ce147_state), GFP_KERNEL);
 	if (state == NULL)
 		return -ENOMEM;
 
 	mutex_init(&state->ctrl_lock);
-	init_completion(&state->af_complete);
 
 	state->runmode = CE147_RUNMODE_NOTREADY;
 	state->pre_focus_mode = -1;
@@ -5650,6 +5574,24 @@ static int ce147_probe(struct i2c_client *client,
 
 	sd = &state->sd;
 	strcpy(sd->name, CE147_DRIVER_NAME);
+
+	/*
+	 * Assign default format and resolution
+	 * Use configured default information in platform data
+	 * or without them, use default information in driver
+	 */
+	state->pix.width = pdata->default_width;
+	state->pix.height = pdata->default_height;
+
+	if (!pdata->pixelformat)
+		state->pix.pixelformat = DEFAULT_PIX_FMT;
+	else
+		state->pix.pixelformat = pdata->pixelformat;
+
+	if (!pdata->freq)
+		state->freq = DEFAULT_MCLK;	/* 24MHz default */
+	else
+		state->freq = pdata->freq;
 
 	/* Registering subdev */
 	v4l2_i2c_subdev_init(sd, client, &ce147_ops);
@@ -5700,12 +5642,26 @@ static const struct i2c_device_id ce147_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, ce147_id);
 
-static struct v4l2_i2c_driver_data v4l2_i2c_data = {
-	.name	= CE147_DRIVER_NAME,
+static struct i2c_driver v4l2_i2c_driver = {
+	.driver.name	= CE147_DRIVER_NAME,
 	.probe	= ce147_probe,
 	.remove	= ce147_remove,
 	.id_table = ce147_id,
 };
+
+static int __init v4l2_i2c_drv_init(void)
+{
+	return i2c_add_driver(&v4l2_i2c_driver);
+}
+
+static void __exit v4l2_i2c_drv_cleanup(void)
+{
+	i2c_del_driver(&v4l2_i2c_driver);
+}
+
+module_init(v4l2_i2c_drv_init);
+module_exit(v4l2_i2c_drv_cleanup);
+
 
 MODULE_DESCRIPTION("NEC CE147-NEC 5MP camera driver");
 MODULE_AUTHOR("Tushar Behera <tushar.b@samsung.com>");

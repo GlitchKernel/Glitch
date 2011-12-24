@@ -12,8 +12,6 @@
 #include <sound/soc.h>
 #include <linux/mfd/wm8994/wm8994_pdata.h>
 
-extern struct snd_soc_codec_device soc_codec_dev_wm8994;
-
 /* Sources for AIF1/2 SYSCLK - use with set_dai_sysclk() */
 #define WM8994_SYSCLK_MCLK1 1
 #define WM8994_SYSCLK_MCLK2 2
@@ -27,12 +25,12 @@ extern struct snd_soc_codec_device soc_codec_dev_wm8994;
 
 #include "wm8994_def.h"
 
-extern struct snd_soc_dai wm8994_dai;
-
 #define WM8994_SYSCLK_MCLK     1
 #define WM8994_SYSCLK_FLL      2
 
-#define AUDIO_COMMON_DEBUG	1
+//#define WM8994_CACHE_SIZE 1570
+
+#define AUDIO_COMMON_DEBUG	0
 
 #define DEACTIVE		0x00
 #define PLAYBACK_ACTIVE		0x01
@@ -75,7 +73,7 @@ Codec Output Path BIT
 #define PLAYBACK_RING_SPK	(0x01 << 6)
 #define PLAYBACK_RING_HP	(0x01 << 7)
 #define PLAYBACK_RING_SPK_HP	(0x01 << 8)
-#define PLAYBACK_HP_NO_MIC  	(0x01 << 9)
+#define PLAYBACK_HP_NO_MIC  (0x01 << 9)
 #define PLAYBACK_EXTRA_DOCK_SPEAKER (0x01 << 10)
 
 #define VOICECALL_RCV		(0x01 << 1)
@@ -103,7 +101,10 @@ Codec Output Path BIT
 #define FMRADIO_HP		(0x01 << 1)
 #define FMRADIO_SPK		(0x01 << 2)
 #define FMRADIO_SPK_HP		(0x01 << 3)
-#define PLAYBACK_GAIN_NUM 48    // added 5 for extra doc audio settings
+
+#define PLAYBACK_GAIN_CDMA_NUM 48
+#define PLAYBACK_GAIN_NUM 43
+
 #define VOICECALL_GAIN_NUM 38
 #define RECORDING_GAIN_NUM 32
 #define GAIN_CODE_NUM 13
@@ -157,7 +158,7 @@ enum wm8994_dc_servo_slots {
 };
 
 struct wm8994_priv {
-	struct snd_soc_codec codec;
+	struct snd_soc_codec *codec;
 	int master;
 	int sysclk_source;
 	unsigned int mclk_rate;
@@ -180,7 +181,6 @@ struct wm8994_priv {
 	select_clock_control universal_clock_control;
 	struct wm8994_platform_data *pdata;
 	struct clk *codec_clk;
-	int testmode_config_flag;
 	int gain_code;
 	u16 dc_servo[3];
 };
@@ -205,8 +205,6 @@ struct gain_info_t {
 			__func__, __LINE__, ## __VA_ARGS__);
 
 /* Definitions of function prototype. */
-static void wm8994_shutdown(struct snd_pcm_substream *substream,
-			    struct snd_soc_dai *codec_dai);
 unsigned int wm8994_read(struct snd_soc_codec *codec, unsigned int reg);
 int wm8994_write(struct snd_soc_codec *codec,
 		unsigned int reg, unsigned int value);

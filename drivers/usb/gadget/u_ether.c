@@ -240,22 +240,22 @@ rx_submit(struct eth_dev *dev, struct usb_request *req, gfp_t gfp_flags)
 	size += out->maxpacket - 1;
 	size -= size % out->maxpacket;
 
+	if (dev->port_usb->is_fixed)
+		size = max_t(size_t, size, dev->port_usb->fixed_out_len);
+
 	skb = alloc_skb(size + NET_IP_ALIGN, gfp_flags);
 	if (skb == NULL) {
 		DBG(dev, "no rx skb\n");
 		goto enomem;
 	}
 
+#ifndef CONFIG_USB_ANDROID_RNDIS_DWORD_ALIGNED
 	/* Some platforms perform better when IP packets are aligned,
 	 * but on at least one, checksumming fails otherwise.  Note:
 	 * RNDIS headers involve variable numbers of LE32 values.
 	 */
-	/*
-	 * RX: Do not move data by IP_ALIGN:
-	 * if your DMA controller cannot handle it
-	 */
-	if (!gadget_dma32(dev->gadget))
-		skb_reserve(skb, NET_IP_ALIGN);
+	skb_reserve(skb, NET_IP_ALIGN);
+#endif
 
 	req->buf = skb->data;
 	req->length = size;
@@ -288,12 +288,6 @@ static void rx_complete(struct usb_ep *ep, struct usb_request *req)
 	/* normal completion */
 	case 0:
 		skb_put(skb, req->actual);
-		if (gadget_dma32(dev->gadget) && NET_IP_ALIGN) {
-			u8 *data = skb->data;
-			size_t len = skb_headlen(skb);
-			skb_reserve(skb, NET_IP_ALIGN);
-			memmove(skb->data, data, len);
-		}
 
 		if (dev->unwrap) {
 			unsigned long	flags;
@@ -491,7 +485,10 @@ static void tx_complete(struct usb_ep *ep, struct usb_request *req)
 	list_add(&req->list, &dev->tx_reqs);
 	spin_unlock(&dev->req_lock);
 	dev_kfree_skb_any(skb);
-
+#ifdef CONFIG_USB_ANDROID_RNDIS_DWORD_ALIGNED
+	if (req->buf != skb->data)
+		kfree(req->buf);
+#endif
 	atomic_dec(&dev->tx_qlen);
 	if (netif_carrier_ok(dev->net))
 		netif_wake_queue(dev->net);
@@ -586,33 +583,36 @@ static netdev_tx_t eth_start_xmit(struct sk_buff *skb,
 		length = skb->len;
 	}
 
-	/*
-	 * Align data to 32bit if the dma controller requires it
-	 */
-	if (gadget_dma32(dev->gadget)) {
-		unsigned long align = (unsigned long)skb->data & 3;
-		if (WARN_ON(skb_headroom(skb) < align)) {
-			dev_kfree_skb_any(skb);
+#ifdef CONFIG_USB_ANDROID_RNDIS_DWORD_ALIGNED
+    if ((int)skb->data & 3) {
+		req->buf = kmalloc(skb->len, GFP_ATOMIC);
+		if (!req->buf)
 			goto drop;
-		} else if (align) {
-			u8 *data = skb->data;
-			size_t len = skb_headlen(skb);
-			skb->data -= align;
-			memmove(skb->data, data, len);
-			skb_set_tail_pointer(skb, len);
-		}
+		memcpy((void *)req->buf, (void *)skb->data, skb->len);
 	}
-
+	else {
+		req->buf = skb->data;
+	}
+#else
 	req->buf = skb->data;
+#endif
+
 	req->context = skb;
 	req->complete = tx_complete;
+
+	/* NCM requires no zlp if transfer is dwNtbInMaxSize */
+	if (dev->port_usb->is_fixed &&
+	    length == dev->port_usb->fixed_in_len &&
+	    (length % in->maxpacket) == 0)
+		req->zero = 0;
+	else
+		req->zero = 1;
 
 	/* use zlp framing on tx for strict CDC-Ether conformance,
 	 * though any robust network rx path ignores extra padding.
 	 * and some hardware doesn't like to write zlps.
 	 */
-	req->zero = 1;
-	if (!dev->zlp && (length % in->maxpacket) == 0)
+	if (req->zero && !dev->zlp && (length % in->maxpacket) == 0)
 		length++;
 
 	req->length = length;
@@ -637,6 +637,10 @@ static netdev_tx_t eth_start_xmit(struct sk_buff *skb,
 		dev_kfree_skb_any(skb);
 drop:
 		dev->net->stats.tx_dropped++;
+#ifdef CONFIG_USB_ANDROID_RNDIS_DWORD_ALIGNED
+		if (req->buf != skb->data)
+			kfree(req->buf);
+#endif
 		spin_lock_irqsave(&dev->req_lock, flags);
 		if (list_empty(&dev->tx_reqs))
 			netif_start_queue(net);
@@ -848,7 +852,6 @@ int gether_setup_name(struct usb_gadget *g, u8 ethaddr[ETH_ALEN],
 	 *  - iff DATA transfer is active, carrier is "on"
 	 *  - tx queueing enabled if open *and* carrier is "on"
 	 */
-	netif_stop_queue(net);
 	netif_carrier_off(net);
 
 	dev->gadget = g;
@@ -881,10 +884,8 @@ void gether_cleanup(void)
 		return;
 
 	unregister_netdev(the_dev->net);
+	flush_work_sync(&the_dev->work);
 	free_netdev(the_dev->net);
-
-	/* assuming we used keventd, it must quiesce too */
-	flush_scheduled_work();
 
 	the_dev = NULL;
 }

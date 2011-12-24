@@ -91,7 +91,7 @@ static int level_open(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static int level_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
+static int level_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	unsigned int val;
 
@@ -132,7 +132,7 @@ static struct file_operations level_fops =
 {
 	.owner = THIS_MODULE,
 	.open = level_open,
-	.ioctl = level_ioctl,
+	.unlocked_ioctl = level_ioctl,
 };
 
 static struct miscdevice level_device = {

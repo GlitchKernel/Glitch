@@ -137,9 +137,9 @@ orientation_data_show(struct device *dev,
 
 	spin_lock_irqsave(&input_data->event_lock, flags);
 
-	x = input_data->abs[REL_X];
-	y = input_data->abs[REL_Y];
-	z = input_data->abs[REL_Z];
+	x = input_data->absinfo[REL_X].value;
+	y = input_data->absinfo[REL_Y].value;
+	z = input_data->absinfo[REL_Z].value;
 
 	spin_unlock_irqrestore(&input_data->event_lock, flags);
 
@@ -156,7 +156,7 @@ orientation_status_show(struct device *dev,
 
 	spin_lock_irqsave(&input_data->event_lock, flags);
 
-	status = input_data->abs[REL_STATUS];
+	status = input_data->absinfo[REL_STATUS].value;
 
 	spin_unlock_irqrestore(&input_data->event_lock, flags);
 
