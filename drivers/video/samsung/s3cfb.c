@@ -41,7 +41,7 @@
 
 #ifdef CONFIG_MACH_ARIES
 
-#ifndef CONFIG_DEV_BOOTLOGO
+#ifdef CONFIG_DEV_BOOTLOGO
 #include "logo_rgb24_wvga_portrait_dev.h"
 #else
 //#include "logo_rgb24_wvga_portrait.h"

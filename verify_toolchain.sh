@@ -1,8 +1,14 @@
 #!/bin/bash
 
-# Version of the toolchain you want to use
+# Available toolchains on the server :
+# 
+# 2009q3-67
+# 4.5-2011.12
+
+# Version of the toolchain you want to use :
+
 VERSION=$1
-[[ "$VERSION" == '' ]] && VERSION=4.5-2011.12
+[[ "$VERSION" == '' ]] && VERSION=2009q3-67
 
 function verify_toolchain()
 {
@@ -12,10 +18,14 @@ function verify_toolchain()
 
   if [ ! -d ../glitch-toolchain/android-toolchain-eabi-${VERSION} ]; then
 
-# To use if you want only one toolchain at a time for building Glitch kernel
 	if test -d ../glitch-toolchain/; then
-echo "You have a Glitch toolchain directory already.. Cleaning"
-    rm -rf ../glitch-toolchain/*
+echo "You have a Glitch toolchain directory already ;)"
+
+# To use if you want only one toolchain at a time for building Glitch kernel :
+
+#echo "You have a Glitch toolchain directory already.. Cleaning"
+#    rm -rf ../glitch-toolchain/*
+
 else
 
 echo "Glitch toolchain directory created"
@@ -34,8 +44,12 @@ echo ""
 echo ""
 echo "Decompressing into Glitch toolchain folder... "
 echo ""
-			if tar -C ../glitch-toolchain/ -xjf "$tarball"; then    
-    mv ../glitch-toolchain/android-toolchain-eabi ../glitch-toolchain/android-toolchain-eabi-${VERSION}
+			if tar -C ../glitch-toolchain/ -xjf "$tarball"; then
+if test -d ../glitch-toolchain/arm-2009q3; then
+	mv ../glitch-toolchain/arm-2009q3 ../glitch-toolchain/android-toolchain-eabi-${VERSION}
+else
+	mv ../glitch-toolchain/android-toolchain-eabi ../glitch-toolchain/android-toolchain-eabi-${VERSION}
+fi
 
 else
 
@@ -61,7 +75,12 @@ fi
     exit 1
   fi
 
+if VERSION=2009q3-67; then
+
+  export CROSS_COMPILE_GLITCH=../glitch-toolchain/android-toolchain-eabi-${VERSION}/bin/arm-none-linux-gnueabi-
+else
   export CROSS_COMPILE_GLITCH=../glitch-toolchain/android-toolchain-eabi-${VERSION}/bin/arm-eabi-
+fi
   export CROSS_COMPILE_443=../../../prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
   
   echo "Toolchains are ready for Glitch building ! :)"
