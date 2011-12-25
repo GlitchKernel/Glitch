@@ -78,7 +78,7 @@ enum s5pv210_dmc_port {
 
 static struct cpufreq_frequency_table s5pv210_freq_table[] = {
 	{L0, 1400*1000},
-	{L1, 1300*1000},
+	{L1, 1304*1000},
 	{L2, 1200*1000},
 	{L3, 1000*1000},
 	{L4, 800*1000},
@@ -179,7 +179,7 @@ static bool ocvalue_changed = false;
 static int oc_value = 100;
 
 static unsigned long sleep_freq;
-static unsigned long original_fclk[] = {1400000, 1300000, 1200000, 1000000, 800000, 800000, 800000, 800000};
+static unsigned long original_fclk[] = {1400000, 1304000, 1200000, 1000000, 800000, 800000, 800000, 800000};
 
 static u32 apll_values[sizeof(original_fclk) / sizeof(unsigned long)];
 #endif
@@ -499,7 +499,7 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 			__raw_writel(APLL_VAL_1400, S5P_APLL_CON);
 			break;
 		case L1:
-			__raw_writel(APLL_VAL_1300, S5P_APLL_CON);
+			__raw_writel(APLL_VAL_1304, S5P_APLL_CON);
 			break;
 		case L2:
 			__raw_writel(APLL_VAL_1200, S5P_APLL_CON);
