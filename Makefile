@@ -352,8 +352,8 @@ GLITCHFLAGS = -finline-functions -ffast-math -fsingle-precision-constant -pipe -
 CFLAGS_MODULE   =
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	= $(GLITCHFLAGS)
-AFLAGS_KERNEL	= $(GLITCHFLAGS)
+CFLAGS_KERNEL	= $(GLITCH_FLAGS)
+AFLAGS_KERNEL	= $(GLITCH_FLAGS)
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -370,7 +370,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks $(GLITCHFLAGS)
+		   -fno-delete-null-pointer-checks
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=

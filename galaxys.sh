@@ -2,7 +2,9 @@
 
 source ./verify_toolchain.sh
 verify_toolchain
-export CROSS_COMPILE=$CROSS_COMPILE_GLITCH
+#export CROSS_COMPILE=$CROSS_COMPILE_GLITCH
+
+export CROSS_COMPILE=$CROSS_COMPILE_443
 
 export KBUILD_BUILD_VERSION="1"
 
