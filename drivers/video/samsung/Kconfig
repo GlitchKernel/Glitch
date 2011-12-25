@@ -13,6 +13,16 @@ config FB_S3C
 	---help---
 	  This enables support for Samsung Display Controller (FIMD)
 
+config DEV_BOOTLOGO
+        bool "Development builds bootlogo"
+        depends on MACH_ARIES
+	default n
+
+config FB_S3C_UNLOCKED_REFRESH
+        bool "Unlocked screen refresh rate to 68Hz"
+        depends on FB_S3C
+	default n
+
 config FB_S3C_SPLASH_SCREEN
         bool "SPLASH_SCREEN on LCD"
         depends on FB_S3C

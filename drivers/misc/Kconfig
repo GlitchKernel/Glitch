@@ -602,6 +602,30 @@ config PN544
 	help
 	  NXP PN544 Near Field Communication controller support.
 
+config BLX
+       bool "Support for Battery Life eXtender"
+       default y
+       help
+         Say Y here to enable Battery Life eXtender
+
+config TOUCH_WAKE
+       bool "Support for Touch Wake"
+       default y
+       help
+         Say Y here to enable Touch Wake
+
+config LIVE_OC
+       bool "Support for Live OC"
+       default y
+       help
+         Say Y here to enable Live OC
+
+config CUSTOM_VOLTAGE
+       bool "Support for Custom Voltage"
+       default y
+       help
+         Say Y here to enable Custom Voltage
+
 config SAMSUNG_PARAM
 	bool "Samsung Param Driver"
 	depends on MACH_ARIES

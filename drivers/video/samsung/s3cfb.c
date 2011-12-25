@@ -40,7 +40,14 @@
 #include "s3cfb.h"
 
 #ifdef CONFIG_MACH_ARIES
-#include "logo_rgb24_wvga_portrait.h"
+
+#ifdef CONFIG_DEV_BOOTLOGO
+#include "logo_rgb24_wvga_portrait_dev.h"
+#else
+//#include "logo_rgb24_wvga_portrait.h"
+#include "logo_rgb24_wvga_portrait_custom.h"
+#endif
+
 #include <mach/regs-clock.h>
 #endif
 

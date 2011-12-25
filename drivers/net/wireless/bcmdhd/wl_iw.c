@@ -5081,7 +5081,11 @@ wl_iw_set_power(
 
 	WL_TRACE(("%s: SIOCSIWPOWER\n", dev->name));
 
+#ifdef CONFIG_BCMDHD_PMFAST
+	pm = vwrq->disabled ? PM_OFF : PM_FAST;
+#else
 	pm = vwrq->disabled ? PM_OFF : PM_MAX;
+#endif
 
 	pm = htod32(pm);
 	if ((error = dev_wlc_ioctl(dev, WLC_SET_PM, &pm, sizeof(pm))))
