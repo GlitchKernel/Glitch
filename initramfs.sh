@@ -15,6 +15,7 @@ if [[ $# -gt 0 ]]; then
 else
 	phones[0]="galaxys"
 	phones[1]="fascinate"
+	phones[2]="captivate"
 fi
 
 cd ../../../

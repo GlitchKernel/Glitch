@@ -6,9 +6,9 @@ verify_toolchain
 
 echo "building ALL variants of all kernels!"
 
-#echo "building initramfs"
+echo "building initramfs"
 
-#./initramfs.sh
+./initramfs.sh
 
 
 echo "Building CDMA variant(s) .. "

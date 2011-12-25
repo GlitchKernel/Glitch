@@ -63,5 +63,7 @@ make -j8
 echo "creating boot.img"
 ../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage ../../../out/target/product/galaxysmtd/ramdisk.img ../../../out/target/product/galaxysmtd/ramdisk-recovery.img
 
+#../../../device/samsung/aries-common/mkshbootimg.py release/boot.img arch/arm/boot/zImage Glitch-Ramdisks/galaxysmtd/ramdisk.img Glitch-Ramdisks/galaxysmtd/ramdisk-recovery.img
+
 echo "launching packaging script"
 ./release/auto/doit.sh
