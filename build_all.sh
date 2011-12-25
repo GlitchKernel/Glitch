@@ -10,15 +10,9 @@ echo "building ALL variants of all kernels!"
 
 #./initramfs.sh
 
-echo "Prepping for CDMA variant builds ... "
-./443cdma.sh
-
 
 echo "Building CDMA variant(s) .. "
 ./fascinate.sh
-
-echo "Prepping for GSM builds .. "
-./443gsm.sh
 
 echo "Building GSM variants .. "
 ./cappy.sh
