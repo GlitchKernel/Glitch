@@ -53,7 +53,7 @@ bool vibrator_is_running(void)
 EXPORT_SYMBOL(vibrator_is_running);
 #endif
 
-static void herring_vibrator_off(void)
+static void aries_vibrator_off(void)
 {
 	pwm_disable(vibdata.pwm_dev);
 	gpio_direction_output(GPIO_VIBTONE_EN1, GPIO_LEVEL_LOW);
