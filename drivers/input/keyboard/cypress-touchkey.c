@@ -259,10 +259,10 @@ static irqreturn_t touchkey_interrupt_handler(int irq, void *touchkey_devdata)
 }
 
 static void notify_led_on(void) {
-	if (unlikely(bl_devdata->is_dead) || bl_on)
-		return;
-
 	down(&enable_sem);
+
+	if (unlikely(bl_devdata->is_dead) || bl_on)
+		goto out;
 
 	if (bl_devdata->is_sleeping) {
 		bl_devdata->pdata->touchkey_sleep_onoff(TOUCHKEY_ON);
@@ -271,17 +271,18 @@ static void notify_led_on(void) {
 	i2c_touchkey_write_byte(bl_devdata, bl_devdata->backlight_on);
 	bl_on = 1;
 
-	up(&enable_sem);
-
 	printk(KERN_DEBUG "%s: notification led enabled\n", __FUNCTION__);
+
+out:
+	up(&enable_sem);
 }
 
 static void notify_led_off(void) {
-	if (unlikely(bl_devdata->is_dead) || !bl_on)
-		return;
-
 	// Avoid race condition with touch key resume
 	down(&enable_sem);
+
+	if (unlikely(bl_devdata->is_dead) || !bl_on)
+		goto out;
 
 	if (bl_on && bl_timer.expires < jiffies) // Don't disable if there's a timer scheduled
 		i2c_touchkey_write_byte(bl_devdata, bl_devdata->backlight_off);
@@ -292,9 +293,10 @@ static void notify_led_off(void) {
 
 	bl_on = 0;
 
-	up(&enable_sem);
-
 	printk(KERN_DEBUG "%s: notification led disabled\n", __FUNCTION__);
+
+out:
+	up(&enable_sem);
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
@@ -308,8 +310,7 @@ static void cypress_touchkey_early_suspend(struct early_suspend *h)
 	devdata->is_powering_on = true;
 
 	if (unlikely(devdata->is_dead)) {
-		up(&enable_sem);
-		return;
+		goto out;
 	}
 
 	disable_irq(devdata->client->irq);
@@ -320,6 +321,7 @@ static void cypress_touchkey_early_suspend(struct early_suspend *h)
 	all_keys_up(devdata);
 	devdata->is_sleeping = true;
 
+out:
 	up(&enable_sem);
 }
 

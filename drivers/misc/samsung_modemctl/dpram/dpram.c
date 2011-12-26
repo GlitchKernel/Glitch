@@ -1477,10 +1477,13 @@ static int dpram_tty_write_room(struct tty_struct *tty)
 }
 
 
-static int dpram_tty_ioctl(struct tty_struct *tty, struct file *file,
+static long dpram_tty_ioctl(struct file *file,
 		unsigned int cmd, unsigned long arg)
 {
 	unsigned int val;
+	int ret = 0;
+
+	mutex_lock(&pdp_lock);
 
 	switch (cmd) {
 		case DPRAM_PHONE_ON:
@@ -1495,30 +1498,36 @@ static int dpram_tty_ioctl(struct tty_struct *tty, struct file *file,
 				onedram_get_semaphore(__func__);
 			}
 #endif
-			return 0;
+			ret = 0;
+			break;
 
 		case DPRAM_PHONE_GETSTATUS:
 			val = dpram_phone_getstatus();
-			return copy_to_user((unsigned int *)arg, &val, sizeof(val));
+			ret = copy_to_user((unsigned int *)arg, &val, sizeof(val));
+			break;
 
 		case DPRAM_PHONE_RESET:
 			phone_sync = 0;
 			requested_semaphore = 0;
 			unreceived_semaphore = 0;
 			dpram_phone_reset();
-			return 0;
+			ret = 0;
+			break;
 
 		case DPRAM_PHONE_OFF:
 			dpram_phone_power_off();
-			return 0;
+			ret = 0;
+			break;
 
 		case DPRAM_PHONE_RAMDUMP_ON:
 			dpram_phone_ramdump_on();
-			return 0;
+			ret = 0;
+			break;
 
 		case DPRAM_PHONE_RAMDUMP_OFF:
 			dpram_phone_ramdump_off();
-			return 0;
+			ret = 0;
+			break;
 
 		case DPRAM_EXTRA_MEM_RW:
 		{
@@ -1527,13 +1536,13 @@ static int dpram_tty_ioctl(struct tty_struct *tty, struct file *file,
 			val = copy_from_user((void *)&param, (void *)arg, sizeof(param));
 			if (dpram_extra_mem_rw(&param) < 0) {
 				printk(KERN_ERR "[OneDRAM] external memory access fail..\n");
-				return -1;
+				ret = -1;
+			} else if (!param.rw) {	//read
+				ret = copy_to_user((unsigned long *)arg, &param, sizeof(param));
+			} else {
+				ret = 0;
 			}
-			if (!param.rw) {	//read
-				return copy_to_user((unsigned long *)arg, &param, sizeof(param));
-			}
-
-			return 0;
+			break;
 		}
 
 #if 0
@@ -1552,10 +1561,13 @@ static int dpram_tty_ioctl(struct tty_struct *tty, struct file *file,
 		}
 #endif
 		default:
+			ret = -ENOIOCTLCMD;
 			break;
 	}
 
-	return -ENOIOCTLCMD;
+	mutex_unlock(&pdp_lock);
+	//printk(KERN_ERR "dpram_tty_ioctl() %d\n", ret);
+	return ret;
 }
 
 static int dpram_tty_chars_in_buffer(struct tty_struct *tty)
