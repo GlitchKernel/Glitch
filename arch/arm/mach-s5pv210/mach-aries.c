@@ -3464,7 +3464,7 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, {
 		.num	= S5PV210_GPH1(3),
-		.cfg	= S3C_GPIO_SFN(0xff),  // was input
+		.cfg	= S3C_GPIO_SFN(0xf),  // was input
 		.val	= S3C_GPIO_SETPIN_NONE,
 		.pud	= S3C_GPIO_PULL_NONE,
 		.drv	= S3C_GPIO_DRVSTR_1X,
@@ -3488,7 +3488,7 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, {
 		.num	= S5PV210_GPH1(7), // GPIO_PHONE_ACTIVE
-		.cfg	= S3C_GPIO_SFN(0xFF),
+		.cfg	= S3C_GPIO_SFN(0xF),
 		.val	= S3C_GPIO_SETPIN_NONE,
 		.pud	= S3C_GPIO_PULL_NONE,
 		.drv	= S3C_GPIO_DRVSTR_1X,
