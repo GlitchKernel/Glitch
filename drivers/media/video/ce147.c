@@ -2806,12 +2806,8 @@ static int ce147_set_preflash(struct v4l2_subdev *sd, int flash_mode) //SecFeatu
 
         unsigned char ce147_buf_set_preflash[2] = { 0x01, 0x00 };
         unsigned int ce147_len_set_preflash = 2;
-        unsigned char ce147_buf_set_preflash_manual[2] = { 0x00, 0x00 };
-        unsigned int ce147_len_set_preflash_manual = 2;
         unsigned char ce147_buf_set_flash[2] = { 0x03, 0x00 };
         unsigned int ce147_len_set_flash = 2;
-        unsigned char ce147_buf_set_flash_manual[2] = { 0x00, 0x00 };
-        unsigned int ce147_len_set_flash_manual = 2;
         unsigned char ce147_buf_set_flash_off[2] = { 0x03, 0x00 };
         unsigned int ce147_len_set_flash_off = 2;
         unsigned char ce147_buf_set_preflash_off[2] = { 0x01, 0x00 };

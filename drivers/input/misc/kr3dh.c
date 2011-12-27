@@ -125,8 +125,6 @@ static int kr3dh_measure(struct kr3dh_data *kr3dh, struct acceleration *accel);
 static int kr3dh_hw_init(struct kr3dh_data *kr3dh)
 {
 	int err = 0;
-	int val = 0;
-	struct acceleration accel;
 
 	kr3dh->ctrl_reg1_shadow = DEFAULT_POWER_ON_SETTING;
         err = i2c_smbus_write_byte_data(kr3dh->client, CTRL_REG1,
@@ -251,9 +249,6 @@ static void kr3dh_set_delay(struct device *dev, s64 delay)
         }
 
         mutex_unlock(&kr3dh->enable_mutex);
-
-	return 0;
-	
 }
 
 static int kr3dh_set_position(struct device *dev, int position)
@@ -295,9 +290,7 @@ static int kr3dh_measure(struct kr3dh_data *kr3dh, struct acceleration *accel)
 	int pos = (int)atomic_read(&kr3dh->position);
 	unsigned char buf[6] = {0};
 	short int raw[3] = {0};
-	int err = 0;
-	int val = 0;
-	
+	long long g;
 
 	for (i = 0; i < 6; i++) {
         	buf[i] = kr3dh_i2c_byte_read(kr3dh->client, AXISDATA_REG + i);
@@ -305,20 +298,16 @@ static int kr3dh_measure(struct kr3dh_data *kr3dh, struct acceleration *accel)
 	for (i = 0; i < 3; i++) {
 		raw[i] = (unsigned short)(buf[i*2+1]<<8) + (unsigned short)buf[i*2];
 	}
-//	printk("RAW Accel: x -> %d y -> %d z -> %d\n", raw[0], raw[1], raw[2]);
 	for (i = 0; i < 3; i++) {
 		value = 0;
 		for (j = 0; j < 3; j++) {
 			value += kr3dh_position_map[pos][i][j] * (int)raw[j]; 
 		}
 		/* normalisation*/
-		long long g;
 		g = (long long)value * GRAVITY_EARTH / KR3DH_RESOLUTION;
 		accel->axis[i] = g;	 
 	}
 	 
-//	printk("Normalisation Accel: x -> %d y -> %d z -> %d\n",  accel->axis[0],  accel->axis[1],  accel->axis[2]);
-
 	return 0;
 }
 
@@ -398,9 +387,6 @@ static void kr3dh_input_fini(struct kr3dh_data *kr3dh)
 static ssize_t kr3dh_enable_show(struct device *dev,
                                   struct device_attribute *attr, char *buf)
 {
-        struct i2c_client *client = to_i2c_client(dev);
-	unsigned int val = 0;
-
        return sprintf(buf, "%d\n", kr3dh_get_enable(dev));
 }
 
