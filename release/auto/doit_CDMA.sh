@@ -28,8 +28,6 @@ REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M)-OLDMODEM.zip
 	cd ../
 		find . -name "*.ko" -exec cp {} release/system/lib/modules/ \; 2>/dev/null || exit 1
 	cd release
-	cp S99screenstate_scaling system/etc/init.d/ || exit 1
-	cp 000leakage system/etc/init.d/ || exit 1
 	cp lights.aries.so.BLN system/lib/hw/lights.aries.so || exit 1
 	cp logcat_module system/etc/init.d/ || exit 1
 	mkdir -p system/bin
@@ -48,6 +46,10 @@ REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M)-OLDMODEM.zip
 	if [ -d lib ]; then
 		cp -r lib system || exit 1
 	fi
+	
+	if [ -d init.d ] then
+    cp init.d/* system/etc/init.d || exit 1
+  fi
 	
 	zip -q -r ${REL} system boot.img META-INF script bml_over_mtd bml_over_mtd.sh || exit 1
 	mv ${REL}* ${TYPE}_OLDMODEM || exit 1
