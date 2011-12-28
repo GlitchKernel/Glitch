@@ -46,7 +46,6 @@
 
 int bl_on = 0;
 static DECLARE_MUTEX(enable_sem);
-//static DECLARE_MUTEX(i2c_sem);
 
 struct cypress_touchkey_devdata *bl_devdata;
 
@@ -84,8 +83,12 @@ static int i2c_touchkey_read_byte(struct cypress_touchkey_devdata *devdata,
 {
 	int ret;
 	int retry = 2;
-
-	//down(&i2c_sem);
+	
+	/* a word about the mutex that used to be here:
+	** it's really not needed. There's already a mutex lock inside the call
+	** to i2c_smbus_read_byte() and the corresponding i2c_smbus_write_byte()
+	** which will ensure that the two are not accessing the i2c bus at the same time.
+	*/
 
 	while (true) {
 		ret = i2c_smbus_read_byte(devdata->client);
@@ -102,8 +105,6 @@ static int i2c_touchkey_read_byte(struct cypress_touchkey_devdata *devdata,
 		msleep(10);
 	}
 
-	//up(&i2c_sem);
-
 	return ret;
 }
 
@@ -112,9 +113,6 @@ static int i2c_touchkey_write_byte(struct cypress_touchkey_devdata *devdata,
 {
 	int ret;
 	int retry = 2;
-   // unsigned long flags;
-
-	//down(&i2c_sem);
 
 	while (true) {
 		ret = i2c_smbus_write_byte(devdata->client, val);
@@ -129,8 +127,6 @@ static int i2c_touchkey_write_byte(struct cypress_touchkey_devdata *devdata,
         }
 		msleep(10);
 	}
-
-	//up(&i2c_sem);
 
 	return ret;
 }
@@ -266,13 +262,9 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 		}
 	}
 	
-	dev_err(&devdata->client->dev, "%s: scancode = 0x%x, data = 0x%x\n", __func__, scancode, data);
-	
 	bl_set_timeout();
 	
 err:
-  
-  
 	return IRQ_HANDLED;
 }
 
@@ -291,8 +283,6 @@ static irqreturn_t touchkey_interrupt_handler(int irq, void *touchkey_devdata)
 					"interrupt\n", __func__);
 		return IRQ_HANDLED;
 	}
-	
-	//disable_irq_nosync(irq);
 
 	return IRQ_WAKE_THREAD;
 }
