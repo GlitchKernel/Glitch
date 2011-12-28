@@ -47,7 +47,7 @@ REL=CM7${TYPE}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 		cp -r lib system || exit 1
 	fi
 	
-	if [ -d init.d ] then
+	if [ -d init.d ]; then
     cp init.d/* system/etc/init.d || exit 1
   fi
 	
