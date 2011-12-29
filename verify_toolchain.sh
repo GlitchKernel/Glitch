@@ -7,7 +7,7 @@
 
 # Version of the toolchain you want to use :
 
-VERSION=$1
+VERSION=$9
 [[ "$VERSION" == '' ]] && VERSION=2009q3-67
 
 function verify_toolchain()
@@ -16,9 +16,9 @@ function verify_toolchain()
   echo "checking 4.4.3 and ${VERSION} toolchains ... "
   echo ""
 
-  if [ ! -d ../glitch-toolchain/android-toolchain-eabi-${VERSION} ]; then
+  if [ ! -d ../glitch-build/toolchain/android-toolchain-eabi-${VERSION} ]; then
 
-	if test -d ../glitch-toolchain/; then
+	if test -d ../glitch-build/toolchain/; then
 echo "You have a Glitch toolchain directory already ;)"
 
 # To use if you want only one toolchain at a time for building Glitch kernel :
@@ -29,7 +29,7 @@ echo "You have a Glitch toolchain directory already ;)"
 else
 
 echo "Glitch toolchain directory created"
-    mkdir ../glitch-toolchain/
+    mkdir ../glitch-build/toolchain/
 	fi
 
 # Downloading
@@ -44,11 +44,11 @@ echo ""
 echo ""
 echo "Decompressing into Glitch toolchain folder... "
 echo ""
-			if tar -C ../glitch-toolchain/ -xjf "$tarball"; then
-if test -d ../glitch-toolchain/arm-2009q3; then
-	mv ../glitch-toolchain/arm-2009q3 ../glitch-toolchain/android-toolchain-eabi-${VERSION}
+			if tar -C ../glitch-build/toolchain/ -xjf "$tarball"; then
+if test -d ../glitch-build/toolchain/arm-2009q3; then
+	mv ../glitch-build/toolchain/arm-2009q3 ../glitch-build/toolchain/android-toolchain-eabi-${VERSION}
 else
-	mv ../glitch-toolchain/android-toolchain-eabi ../glitch-toolchain/android-toolchain-eabi-${VERSION}
+	mv ../glitch-build/toolchain/android-toolchain-eabi ../glitch-build/toolchain/android-toolchain-eabi-${VERSION}
 fi
 
 else
@@ -56,7 +56,7 @@ else
 echo "############################################"
 echo "#  Something went wrong ! Trying again ... #"
 echo "############################################"
-    rm -rf ../glitch-toolchain/android-toolchain-eabi-${VERSION}
+    rm -rf ../glitch-build/toolchain/android-toolchain-eabi-${VERSION}
     rm "$tarball"
     source ./verify_toolchain.sh
     verify_toolchain
@@ -77,9 +77,9 @@ fi
 
 if VERSION=2009q3-67; then
 
-  export CROSS_COMPILE_GLITCH=../glitch-toolchain/android-toolchain-eabi-${VERSION}/bin/arm-none-linux-gnueabi-
+  export CROSS_COMPILE_GLITCH=../glitch-build/toolchain/android-toolchain-eabi-${VERSION}/bin/arm-none-linux-gnueabi-
 else
-  export CROSS_COMPILE_GLITCH=../glitch-toolchain/android-toolchain-eabi-${VERSION}/bin/arm-eabi-
+  export CROSS_COMPILE_GLITCH=../glitch-build/toolchain/android-toolchain-eabi-${VERSION}/bin/arm-eabi-
 fi
   export CROSS_COMPILE_443=../../../prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
   

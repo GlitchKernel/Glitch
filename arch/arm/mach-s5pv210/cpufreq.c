@@ -33,9 +33,9 @@ static struct clk *dmc1_clk;
 static struct cpufreq_freqs freqs;
 static DEFINE_MUTEX(set_freq_lock);
 
-/* APLL M,P,S values for 1.4GHz/1.2GHz/1.0GHz/800MHz */
+/* APLL M,P,S values for 1.4GHz/1.3GHz/1.2GHz/1.0GHz/800MHz */
 #define APLL_VAL_1400	((1 << 31) | (175 << 16) | (3 << 8) | 1)
-#define APLL_VAL_1304	((1 << 31) | (163 << 16) | (3 << 8) | 1)
+#define APLL_VAL_1300	((1 << 31) | (325 << 16) | (6 << 8) | 1)
 #define APLL_VAL_1200	((1 << 31) | (150 << 16) | (3 << 8) | 1)
 #define APLL_VAL_1000	((1 << 31) | (125 << 16) | (3 << 8) | 1)
 #define APLL_VAL_800	((1 << 31) | (100 << 16) | (3 << 8) | 1)
@@ -78,7 +78,7 @@ enum s5pv210_dmc_port {
 
 static struct cpufreq_frequency_table s5pv210_freq_table[] = {
 	{L0, 1400*1000},
-	{L1, 1304*1000},
+	{L1, 1300*1000},
 	{L2, 1200*1000},
 	{L3, 1000*1000},
 	{L4, 800*1000},
@@ -155,7 +155,7 @@ static u32 clkdiv_val[8][11] = {
 	 */
 	/* L0 : [1400/200/200/100][166/83][133/66][200/200] */
 	{0, 6, 6, 1, 3, 1, 4, 1, 3, 0, 0},
-	/* L1 : [1304/200/200/100][166/83][133/66][200/200] */
+	/* L1 : [1300/200/200/100][166/83][133/66][200/200] */
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
 	/* L2 : [1200/200/200/100][166/83][133/66][200/200] */
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
@@ -179,7 +179,7 @@ static bool ocvalue_changed = false;
 static int oc_value = 100;
 
 static unsigned long sleep_freq;
-static unsigned long original_fclk[] = {1400000, 1304000, 1200000, 1000000, 800000, 800000, 800000, 800000};
+static unsigned long original_fclk[] = {1400000, 1300000, 1200000, 1000000, 800000, 800000, 800000, 800000};
 
 static u32 apll_values[sizeof(original_fclk) / sizeof(unsigned long)];
 #endif
@@ -499,7 +499,7 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 			__raw_writel(APLL_VAL_1400, S5P_APLL_CON);
 			break;
 		case L1:
-			__raw_writel(APLL_VAL_1304, S5P_APLL_CON);
+			__raw_writel(APLL_VAL_1300, S5P_APLL_CON);
 			break;
 		case L2:
 			__raw_writel(APLL_VAL_1200, S5P_APLL_CON);
