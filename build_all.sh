@@ -13,10 +13,6 @@ rm -rf ./release/{Captivate,CDMA_OLDMODEM,Fascinate,GSM_OLDMODEM,i9k,TelusFascin
 
 echo "building ALL variants of ALL kernels!"
 
-#echo "building initramfs"
-
-#./initramfs.sh
-
 echo "Prepping for CDMA variant builds ... "
 ./443cdma.sh
 
@@ -31,5 +27,4 @@ echo "Building GSM variants .. "
 ./cappy.sh
 ./galaxys.sh
 ./vibrant.sh
-./telus.sh
 
