@@ -43,10 +43,6 @@ build ()
     sed "s|usr/|$KERNEL_DIR/usr/|g" -i "$target_dir/usr/"*.list
     mka -C "$KERNEL_DIR" O="$target_dir" aries_${target}_defconfig HOSTCC="$CCACHE gcc"
     mka -C "$KERNEL_DIR" O="$target_dir" HOSTCC="$CCACHE gcc" CROSS_COMPILE="$CCACHE $CROSS_PREFIX" zImage modules
-    cp "$target_dir"/arch/arm/boot/zImage $KERNEL_DIR/release/$target/zImage
-    for module in "${MODULES[@]}" ; do
-        cp "$target_dir/$module" $KERNEL_DIR/release/$target
-    done
 
 [[ -d release ]] || {
 	echo "must be in kernel root dir"
@@ -54,15 +50,15 @@ build ()
 }
 
 echo "creating boot.img"
-$repo/device/samsung/aries-common/mkshbootimg.py $KERNEL_DIR/release/boot.img $KERNEL_DIR/release/$target/zImage $repo/out/target/product/$target/ramdisk.img $repo/out/target/product/$target/ramdisk-recovery.img
+$repo/device/samsung/aries-common/mkshbootimg.py $KERNEL_DIR/release/boot.img "$target_dir"/arch/arm/boot/zImage $repo/out/target/product/$target/ramdisk.img $repo/out/target/product/$target/ramdisk-recovery.img
 
 echo "packaging it up"
 
 cd release && {
 
-mkdir -p $target || exit 1
+mkdir -p ${target} || exit 1
 
-REL=CM9$target-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
+REL=CM9${target}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 
 	rm -r system 2> /dev/null
 	mkdir  -p system/lib/modules || exit 1
@@ -70,10 +66,10 @@ REL=CM9$target-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 	mkdir  -p system/etc/glitch-config || exit 1
 	echo "inactive" > system/etc/glitch-config/screenstate_scaling || exit 1
 	echo "conservative" > system/etc/glitch-config/sleep_governor || exit 1
-#	cp logger.module system/lib/modules/logger.ko
-	cd ../
-		cp $KERNEL_DIR/release/$target/modules/ \; 2>/dev/null || exit 1
-	cd release
+	cp logger.module system/lib/modules/logger.ko
+	for module in "${MODULES[@]}" ; do
+		cp "$target_dir/$module" \; 2>/dev/null
+	done
 	cp S99screenstate_scaling system/etc/init.d/ || exit 1
 	cp 90call_vol system/etc/init.d/ || exit 1
 	cp logcat_module system/etc/init.d/ || exit 1
@@ -96,7 +92,7 @@ REL=CM9$target-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
 	
 	zip -q -r ${REL} system boot.img META-INF script bml_over_mtd bml_over_mtd.sh || exit 1
 	sha256sum ${REL} > ${REL}.sha256sum
-	mv ${REL}* $target || exit 1
+	mv ${REL}* $KERNEL_DIR/release/${target}/ || exit 1
 } || exit 1
 
 rm boot.img
