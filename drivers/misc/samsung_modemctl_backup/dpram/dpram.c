@@ -849,7 +849,7 @@ void request_phone_reset()
 
 static int onedram_get_semaphore(const char *func)
 {
-	int i, req_try = 100;
+	int i, req_try = 512; // was 100
 
 	const u16 cmd = INT_COMMAND(INT_MASK_CMD_SMP_REQ);
 	
@@ -864,7 +864,7 @@ static int onedram_get_semaphore(const char *func)
 			unreceived_semaphore = 0;
 			return 1;
 		}
-		if (i == 0)
+		if ((i & 0xff) == 0)  // was i == 0
 			*onedram_mailboxBA = cmd;
 		udelay(40);
 	}
@@ -2315,7 +2315,7 @@ static int pdp_mux(struct pdp_info *dev, const void *data, size_t len   )
 		ret = dpram_write(&dpram_table[RAW_INDEX], tx_buf, hdr->len + 2);
 
 		if (ret < 0) {
-			printk(KERN_ERR "write_to_dpram() failed: %d\n", ret);
+			printk(KERN_ERR "write_to_dpram() failed: %d for device %d", ret, dev->id);
 			return ret;
 		}
 		buf += nbytes;
@@ -2542,7 +2542,7 @@ static int multipdp_init(void)
 		{ .id = 1, .ifname = "ttyCSD" },
 		{ .id = 7, .ifname = "ttyCDMA" },
 		{ .id = 9, .ifname = "ttyTRFB" },
-		{ .id = 27, .ifname = "ttyCIQ" },
+		//{ .id = 27, .ifname = "ttyCIQ" },
 	};
 
 
@@ -2757,6 +2757,7 @@ static int __devinit dpram_probe(struct platform_device *dev)
 
 	/* @LDK@ check out missing interrupt from the phone */
 	//check_miss_interrupt();
+	gpio_set_value(GPIO_PDA_ACTIVE, GPIO_LEVEL_HIGH);
 	
 	return 0;
 }

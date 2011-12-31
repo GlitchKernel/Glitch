@@ -80,6 +80,8 @@ struct mxt224_data {
 	struct finger_info fingers[];
 };
 
+static struct mxt224_data* _my_dev_data = NULL;
+
 static int read_mem(struct mxt224_data *data, u16 reg, u8 len, u8 *buf)
 {
 	int ret;
@@ -328,6 +330,44 @@ static void report_input_data(struct mxt224_data *data)
 	input_sync(data->input_dev);
 }
 
+void touchpad_forced_release( void )
+{
+   int i;
+   int tmp_val = 0;
+   struct mxt224_data *data = _my_dev_data;
+   
+   if ( data == NULL )
+     return;
+
+	for (i = 0; i < data->num_fingers; i++) {
+		if (data->fingers[i].z == -1)
+			continue;
+
+    // force release
+    data->fingers[i].z = 0;
+
+		input_report_abs(data->input_dev, ABS_MT_POSITION_X,
+					data->fingers[i].x);
+		input_report_abs(data->input_dev, ABS_MT_POSITION_Y,
+					data->fingers[i].y);
+		input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR,
+					data->fingers[i].z);
+		input_report_abs(data->input_dev, ABS_MT_WIDTH_MAJOR,
+					data->fingers[i].w);
+		input_report_abs(data->input_dev, ABS_MT_TRACKING_ID, i);
+		input_mt_sync(data->input_dev);
+
+		if (data->fingers[i].z == 0)
+			data->fingers[i].z = -1;
+			
+		++tmp_val;
+	}
+
+  if ( tmp_val )
+	input_sync(data->input_dev);
+}
+EXPORT_SYMBOL(touchpad_forced_release);
+
 static irqreturn_t mxt224_irq_thread(int irq, void *ptr)
 {
 	struct mxt224_data *data = ptr;
@@ -382,7 +422,7 @@ static irqreturn_t mxt224_irq_thread(int irq, void *ptr)
 
 static int mxt224_internal_suspend(struct mxt224_data *data)
 {
-	static const u8 sleep_power_cfg[3];
+	static const u8 sleep_power_cfg[3] = {0,0,0};
 	int ret;
 	int i;
 
@@ -487,6 +527,7 @@ static int __devinit mxt224_probe(struct i2c_client *client,
 
 	data->client = client;
 	i2c_set_clientdata(client, data);
+	_my_dev_data = data;
 
 	input_dev = input_allocate_device();
 	if (!input_dev) {

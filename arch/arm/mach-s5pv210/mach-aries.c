@@ -7,7 +7,7 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
 */
-
+ 
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/init.h>
@@ -3464,7 +3464,7 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, {
 		.num	= S5PV210_GPH1(3),
-		.cfg	= S3C_GPIO_INPUT,
+		.cfg	= S3C_GPIO_SFN(0xf),  // was input
 		.val	= S3C_GPIO_SETPIN_NONE,
 		.pud	= S3C_GPIO_PULL_NONE,
 		.drv	= S3C_GPIO_DRVSTR_1X,
@@ -3607,9 +3607,9 @@ static struct gpio_init_data aries_init_gpios[] = {
 	}, {
 #if defined(CONFIG_SAMSUNG_FASCINATE)
 		.num	= S5PV210_GPH3(7), // GPIO_CP_RST	
-		.cfg	= S3C_GPIO_INPUT,
-		.val	= S3C_GPIO_SETPIN_NONE,
-		.pud	= S3C_GPIO_PULL_DOWN,
+		.cfg	= S3C_GPIO_OUTPUT,  // was input
+		.val	= S3C_GPIO_SETPIN_ONE, // was none
+		.pud	= S3C_GPIO_PULL_NONE, // was down
 		.drv	= S3C_GPIO_DRVSTR_1X,
 #else
 		.num	= S5PV210_GPH3(7), // GPIO_CP_RST	
@@ -3727,9 +3727,9 @@ static struct gpio_init_data aries_init_gpios[] = {
 	// GPJ1 ----------------------------
 	{
 		.num	= S5PV210_GPJ1(0), // GPIO_PHONE_ON
-		.cfg	= S3C_GPIO_INPUT,
-		.val	= S3C_GPIO_SETPIN_NONE,
-		.pud	= S3C_GPIO_PULL_DOWN,
+		.cfg	= S3C_GPIO_OUTPUT,  // was input, none, down
+		.val	= S3C_GPIO_SETPIN_ZERO,
+		.pud	= S3C_GPIO_PULL_NONE,
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, {
 		.num	= S5PV210_GPJ1(1), // GPIO_VIBTONE_EN1
@@ -4463,7 +4463,7 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 #if defined (CONFIG_SAMSUNG_CAPTIVATE)
 	{ S5PV210_GPJ1(0), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_PHONE_ON
 #elif defined(CONFIG_SAMSUNG_FASCINATE)
-  	{ S5PV210_GPJ1(0), S3C_GPIO_SLP_PREV,   S3C_GPIO_PULL_DOWN},
+  	{ S5PV210_GPJ1(0), S3C_GPIO_SLP_PREV,   S3C_GPIO_PULL_NONE}, // was pull down
 #else
   	{ S5PV210_GPJ1(0), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},
 #endif
@@ -4685,8 +4685,8 @@ void s3c_config_sleep_gpio(void)
 	s3c_gpio_cfgpin(S5PV210_GPH1(6), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(6), S3C_GPIO_PULL_DOWN);
 
-	s3c_gpio_cfgpin(S5PV210_GPH1(7), S3C_GPIO_INPUT);
-	s3c_gpio_setpull(S5PV210_GPH1(7), S3C_GPIO_PULL_NONE);
+	//s3c_gpio_cfgpin(S5PV210_GPH1(7), S3C_GPIO_INPUT);
+	//s3c_gpio_setpull(S5PV210_GPH1(7), S3C_GPIO_PULL_NONE);
 
 	s3c_gpio_cfgpin(S5PV210_GPH2(0), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH2(0), S3C_GPIO_PULL_DOWN);
