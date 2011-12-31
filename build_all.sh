@@ -9,7 +9,7 @@ export CROSS_COMPILE=$CROSS_COMPILE_GLITCH
 make clean
 make mrproper
 
-rm -rf ./release/{Captivate,CDMA_OLDMODEM,Fascinate,GSM_OLDMODEM,i9k,TelusFascinate,Vibrant}
+rm -rf ./release/{Captivate,CDMA_OLDMODEM,Fascinate,GSM_OLDMODEM,i9000-T959D,Vibrant}
 
 echo "building ALL variants of ALL kernels!"
 
