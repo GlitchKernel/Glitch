@@ -353,7 +353,6 @@ struct s5p_panel_data aries_panel_data = {
 		0x0b8,
 		0x0fc,
 	},
-
 	.gamma_adj_points = &gamma_adj_points,
 	.gamma_table = gamma_table,
 	.gamma_table_size = ARRAY_SIZE(gamma_table),

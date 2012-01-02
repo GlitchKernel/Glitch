@@ -115,6 +115,7 @@ config CPU_FREQ_DEFAULT_GOV_LAZY
 	select CPU_FREQ_GOV_PERFORMANCE
 	help
 	  Use the CPUFreq governor 'lazy' as default.
+
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE

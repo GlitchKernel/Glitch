@@ -50,7 +50,9 @@ build ()
 }
 
 echo "creating boot.img"
-$repo/device/samsung/aries-common/mkshbootimg.py $KERNEL_DIR/release/boot.img "$target_dir"/arch/arm/boot/zImage $repo/out/target/product/$target/ramdisk.img $repo/out/target/product/$target/ramdisk-recovery.img
+#$repo/device/samsung/aries-common/mkshbootimg.py $KERNEL_DIR/release/boot.img "$target_dir"/arch/arm/boot/zImage $repo/out/target/product/$target/ramdisk.img $repo/out/target/product/$target/ramdisk-recovery.img
+
+$repo/device/samsung/aries-common/mkshbootimg.py $KERNEL_DIR/release/boot.img "$target_dir"/arch/arm/boot/zImage $KERNEL_DIR/release/auto/Glitch-Ramdisks/$target/ramdisk.img $KERNEL_DIR/release/auto/Glitch-Ramdisks/$target/ramdisk-recovery.img
 
 echo "packaging it up"
 
@@ -58,7 +60,7 @@ cd release && {
 
 mkdir -p ${target} || exit 1
 
-REL=CM9${target}-Glitch-DEV-$(date +%Y%m%d_%H%M).zip
+REL=CM9-${target}-Glitch-$(date +%Y%m%d.%H%M).zip
 
 	rm -r system 2> /dev/null
 	mkdir  -p system/lib/modules || exit 1

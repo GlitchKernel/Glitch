@@ -76,6 +76,7 @@ GTAGS
 
 *.orig
 *~
+*.*~
 \#*#
 
 release/i9k/*.zip

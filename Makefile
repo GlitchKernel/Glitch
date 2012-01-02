@@ -347,13 +347,11 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-GLITCHFLAGS = -finline-functions -ffast-math -fsingle-precision-constant -pipe -mtune=cortex-a8 -mfpu=neon --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
-
 CFLAGS_MODULE   =
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	= $(GLITCH_FLAGS)
-AFLAGS_KERNEL	= $(GLITCH_FLAGS)
+CFLAGS_KERNEL	=
+AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -371,7 +369,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks
-
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__

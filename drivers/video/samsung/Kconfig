@@ -16,7 +16,7 @@ config FB_S3C
 config DEV_BOOTLOGO
         bool "Development builds bootlogo"
         depends on MACH_ARIES
-	default n
+	default y
 
 config FB_S3C_UNLOCKED_REFRESH
         bool "Unlocked screen refresh rate to 68Hz"

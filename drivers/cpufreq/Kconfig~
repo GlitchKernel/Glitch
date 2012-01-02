@@ -206,6 +206,10 @@ config CPU_FREQ_GOV_CONSERVATIVE
 
 	  If in doubt, say N.
 
+config CPU_FREQ_GOV_LAZY
+	tristate "'lazy' cpufreq governor"
+	depends on CPU_FREQ
+
 menu "x86 CPU frequency scaling drivers"
 depends on X86
 source "drivers/cpufreq/Kconfig.x86"

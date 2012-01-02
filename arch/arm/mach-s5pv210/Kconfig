@@ -355,11 +355,9 @@ config DVFS_LIMIT
 	default n
 
 config CPU_DIDLE
-	bool "Enable DEEP IDLE support for S5PV210 CPU"
+	bool "DEEP Idle"
 	depends on CPU_IDLE
 	default n
-	help
-	  Enable DEEP IDLE support for S5PV210 CPU.
 
 config WIFI_CONTROL_FUNC
        bool "Enable WiFi control function abstraction"

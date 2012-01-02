@@ -25,7 +25,7 @@ config BCMDHD_NVRAM_PATH
 	  Path to the calibration file.
 
 config BCMDHD_PMFAST	
-	depends on BCM4329
+	depends on BCMDHD
 	bool "Low power mode PM_FAST"
 	default y
 	---help---
