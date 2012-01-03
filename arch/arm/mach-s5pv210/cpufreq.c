@@ -475,7 +475,7 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 	/* ARM MCS value changed */
 	reg = __raw_readl(S5P_ARM_MCS_CON);
 	reg &= ~0x3;
-	if (index >= L3)
+	if (index >= L6)
 		reg |= 0x3;
 	else
 		reg |= 0x1;

@@ -29,6 +29,7 @@ setup ()
     fi
 
     CROSS_PREFIX="$CM9_REPO/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-"
+    #CROSS_PREFIX="$CM9_REPO/kernel/samsung/glitch-build/toolchain/android-toolchain-eabi-4.5-2011.12/bin/arm-eabi-"
 }
 
 build ()
