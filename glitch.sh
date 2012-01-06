@@ -137,7 +137,6 @@ setup
 
 if [ "$1" = clean ] ; then
     rm -fr "$BUILD_DIR"/*
-    rm -fr "$tempmodem"/built-in.o
     echo "Old build cleaned"
     exit 0
 fi
