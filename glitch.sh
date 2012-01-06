@@ -1,10 +1,23 @@
 #!/bin/bash
 
-# You'll need to create a symlink to your CM9 repo root:
-
+# CM9 repo path :
 repo=~/CM9
 
+# Glitch kernel build-script parameters :
+#
+# "device" : build for a supported device (galaxys, captivate, fascinate, vibrant).
+# No parameter will build for all supported devices.
+#
+# clean : clean the build directory.
+# full : build everything (initramfs, 443 builds for gsm & cdma, all devices).
+
 export CM9_REPO=$repo
+
+tempmodem=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/misc/samsung_modemctl
+MODEM_DIR=$repo/kernel/samsung/glitch-build/modem
+
+source ./release/auto/setup.sh
+verify_toolchain
 
 setup ()
 {
@@ -28,19 +41,29 @@ setup ()
         CCACHE=""
     fi
 
-    CROSS_PREFIX="$CM9_REPO/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-"
-    #CROSS_PREFIX="$CM9_REPO/kernel/samsung/glitch-build/toolchain/android-toolchain-eabi-4.5-2011.12/bin/arm-eabi-"
+CROSS_PREFIX=$CROSS_PREFIX_GLITCH
+
 }
 
 build ()
 {
-    local target=$1
+    local target=$target
     echo "Building for $target"
     local target_dir="$BUILD_DIR/$target"
     local module
     rm -fr "$target_dir"
     mkdir -p "$target_dir/usr"
     cp "$KERNEL_DIR/usr/"*.list "$target_dir/usr"
+    mkdir -p "$tempmodem/kernel/$target/drivers/misc/samsung_modemctl/modemctl"
+
+echo "Copying 443 modem files ..."
+if [ "$target" = fascinate ] ; then
+    cp $MODEM_DIR/built-in.443cdma_samsung_modemctl $tempmodem/built-in.o
+else
+    cp $MODEM_DIR/built-in.443gsm_samsung_modemctl $tempmodem/built-in.o
+    cp $MODEM_DIR/built-in.443gsm_modemctl $tempmodem/modemctl/built-in.o
+fi
+
     sed "s|usr/|$KERNEL_DIR/usr/|g" -i "$target_dir/usr/"*.list
     mka -C "$KERNEL_DIR" O="$target_dir" aries_${target}_defconfig HOSTCC="$CCACHE gcc"
     mka -C "$KERNEL_DIR" O="$target_dir" HOSTCC="$CCACHE gcc" CROSS_COMPILE="$CCACHE $CROSS_PREFIX" zImage modules
@@ -51,9 +74,14 @@ build ()
 }
 
 echo "creating boot.img"
-#$repo/device/samsung/aries-common/mkshbootimg.py $KERNEL_DIR/release/boot.img "$target_dir"/arch/arm/boot/zImage $repo/out/target/product/$target/ramdisk.img $repo/out/target/product/$target/ramdisk-recovery.img
 
-$repo/device/samsung/aries-common/mkshbootimg.py $KERNEL_DIR/release/boot.img "$target_dir"/arch/arm/boot/zImage $KERNEL_DIR/release/auto/Glitch-Ramdisks/$target/ramdisk.img $KERNEL_DIR/release/auto/Glitch-Ramdisks/$target/ramdisk-recovery.img
+# CM9 repo as target for ramdisks
+
+$repo/device/samsung/aries-common/mkshbootimg.py $KERNEL_DIR/release/boot.img "$target_dir"/arch/arm/boot/zImage $repo/out/target/product/$target/ramdisk.img $repo/out/target/product/$target/ramdisk-recovery.img
+
+# Backup as target for ramdisks
+
+#$repo/device/samsung/aries-common/mkshbootimg.py $KERNEL_DIR/release/boot.img "$target_dir"/arch/arm/boot/zImage $KERNEL_DIR/release/auto/Glitch-Ramdisks/$target/ramdisk.img $KERNEL_DIR/release/auto/Glitch-Ramdisks/$target/ramdisk-recovery.img
 
 echo "packaging it up"
 
@@ -109,7 +137,28 @@ setup
 
 if [ "$1" = clean ] ; then
     rm -fr "$BUILD_DIR"/*
+    rm -fr "$tempmodem"/built-in.o
     echo "Old build cleaned"
+    exit 0
+fi
+
+if [ "$1" = full ] ; then
+echo "Building ALL variants of all kernels!"
+
+echo "Building initramfs"
+./initramfs.sh
+
+echo "Building 443 versions .."
+./443glitch.sh cdma
+./443glitch.sh gsm
+
+echo "Building CDMA variant(s) .. "
+./glitch.sh fascinate
+
+echo "Building GSM variants .. "
+./glitch.sh captivate
+./glitch.sh galaxys
+./glitch.sh vibrant
     exit 0
 fi
 
