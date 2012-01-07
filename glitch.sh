@@ -13,9 +13,6 @@ repo=~/CM9
 
 export CM9_REPO=$repo
 
-tempmodem=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/misc/samsung_modemctl
-MODEM_DIR=$repo/kernel/samsung/glitch-build/modem
-
 source ./release/auto/setup.sh
 verify_toolchain
 
@@ -47,6 +44,10 @@ CROSS_PREFIX=$CROSS_PREFIX_GLITCH
 
 build ()
 {
+
+tempmodem=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/misc/samsung_modemctl
+MODEM_DIR=$repo/kernel/samsung/glitch-build/modem
+
     local target=$target
     echo "Building for $target"
     local target_dir="$BUILD_DIR/$target"
@@ -54,7 +55,7 @@ build ()
     rm -fr "$target_dir"
     mkdir -p "$target_dir/usr"
     cp "$KERNEL_DIR/usr/"*.list "$target_dir/usr"
-    mkdir -p "$tempmodem/kernel/$target/drivers/misc/samsung_modemctl/modemctl"
+    mkdir -p "$tempmodem/modemctl"
 
 echo "Copying 443 modem files ..."
 if [ "$target" = fascinate ] ; then

@@ -44,7 +44,7 @@ CROSS_PREFIX=$CROSS_PREFIX_443
 
 build ()
 {
-    local target="$target"
+    local target="$1"
     echo "Building for $target"
     local target_dir="$BUILD_DIR/CDMA-GSM"
     local module
