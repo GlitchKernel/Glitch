@@ -348,7 +348,7 @@ CHECK		= sparse
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 
-GLITCHFLAGS = -finline-functions -ffast-math -fsingle-precision-constant -pipe -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
+GLITCHFLAGS = -finline-functions -ffast-math -fsingle-precision-constant -pipe -mtune=cortex-a8 -mfpu=neon --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=64 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone -mvectorize-with-neon-quad -fvect-cost-model
 
 CFLAGS_MODULE   = $(GLITCHFLAGS)
 AFLAGS_MODULE   = $(GLITCHFLAGS)
