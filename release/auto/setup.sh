@@ -68,7 +68,7 @@ echo "#  Something went wrong ! Trying again ... #"
 echo "############################################"
     rm -rf $CM9_REPO/kernel/samsung/glitch-build/toolchain/android-toolchain-eabi-${VERSION}
     rm "$tarball"
-    source ./verify_toolchain.sh
+    source ./release/setup.sh
     verify_toolchain
 			fi
 if test -s "$tarball"; then

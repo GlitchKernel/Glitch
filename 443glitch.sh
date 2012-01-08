@@ -4,6 +4,7 @@
 repo=~/CM9
 
 # Glitch kernel "443" build-script parameters :
+#
 # gsm : build for gsm.
 # cdma : build for cdma.
 # clean : clean the build directory.
