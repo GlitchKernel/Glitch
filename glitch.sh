@@ -6,10 +6,10 @@ repo=~/CM9
 # Glitch kernel build-script parameters :
 #
 # "device" : build for a supported device (galaxys, captivate, fascinate, vibrant).
-# No parameter will build for all supported devices.
+# You can list all devices you want to build, separated by a space.
 #
-# clean : clean the build directory.
 # full : build everything (initramfs, 443 builds for gsm & cdma, all devices).
+# clean : clean the build directory.
 
 export CM9_REPO=$repo
 

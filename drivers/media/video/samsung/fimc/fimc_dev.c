@@ -1625,14 +1625,12 @@ int fimc_resume(struct platform_device *pdev)
 {
 	struct fimc_control *ctrl;
 	struct s3c_platform_fimc *pdata;
-	int in_use, id = pdev->id;
+	int id = pdev->id;
 
 	ctrl = get_fimc_ctrl(id);
 	pdata = to_fimc_plat(ctrl->dev);
 
-	in_use = atomic_read(&ctrl->in_use);
-
-	if (in_use)
+	if (atomic_read(&ctrl->in_use))
 		fimc_clk_en(ctrl, true);
 
 	if (ctrl->out)
@@ -1642,9 +1640,6 @@ int fimc_resume(struct platform_device *pdev)
 		fimc_resume_cap(ctrl);
 	else
 		ctrl->status = FIMC_STREAMOFF;
-
-	if (in_use && 0 != ctrl->id)
-		fimc_clk_en(ctrl, false);
 
 	return 0;
 }

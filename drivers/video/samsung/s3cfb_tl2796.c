@@ -41,6 +41,10 @@
 
 #define U32_MAX (~(u32)0)
 
+#ifdef CONFIG_FB_S3C_MDNIE
+extern void init_mdnie_class(void);
+#endif
+
 static const struct tl2796_gamma_adj_points default_gamma_adj_points = {
 	.v0 = BV_0,
 	.v1 = BV_1,
@@ -699,6 +703,10 @@ static int __devinit tl2796_probe(struct spi_device *spi)
 	}
 	lcd->gamma_adj_points =
 		lcd->data->gamma_adj_points ?: &default_gamma_adj_points;
+
+#ifdef CONFIG_FB_S3C_MDNIE
+	init_mdnie_class();  //set mDNIe UI mode, Outdoormode
+#endif
 
 	spi_set_drvdata(spi, lcd);
 	tl2796_read_mtp_info(lcd);

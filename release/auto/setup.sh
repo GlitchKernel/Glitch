@@ -22,9 +22,7 @@ echo "Modem folder created"
     mkdir $CM9_REPO/kernel/samsung/glitch-build/modem
 	fi
 
-  if [ ! -d $CM9_REPO/kernel/samsung/glitch-build/toolchain/android-toolchain-eabi-${VERSION} ]; then
-
-	if test -d $CM9_REPO/kernel/samsung/glitch-build/toolchain/; then
+if test -d $CM9_REPO/kernel/samsung/glitch-build/toolchain/; then
 echo "You have a Glitch toolchain directory already ;)"
 
 # To use if you want only one toolchain at a time for building Glitch kernel :
@@ -37,6 +35,15 @@ else
 echo "Glitch toolchain directory created"
     mkdir $CM9_REPO/kernel/samsung/glitch-build/toolchain
 	fi
+
+if test -d $CM9_REPO/kernel/samsung/glitch-build/kernel/; then
+echo "Kernel building dedicated folder is ok"
+else
+echo "Kernel building dedicated foler created"
+    mkdir $CM9_REPO/kernel/samsung/glitch-build/kernel
+	fi
+
+  if [ ! -d $CM9_REPO/kernel/samsung/glitch-build/toolchain/android-toolchain-eabi-${VERSION} ]; then
 
 # Downloading
 echo ""
