@@ -19,7 +19,7 @@ if test -d $CM9_REPO/kernel/samsung/glitch-build/modem/; then
 echo "Modem folder is ok"
 else
 echo "Modem folder created"
-    mkdir $CM9_REPO/kernel/samsung/glitch-build/modem
+    mkdir -p $CM9_REPO/kernel/samsung/glitch-build/modem
 	fi
 
 if test -d $CM9_REPO/kernel/samsung/glitch-build/toolchain/; then
@@ -33,14 +33,14 @@ echo "You have a Glitch toolchain directory already ;)"
 else
 
 echo "Glitch toolchain directory created"
-    mkdir $CM9_REPO/kernel/samsung/glitch-build/toolchain
+    mkdir -p $CM9_REPO/kernel/samsung/glitch-build/toolchain
 	fi
 
 if test -d $CM9_REPO/kernel/samsung/glitch-build/kernel/; then
 echo "Kernel building dedicated folder is ok"
 else
-echo "Kernel building dedicated foler created"
-    mkdir $CM9_REPO/kernel/samsung/glitch-build/kernel
+echo "Kernel building dedicated folder created"
+    mkdir -p $CM9_REPO/kernel/samsung/glitch-build/kernel
 	fi
 
   if [ ! -d $CM9_REPO/kernel/samsung/glitch-build/toolchain/android-toolchain-eabi-${VERSION} ]; then
@@ -68,7 +68,7 @@ echo "#  Something went wrong ! Trying again ... #"
 echo "############################################"
     rm -rf $CM9_REPO/kernel/samsung/glitch-build/toolchain/android-toolchain-eabi-${VERSION}
     rm "$tarball"
-    source ./release/setup.sh
+    source ./release/auto/setup.sh
     verify_toolchain
 			fi
 if test -s "$tarball"; then
