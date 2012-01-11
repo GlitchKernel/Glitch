@@ -88,7 +88,8 @@ typedef enum
 	mDNIe_VIDEO_WARM_MODE,
 	mDNIe_VIDEO_COLD_MODE,
 	mDNIe_CAMERA_MODE,
-	mDNIe_NAVI
+	mDNIe_NAVI,
+	mDNIe_BYPASS_MODE
 }Lcd_mDNIe_UI;
 
 struct class *mdnieset_ui_class;
@@ -143,9 +144,8 @@ mDNIe_data_type mDNIe_Camera_Outdoor_Mode[]=
 	{END_SEQ, 0x0000},
 };
 
-mDNIe_data_type mDNIe_UI[]= 
+mDNIe_data_type mDNIe_Bypass[]=
 {
-#if 0
 	{0x0084, 0x0000},
 	{0x0090, 0x0000},
 	{0x0094, 0x0fff},
@@ -154,7 +154,10 @@ mDNIe_data_type mDNIe_UI[]=
 	{0x00AC, 0x0000},
 	{0x00B4, 0x03ff},
 	{END_SEQ, 0x0000},
-#else
+};
+
+mDNIe_data_type mDNIe_UI[]=
+{
 	{0x0084, 0x0040},
 	{0x0090, 0x0000},
 	{0x0094, 0x0fff},
@@ -168,7 +171,6 @@ mDNIe_data_type mDNIe_UI[]=
 	{0x00D0, 0x00C0},
 	{0x0100, 0x0000},
 	{END_SEQ, 0x0000},
-#endif
 };
 
 mDNIe_data_type mDNIe_Video_Warm[]= 
@@ -247,7 +249,7 @@ mDNIe_data_type mDNIe_Outdoor_Mode[]=
 };
 
 
-Lcd_mDNIe_UI current_mDNIe_UI = mDNIe_UI_MODE; // mDNIe Set Status Checking Value.
+Lcd_mDNIe_UI current_mDNIe_UI = mDNIe_BYPASS_MODE; // mDNIe Set Status Checking Value.
 u8 current_mDNIe_OutDoor_OnOff = FALSE;
 
 int mDNIe_Tuning_Mode = FALSE;
@@ -548,10 +550,14 @@ void mDNIe_Set_Mode(Lcd_mDNIe_UI mode, u8 mDNIe_Outdoor_OnOff)
 			case mDNIe_NAVI:
 				mDNIe_Mode_Change(mDNIe_Outdoor_Mode);
 			break;
+
+			case mDNIe_BYPASS_MODE:
+				mDNIe_Mode_Change(mDNIe_Bypass);
+			break;
 		}
 
 		current_mDNIe_UI = mode;
-		if(current_mDNIe_UI == mDNIe_UI_MODE)
+		if(current_mDNIe_UI == mDNIe_UI_MODE || current_mDNIe_UI == mDNIe_BYPASS_MODE)
 			current_mDNIe_OutDoor_OnOff = FALSE;
 		else
 			current_mDNIe_OutDoor_OnOff = TRUE;
@@ -582,6 +588,10 @@ void mDNIe_Set_Mode(Lcd_mDNIe_UI mode, u8 mDNIe_Outdoor_OnOff)
 
 			case mDNIe_NAVI:
 				mDNIe_Mode_Change(mDNIe_UI);
+			break;
+
+			case mDNIe_BYPASS_MODE:
+				mDNIe_Mode_Change(mDNIe_Bypass);
 			break;
 		}
 		
@@ -631,6 +641,10 @@ static ssize_t mdnieset_ui_file_cmd_show(struct device *dev,
 		case mDNIe_NAVI:
 			mdnie_ui = 5;
 			break;
+
+		case mDNIe_BYPASS_MODE:
+			mdnie_ui = 6;
+			break;
 	}
 	return sprintf(buf,"%u\n",mdnie_ui);
 }
@@ -669,7 +683,11 @@ static ssize_t mdnieset_ui_file_cmd_store(struct device *dev,
 		case SIG_MDNIE_NAVI:
 			current_mDNIe_UI = mDNIe_NAVI;
 			break;
-	
+
+		case SIG_MDNIE_BYPASS_MODE:
+			current_mDNIe_UI = mDNIe_BYPASS_MODE;
+			break;
+
 		default:
 			printk("\nmdnieset_ui_file_cmd_store value is wrong : value(%d)\n",value);
 			break;
