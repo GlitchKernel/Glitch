@@ -60,7 +60,7 @@ static inline void file_free(struct file *f)
 /*
  * Return the total number of open files in the system
  */
-static int get_nr_files(void)
+static long get_nr_files(void)
 {
 	return percpu_counter_read_positive(&nr_files);
 }
@@ -68,7 +68,7 @@ static int get_nr_files(void)
 /*
  * Return the maximum number of open files in the system
  */
-int get_max_files(void)
+unsigned long get_max_files(void)
 {
 	return files_stat.max_files;
 }
@@ -82,7 +82,7 @@ int proc_nr_files(ctl_table *table, int write,
                      void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	files_stat.nr_files = get_nr_files();
-	return proc_dointvec(table, write, buffer, lenp, ppos);
+	return proc_doulongvec_minmax(table, write, buffer, lenp, ppos);
 }
 #else
 int proc_nr_files(ctl_table *table, int write,
@@ -105,7 +105,7 @@ int proc_nr_files(ctl_table *table, int write,
 struct file *get_empty_filp(void)
 {
 	const struct cred *cred = current_cred();
-	static int old_max;
+	static long old_max;
 	struct file * f;
 
 	/*
@@ -140,8 +140,7 @@ struct file *get_empty_filp(void)
 over:
 	/* Ran out of filps - report that */
 	if (get_nr_files() > old_max) {
-		printk(KERN_INFO "VFS: file-max limit %d reached\n",
-					get_max_files());
+		pr_info("VFS: file-max limit %lu reached\n", get_max_files());
 		old_max = get_nr_files();
 	}
 	goto fail;
@@ -191,7 +190,8 @@ struct file *alloc_file(struct path *path, fmode_t mode,
 		file_take_write(file);
 		WARN_ON(mnt_clone_write(path->mnt));
 	}
-	ima_counts_get(file);
+	if ((mode & (FMODE_READ | FMODE_WRITE)) == FMODE_READ)
+		i_readcount_inc(path->dentry->d_inode);
 	return file;
 }
 EXPORT_SYMBOL(alloc_file);
@@ -247,11 +247,15 @@ static void __fput(struct file *file)
 		file->f_op->release(inode, file);
 	security_file_free(file);
 	ima_file_free(file);
-	if (unlikely(S_ISCHR(inode->i_mode) && inode->i_cdev != NULL))
+	if (unlikely(S_ISCHR(inode->i_mode) && inode->i_cdev != NULL &&
+		     !(file->f_mode & FMODE_PATH))) {
 		cdev_put(inode->i_cdev);
+	}
 	fops_put(file->f_op);
 	put_pid(file->f_owner.pid);
 	file_sb_list_del(file);
+	if ((file->f_mode & (FMODE_READ | FMODE_WRITE)) == FMODE_READ)
+		i_readcount_dec(inode);
 	if (file->f_mode & FMODE_WRITE)
 		drop_file_write_access(file);
 	file->f_path.dentry = NULL;
@@ -277,11 +281,10 @@ struct file *fget(unsigned int fd)
 	rcu_read_lock();
 	file = fcheck_files(files, fd);
 	if (file) {
-		if (!atomic_long_inc_not_zero(&file->f_count)) {
-			/* File object ref couldn't be taken */
-			rcu_read_unlock();
-			return NULL;
-		}
+		/* File object ref couldn't be taken */
+		if (file->f_mode & FMODE_PATH ||
+		    !atomic_long_inc_not_zero(&file->f_count))
+			file = NULL;
 	}
 	rcu_read_unlock();
 
@@ -290,14 +293,69 @@ struct file *fget(unsigned int fd)
 
 EXPORT_SYMBOL(fget);
 
+struct file *fget_raw(unsigned int fd)
+{
+	struct file *file;
+	struct files_struct *files = current->files;
+
+	rcu_read_lock();
+	file = fcheck_files(files, fd);
+	if (file) {
+		/* File object ref couldn't be taken */
+		if (!atomic_long_inc_not_zero(&file->f_count))
+			file = NULL;
+	}
+	rcu_read_unlock();
+
+	return file;
+}
+
+EXPORT_SYMBOL(fget_raw);
+
 /*
- * Lightweight file lookup - no refcnt increment if fd table isn't shared. 
- * You can use this only if it is guranteed that the current task already 
- * holds a refcnt to that file. That check has to be done at fget() only
- * and a flag is returned to be passed to the corresponding fput_light().
- * There must not be a cloning between an fget_light/fput_light pair.
+ * Lightweight file lookup - no refcnt increment if fd table isn't shared.
+ *
+ * You can use this instead of fget if you satisfy all of the following
+ * conditions:
+ * 1) You must call fput_light before exiting the syscall and returning control
+ *    to userspace (i.e. you cannot remember the returned struct file * after
+ *    returning to userspace).
+ * 2) You must not call filp_close on the returned struct file * in between
+ *    calls to fget_light and fput_light.
+ * 3) You must not clone the current task in between the calls to fget_light
+ *    and fput_light.
+ *
+ * The fput_needed flag returned by fget_light should be passed to the
+ * corresponding fput_light.
  */
 struct file *fget_light(unsigned int fd, int *fput_needed)
+{
+	struct file *file;
+	struct files_struct *files = current->files;
+
+	*fput_needed = 0;
+	if (atomic_read(&files->count) == 1) {
+		file = fcheck_files(files, fd);
+		if (file && (file->f_mode & FMODE_PATH))
+			file = NULL;
+	} else {
+		rcu_read_lock();
+		file = fcheck_files(files, fd);
+		if (file) {
+			if (!(file->f_mode & FMODE_PATH) &&
+			    atomic_long_inc_not_zero(&file->f_count))
+				*fput_needed = 1;
+			else
+				/* Didn't get the reference, someone's freed */
+				file = NULL;
+		}
+		rcu_read_unlock();
+	}
+
+	return file;
+}
+
+struct file *fget_raw_light(unsigned int fd, int *fput_needed)
 {
 	struct file *file;
 	struct files_struct *files = current->files;
@@ -478,7 +536,7 @@ retry:
 
 void __init files_init(unsigned long mempages)
 { 
-	int n; 
+	unsigned long n;
 
 	filp_cachep = kmem_cache_create("filp", sizeof(struct file), 0,
 			SLAB_HWCACHE_ALIGN | SLAB_PANIC, NULL);
@@ -489,9 +547,7 @@ void __init files_init(unsigned long mempages)
 	 */ 
 
 	n = (mempages * (PAGE_SIZE / 1024)) / 10;
-	files_stat.max_files = n; 
-	if (files_stat.max_files < NR_FILE)
-		files_stat.max_files = NR_FILE;
+	files_stat.max_files = max_t(unsigned long, n, NR_FILE);
 	files_defer_init();
 	lg_lock_init(files_lglock);
 	percpu_counter_init(&nr_files, 0);

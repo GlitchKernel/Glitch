@@ -31,9 +31,6 @@
 #include <linux/gpio_event.h>
 #include <linux/sec_jack.h>
 
-#undef pr_debug
-#define pr_debug pr_info
-
 #define MAX_ZONE_LIMIT		10
 #define SEND_KEY_CHECK_TIME_MS	30		/* 30ms */
 #define DET_CHECK_TIME_MS	200		/* 200ms */
@@ -83,7 +80,7 @@ static struct gpio_event_input_info sec_jack_key_info = {
 	.info.func = gpio_event_input_func,
 	.info.no_suspend = true,
 	.type = EV_KEY,
-	.debounce_time.tv.nsec = SEND_KEY_CHECK_TIME_MS * NSEC_PER_MSEC,
+	.debounce_time.tv64 = SEND_KEY_CHECK_TIME_MS * NSEC_PER_MSEC,
 	.keymap = sec_jack_key_map,
 	.keymap_size = ARRAY_SIZE(sec_jack_key_map)
 };
@@ -108,11 +105,9 @@ static bool sec_jack_buttons_filter(struct input_handle *handle,
 {
 	struct sec_jack_info *hi = handle->handler->private;
 
-    pr_debug("%s: type=%d, code=%d, value=%d\n", __func__, type, code, value);
 	if (type != EV_KEY || code != KEY_UNKNOWN)
 		return false;
 
-    pr_debug("%s: queueing type=%d, code=%d, value=%d\n", __func__, type, code, value);
 	hi->pressed = value;
 
 	/* This is called in timer handler of gpio_input driver.
@@ -137,7 +132,6 @@ static int sec_jack_buttons_connect(struct input_handler *handler,
 	if (dev->name != sec_jack_input_data.name)
 		return -ENODEV;
 
-    pr_debug("%s\n", __func__);
 	hi = handler->private;
 	pdata = hi->pdata;
 	btn_zones = pdata->buttons_zones;
@@ -176,7 +170,6 @@ static int sec_jack_buttons_connect(struct input_handler *handler,
 
 static void sec_jack_buttons_disconnect(struct input_handle *handle)
 {
-    pr_debug("%s\n", __func__);
 	input_close_device(handle);
 	input_unregister_handle(handle);
 }
@@ -222,7 +215,6 @@ static void sec_jack_set_type(struct sec_jack_info *hi, int jack_type)
 
 static void handle_jack_not_inserted(struct sec_jack_info *hi)
 {
-    pr_debug("%s\n", __func__);
 	sec_jack_set_type(hi, SEC_JACK_NO_DEVICE);
 	hi->pdata->set_micbias_state(false);
 }
@@ -236,7 +228,6 @@ static void determine_jack_type(struct sec_jack_info *hi)
 	int i;
 	unsigned npolarity = !hi->pdata->det_active_high;
 
-    pr_debug("%s\n", __func__);
 	while (gpio_get_value(hi->pdata->det_gpio) ^ npolarity) {
 		adc = hi->pdata->get_adc_value();
 		pr_debug("%s: adc = %d\n", __func__, adc);
@@ -276,8 +267,6 @@ static irqreturn_t sec_jack_detect_irq_thread(int irq, void *dev_id)
 	int time_left_ms = DET_CHECK_TIME_MS;
 	unsigned npolarity = !hi->pdata->det_active_high;
 
-    pr_debug("%s", __func__);
-
 	/* set mic bias to enable adc */
 	pdata->set_micbias_state(true);
 
@@ -296,33 +285,6 @@ static irqreturn_t sec_jack_detect_irq_thread(int irq, void *dev_id)
 	/* jack presence was detected the whole time, figure out which type */
 	determine_jack_type(hi);
 	return IRQ_HANDLED;
-}
-
-static void sec_jack_init_jack_state(struct sec_jack_info *hi)
-{
-	struct sec_jack_platform_data *pdata = hi->pdata;
-	int time_left_ms = DET_CHECK_TIME_MS;
-	unsigned npolarity = !hi->pdata->det_active_high;
-
-    pr_debug("%s", __func__);
-
-	/* set mic bias to enable adc */
-	pdata->set_micbias_state(true);
-
-	/* debounce headset jack.  don't try to determine the type of
-	 * headset until the detect state is true for a while.
-	 */
-	while (time_left_ms > 0) {
-		if (!(gpio_get_value(hi->pdata->det_gpio) ^ npolarity)) {
-			/* jack not detected. */
-			handle_jack_not_inserted(hi);
-			return;
-		}
-		msleep(10);
-		time_left_ms -= 10;
-	}
-	/* jack presence was detected the whole time, figure out which type */
-	determine_jack_type(hi);
 }
 
 /* thread run whenever the button of headset is pressed or released */
@@ -346,7 +308,7 @@ void sec_jack_buttons_work(struct work_struct *work)
 
 	/* when button is pressed */
 	adc = pdata->get_adc_value();
-    pr_debug("%s: adc=%d\n", __func__, adc);
+
 	for (i = 0; i < pdata->num_buttons_zones; i++)
 		if (adc >= btn_zones[i].adc_low &&
 		    adc <= btn_zones[i].adc_high) {
@@ -462,15 +424,6 @@ static int sec_jack_probe(struct platform_device *pdev)
 	}
 
 	dev_set_drvdata(&pdev->dev, hi);
-
-#if defined (CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_VIBRANT)
-	pdata->det_active_high = 1;
-#else
-	pdata->det_active_high = 0;
-#endif
-
-    /* initialize headset jack state */
-    sec_jack_init_jack_state(hi);
 
 	return 0;
 

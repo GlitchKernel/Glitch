@@ -13,17 +13,9 @@
 #include <linux/resume-trace.h>
 #include <linux/workqueue.h>
 
-#ifdef CONFIG_DVFS_LIMIT
-#include <mach/cpu-freq-v210.h>
-#endif
-
-
 #include "power.h"
 
 DEFINE_MUTEX(pm_mutex);
-
-unsigned int pm_flags;
-EXPORT_SYMBOL(pm_flags);
 
 #ifdef CONFIG_PM_SLEEP
 
@@ -243,7 +235,7 @@ power_attr(state);
  * writing to 'state'.  It first should read from 'wakeup_count' and store
  * the read value.  Then, after carrying out its own preparations for the system
  * transition to a sleep state, it should write the stored value to
- * 'wakeup_count'.  If that fails, at least one wakeup event has occured since
+ * 'wakeup_count'.  If that fails, at least one wakeup event has occurred since
  * 'wakeup_count' was read and 'state' should not be written to.  Otherwise, it
  * is allowed to write to 'state', but the transition will be aborted if there
  * are any wakeup events detected after 'wakeup_count' was written to.
@@ -253,18 +245,18 @@ static ssize_t wakeup_count_show(struct kobject *kobj,
 				struct kobj_attribute *attr,
 				char *buf)
 {
-	unsigned long val;
+	unsigned int val;
 
-	return pm_get_wakeup_count(&val) ? sprintf(buf, "%lu\n", val) : -EINTR;
+	return pm_get_wakeup_count(&val) ? sprintf(buf, "%u\n", val) : -EINTR;
 }
 
 static ssize_t wakeup_count_store(struct kobject *kobj,
 				struct kobj_attribute *attr,
 				const char *buf, size_t n)
 {
-	unsigned long val;
+	unsigned int val;
 
-	if (sscanf(buf, "%lu", &val) == 1) {
+	if (sscanf(buf, "%u", &val) == 1) {
 		if (pm_save_wakeup_count(val))
 			return n;
 	}
@@ -297,6 +289,23 @@ pm_trace_store(struct kobject *kobj, struct kobj_attribute *attr,
 }
 
 power_attr(pm_trace);
+
+static ssize_t pm_trace_dev_match_show(struct kobject *kobj,
+				       struct kobj_attribute *attr,
+				       char *buf)
+{
+	return show_trace_dev_match(buf, PAGE_SIZE);
+}
+
+static ssize_t
+pm_trace_dev_match_store(struct kobject *kobj, struct kobj_attribute *attr,
+			 const char *buf, size_t n)
+{
+	return -EINVAL;
+}
+
+power_attr(pm_trace_dev_match);
+
 #endif /* CONFIG_PM_TRACE */
 
 #ifdef CONFIG_USER_WAKELOCK
@@ -304,91 +313,11 @@ power_attr(wake_lock);
 power_attr(wake_unlock);
 #endif
 
-#ifdef CONFIG_DVFS_LIMIT
-//extern int g_dbs_timer_started;
-static int dvfsctrl_locked = 0;
-static int gdDvfsctrl = 0;
-
-static void do_dvfsunlock_timer(struct work_struct *work);
-//static DEFINE_MUTEX (dvfslock_ctrl_mutex);
-static DECLARE_DELAYED_WORK(dvfslock_crtl_unlock_work, do_dvfsunlock_timer);
-
-static ssize_t dvfslock_ctrl(const char *buf, size_t count)
-{
-	unsigned int ret = -EINVAL;
-	int dlevel;
-	int dtime_msec;
-
-	//mutex_lock(&dvfslock_ctrl_mutex);
-	ret = sscanf(buf, "%u", &gdDvfsctrl);
-	if (ret != 1)
-		return -EINVAL;
-
-	//if (!g_dbs_timer_started) return -EINVAL;
-	if (gdDvfsctrl == 0) {
-		if (dvfsctrl_locked) {
-			s5pv210_unlock_dvfs_high_level(DVFS_LOCK_TOKEN_6);
-			dvfsctrl_locked = 0;
-		}
-		return -EINVAL;
-	}
-
-	if (dvfsctrl_locked)
-		return 0;
-
-	dlevel = gdDvfsctrl & 0xffff0000;
-	dtime_msec = gdDvfsctrl & 0x0000ffff;
-
-	if (dtime_msec < 16)
-		dtime_msec = 16;
-	if (dtime_msec  == 0)
-		return -EINVAL;
-
-	if (dlevel)
-		dlevel = L1;
-	else
-		dlevel = L0;
-
-	printk(KERN_DEBUG "%s : level=%d, time=%d\n", __func__, dlevel, dtime_msec);
-
-	s5pv210_lock_dvfs_high_level(DVFS_LOCK_TOKEN_6, dlevel);
-	dvfsctrl_locked = 1;
-
-	schedule_delayed_work(&dvfslock_crtl_unlock_work, msecs_to_jiffies(dtime_msec));
-
-	//mutex_unlock(&dvfslock_ctrl_mutex);
-
-	return -EINVAL;
-}
-
-static void do_dvfsunlock_timer(struct work_struct *work)
-{
-	dvfsctrl_locked = 0;	
-	s5pv210_unlock_dvfs_high_level(DVFS_LOCK_TOKEN_6);
-}
-
-static ssize_t dvfslock_ctrl_show(struct kobject *kobj,
-				  struct kobj_attribute *attr, char *buf)
-{
-	return sprintf(buf, "0x%08x\n", gdDvfsctrl);
-}
-
-static ssize_t dvfslock_ctrl_store(struct kobject *kobj, struct kobj_attribute *attr,
-				   const char *buf, size_t n)
-{
-	dvfslock_ctrl(buf, 0);
-	return n;
-}
-
-power_attr(dvfslock_ctrl);
-#endif
-
-
-
 static struct attribute * g[] = {
 	&state_attr.attr,
 #ifdef CONFIG_PM_TRACE
 	&pm_trace_attr.attr,
+	&pm_trace_dev_match_attr.attr,
 #endif
 #ifdef CONFIG_PM_SLEEP
 	&pm_async_attr.attr,
@@ -400,9 +329,6 @@ static struct attribute * g[] = {
 	&wake_lock_attr.attr,
 	&wake_unlock_attr.attr,
 #endif
-#endif
-#ifdef CONFIG_DVFS_LIMIT
-	&dvfslock_ctrl_attr.attr,
 #endif
 	NULL,
 };
@@ -417,7 +343,7 @@ EXPORT_SYMBOL_GPL(pm_wq);
 
 static int __init pm_start_workqueue(void)
 {
-	pm_wq = create_freezeable_workqueue("pm");
+	pm_wq = alloc_workqueue("pm", WQ_FREEZABLE, 0);
 
 	return pm_wq ? 0 : -ENOMEM;
 }
@@ -431,6 +357,7 @@ static int __init pm_init(void)
 	if (error)
 		return error;
 	hibernate_image_size_init();
+	hibernate_reserved_size_init();
 	power_kobj = kobject_create_and_add("power", NULL);
 	if (!power_kobj)
 		return -ENOMEM;

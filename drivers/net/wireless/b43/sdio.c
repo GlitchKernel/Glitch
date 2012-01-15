@@ -66,7 +66,7 @@ static void b43_sdio_interrupt_dispatcher(struct sdio_func *func)
 int b43_sdio_request_irq(struct b43_wldev *dev,
 			 void (*handler)(struct b43_wldev *dev))
 {
-	struct ssb_bus *bus = dev->dev->bus;
+	struct ssb_bus *bus = dev->sdev->bus;
 	struct sdio_func *func = bus->host_sdio;
 	struct b43_sdio *sdio = sdio_get_drvdata(func);
 	int err;
@@ -82,7 +82,7 @@ int b43_sdio_request_irq(struct b43_wldev *dev,
 
 void b43_sdio_free_irq(struct b43_wldev *dev)
 {
-	struct ssb_bus *bus = dev->dev->bus;
+	struct ssb_bus *bus = dev->sdev->bus;
 	struct sdio_func *func = bus->host_sdio;
 	struct b43_sdio *sdio = sdio_get_drvdata(func);
 
@@ -185,6 +185,7 @@ static void b43_sdio_remove(struct sdio_func *func)
 
 static const struct sdio_device_id b43_sdio_ids[] = {
 	{ SDIO_DEVICE(0x02d0, 0x044b) }, /* Nintendo Wii WLAN daughter card */
+	{ SDIO_DEVICE(0x0092, 0x0004) }, /* C-guys, Inc. EW-CG1102GC */
 	{ },
 };
 

@@ -19,12 +19,6 @@ SUBSYS(debug)
 
 /* */
 
-#ifdef CONFIG_CGROUP_NS
-SUBSYS(ns)
-#endif
-
-/* */
-
 #ifdef CONFIG_CGROUP_SCHED
 SUBSYS(cpu_cgroup)
 #endif
@@ -65,10 +59,8 @@ SUBSYS(net_cls)
 SUBSYS(blkio)
 #endif
 
-/* */
-
-#ifdef CONFIG_CGROUP_BFQIO
-SUBSYS(bfqio)
+#ifdef CONFIG_CGROUP_PERF
+SUBSYS(perf)
 #endif
 
 /* */

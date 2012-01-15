@@ -97,7 +97,7 @@ static void update_timer_locked(struct alarm_queue *base, bool head_removed)
 	}
 
 	hrtimer_try_to_cancel(&base->timer);
-	base->timer._expires = ktime_add(base->delta, alarm->expires);
+	base->timer.node.expires = ktime_add(base->delta, alarm->expires);
 	base->timer._softexpires = ktime_add(base->delta, alarm->softexpires);
 	hrtimer_start_expires(&base->timer, HRTIMER_MODE_ABS);
 }
@@ -389,7 +389,7 @@ static int alarm_suspend(struct platform_device *pdev, pm_message_t state)
 
 	hrtimer_cancel(&alarms[ANDROID_ALARM_RTC_WAKEUP].timer);
 	hrtimer_cancel(&alarms[
-			ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP_MASK].timer);
+			ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP].timer);
 
 	tmp_queue = &alarms[ANDROID_ALARM_RTC_WAKEUP];
 	if (tmp_queue->first)
@@ -583,11 +583,6 @@ static void  __exit alarm_exit(void)
 	wake_lock_destroy(&alarm_rtc_wake_lock);
 	platform_driver_unregister(&alarm_driver);
 }
-
-EXPORT_SYMBOL(alarm_init);
-EXPORT_SYMBOL(alarm_cancel);
-EXPORT_SYMBOL(alarm_start_range);
-EXPORT_SYMBOL(alarm_get_elapsed_realtime);
 
 late_initcall(alarm_late_init);
 module_init(alarm_driver_init);

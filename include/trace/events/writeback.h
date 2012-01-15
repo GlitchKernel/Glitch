@@ -5,6 +5,7 @@
 #define _TRACE_WRITEBACK_H
 
 #include <linux/backing-dev.h>
+#include <linux/device.h>
 #include <linux/writeback.h>
 
 struct wb_writeback_work;
@@ -96,8 +97,6 @@ DECLARE_EVENT_CLASS(wbc_class,
 		__field(long, nr_to_write)
 		__field(long, pages_skipped)
 		__field(int, sync_mode)
-		__field(int, nonblocking)
-		__field(int, encountered_congestion)
 		__field(int, for_kupdate)
 		__field(int, for_background)
 		__field(int, for_reclaim)
@@ -148,64 +147,44 @@ DEFINE_EVENT(wbc_class, name, \
 DEFINE_WBC_EVENT(wbc_writeback_start);
 DEFINE_WBC_EVENT(wbc_writeback_written);
 DEFINE_WBC_EVENT(wbc_writeback_wait);
+DEFINE_WBC_EVENT(wbc_balance_dirty_start);
+DEFINE_WBC_EVENT(wbc_balance_dirty_written);
+DEFINE_WBC_EVENT(wbc_balance_dirty_wait);
 DEFINE_WBC_EVENT(wbc_writepage);
 
-#define BDP_PERCENT(a, b, c)	((__entry->a - __entry->b) * 100 * c + \
-				  __entry->bdi_limit/2) / (__entry->bdi_limit|1)
-TRACE_EVENT(balance_dirty_pages,
+DECLARE_EVENT_CLASS(writeback_congest_waited_template,
 
-	TP_PROTO(struct backing_dev_info *bdi,
-		 long bdi_dirty,
-		 long bdi_limit,
-		 long task_limit,
-		 long pages_dirtied,
-		 long pause),
+	TP_PROTO(unsigned int usec_timeout, unsigned int usec_delayed),
 
-	TP_ARGS(bdi, bdi_dirty, bdi_limit, task_limit,
-		pages_dirtied, pause),
+	TP_ARGS(usec_timeout, usec_delayed),
 
 	TP_STRUCT__entry(
-		__array(char,	bdi, 32)
-		__field(long,	bdi_dirty)
-		__field(long,	bdi_limit)
-		__field(long,	task_limit)
-		__field(long,	pages_dirtied)
-		__field(long,	pause)
+		__field(	unsigned int,	usec_timeout	)
+		__field(	unsigned int,	usec_delayed	)
 	),
 
 	TP_fast_assign(
-		strlcpy(__entry->bdi, dev_name(bdi->dev), 32);
-		__entry->bdi_dirty	= bdi_dirty;
-		__entry->bdi_limit	= bdi_limit;
-		__entry->task_limit	= task_limit;
-		__entry->pages_dirtied	= pages_dirtied;
-		__entry->pause		= pause * 1000 / HZ;
+		__entry->usec_timeout	= usec_timeout;
+		__entry->usec_delayed	= usec_delayed;
 	),
 
+	TP_printk("usec_timeout=%u usec_delayed=%u",
+			__entry->usec_timeout,
+			__entry->usec_delayed)
+);
 
-	/*
-	 *           [..................soft throttling range.........]
-	 *           ^                |<=========== bdi_gap =========>|
-	 * background_thresh          |<== task_gap ==>|
-	 * -------------------|-------+----------------|--------------|
-	 *   (bdi_limit * 7/8)^       ^bdi_dirty       ^task_limit    ^bdi_limit
-	 *
-	 * Reasonable large gaps help produce smooth pause times.
-	 */
-	TP_printk("bdi=%s bdi_dirty=%lu bdi_limit=%lu task_limit=%lu "
-		  "task_weight=%ld%% task_gap=%ld%% bdi_gap=%ld%% "
-		  "pages_dirtied=%lu pause=%lu",
-		  __entry->bdi,
-		  __entry->bdi_dirty,
-		  __entry->bdi_limit,
-		  __entry->task_limit,
-		  /* task weight: proportion of recent dirtied pages */
-		  BDP_PERCENT(bdi_limit, task_limit, TASK_SOFT_DIRTY_LIMIT),
-		  BDP_PERCENT(task_limit, bdi_dirty, TASK_SOFT_DIRTY_LIMIT),
-		  BDP_PERCENT(bdi_limit, bdi_dirty, BDI_SOFT_DIRTY_LIMIT),
-		  __entry->pages_dirtied,
-		  __entry->pause
-		  )
+DEFINE_EVENT(writeback_congest_waited_template, writeback_congestion_wait,
+
+	TP_PROTO(unsigned int usec_timeout, unsigned int usec_delayed),
+
+	TP_ARGS(usec_timeout, usec_delayed)
+);
+
+DEFINE_EVENT(writeback_congest_waited_template, writeback_wait_iff_congested,
+
+	TP_PROTO(unsigned int usec_timeout, unsigned int usec_delayed),
+
+	TP_ARGS(usec_timeout, usec_delayed)
 );
 
 #endif /* _TRACE_WRITEBACK_H */

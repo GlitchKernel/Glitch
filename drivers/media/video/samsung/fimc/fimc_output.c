@@ -122,6 +122,7 @@ int fimc_outdev_stop_streaming(struct fimc_control *ctrl, struct fimc_ctx *ctx)
 
 int fimc_outdev_resume_dma(struct fimc_control *ctrl, struct fimc_ctx *ctx)
 {
+	struct v4l2_rect fimd_rect;
 	struct fb_var_screeninfo var;
 	struct fb_info *fbinfo;
 	struct s3cfb_window *win;
@@ -131,12 +132,28 @@ int fimc_outdev_resume_dma(struct fimc_control *ctrl, struct fimc_ctx *ctx)
 	win = (struct s3cfb_window *)fbinfo->par;
 
 	memcpy(&var, &fbinfo->var, sizeof(struct fb_var_screeninfo));
+	memset(&fimd_rect, 0, sizeof(struct v4l2_rect));
+	ret = fimc_fimd_rect(ctrl, ctx, &fimd_rect);
+	if (ret < 0) {
+		fimc_err("fimc_fimd_rect fail\n");
+		return -EINVAL;
+	}
 
 	/* set window path & owner */
 	win->path = DATA_PATH_DMA;
 	win->owner = DMA_MEM_OTHER;
 	win->other_mem_addr = ctx->dst[1].base[FIMC_ADDR_Y];
 	win->other_mem_size = ctx->dst[1].length[FIMC_ADDR_Y];
+
+	/* Update WIN size */
+	var.xres_virtual = fimd_rect.width;
+	var.yres_virtual = fimd_rect.height;
+	var.xres = fimd_rect.width;
+	var.yres = fimd_rect.height;
+
+	/* Update WIN position */
+	win->x = fimd_rect.left;
+	win->y = fimd_rect.top;
 
 	var.activate = FB_ACTIVATE_FORCE;
 	ret = fb_set_var(fbinfo, &var);
@@ -209,7 +226,7 @@ static int fimc_outdev_set_src_buf(struct fimc_control *ctrl,
 		size = PAGE_ALIGN(y_size + cb_size);
 		break;
 	case V4L2_PIX_FMT_NV12T:
-		fimc_get_nv12t_size(width, height, &y_size, &cb_size, 0);
+		fimc_get_nv12t_size(width, height, &y_size, &cb_size);
 		size = PAGE_ALIGN(y_size + cb_size);
 		break;
 	case V4L2_PIX_FMT_NV16:
@@ -281,32 +298,11 @@ static int fimc_outdev_set_src_buf(struct fimc_control *ctrl,
 	return 0;
 }
 
-static void fimc_outdev_clear_dst_buf(struct fimc_control *ctrl,
-				   struct fimc_ctx *ctx, int index)
-{
-	void *dst_mem = NULL;
-
-	if ((ctx->overlay.mode != FIMC_OVLY_DMA_AUTO) &&
-			(ctx->overlay.mode != FIMC_OVLY_DMA_MANUAL))
-		return;
-
-	/* clear buffer */
-	dst_mem = (void *)ioremap((int)ctx->dst[index].base[FIMC_ADDR_Y],
-				ctx->dst[index].length[FIMC_ADDR_Y]);
-	if (dst_mem) {
-		memset(dst_mem, 0x0, ctx->dst[index].length[FIMC_ADDR_Y]);
-		iounmap(dst_mem);
-	} else
-		fimc_warn("%s: Failed to clear destination buffers\n",
-					__func__);
-}
-
 static int fimc_outdev_set_dst_buf(struct fimc_control *ctrl,
 				   struct fimc_ctx *ctx)
 {
 	dma_addr_t *curr = &ctrl->mem.curr;
 	dma_addr_t end;
-	void *dst_mem = NULL;
 	u32 width = ctrl->fb.lcd_hres;
 	u32 height = ctrl->fb.lcd_vres;
 	u32 i, size;
@@ -315,25 +311,9 @@ static int fimc_outdev_set_dst_buf(struct fimc_control *ctrl,
 	size = PAGE_ALIGN(width * height * 4);
 
 	if ((*curr + (size * FIMC_OUTBUFS)) > end) {
-		fimc_err("%s: Reserved memory is not sufficient\n",
-					__func__);
+		fimc_err("%s: Reserved memory is not sufficient\n", __func__);
 		return -EINVAL;
 	}
-
-	if (ctx->dst[0].base[FIMC_ADDR_Y]) {
-		fimc_warn("%s: already allocated destination buffers\n",
-					__func__);
-		return 0;
-	}
-
-	/* clear buffer */
-	dst_mem = (void *)ioremap((int)*curr, size*FIMC_OUTBUFS);
-	if (dst_mem) {
-		memset(dst_mem, 0x0, size*FIMC_OUTBUFS);
-		iounmap(dst_mem);
-	} else
-		fimc_warn("%s: Failed to clear destination buffers\n",
-					__func__);
 
 	/* Initialize destination buffer addr */
 	for (i = 0; i < FIMC_OUTBUFS; i++) {
@@ -765,6 +745,7 @@ static void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl,
 	}
 
 	switch (ctx->overlay.mode) {
+	case FIMC_OVLY_DMA_AUTO:	/* fall through */
 	case FIMC_OVLY_DMA_MANUAL:
 		memset(&bound, 0, sizeof(bound));
 		memset(&win, 0, sizeof(win));
@@ -858,7 +839,6 @@ static int fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl,
 	switch (ctx->overlay.mode) {
 	case FIMC_OVLY_NONE_MULTI_BUF:	/* fall through */
 	case FIMC_OVLY_NONE_SINGLE_BUF:
-	case FIMC_OVLY_DMA_AUTO:
 		real.width = ctx->win.w.width;
 		real.height = ctx->win.w.height;
 
@@ -881,6 +861,7 @@ static int fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl,
 		break;
 
 	case FIMC_OVLY_DMA_MANUAL:	/* fall through */
+	case FIMC_OVLY_DMA_AUTO:
 		real.width = ctx->win.w.width;
 		real.height = ctx->win.w.height;
 
@@ -1255,17 +1236,6 @@ int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 						__func__, i, buf->vir_addr[i]);
 				}
 			}
-
-			/* clear destination buffer address */
-			ctrl->mem.curr = ctx->dst[0].base[FIMC_ADDR_Y];
-			for (i = 0; i < FIMC_OUTBUFS; i++) {
-				ctx->dst[i].base[FIMC_ADDR_Y] = 0;
-				ctx->dst[i].length[FIMC_ADDR_Y] = 0;
-				ctx->dst[i].base[FIMC_ADDR_CB] = 0;
-				ctx->dst[i].length[FIMC_ADDR_CB] = 0;
-				ctx->dst[i].base[FIMC_ADDR_CR] = 0;
-				ctx->dst[i].length[FIMC_ADDR_CR] = 0;
-			}
 			break;
 		default:
 			break;
@@ -1278,18 +1248,9 @@ int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 			if (ret)
 				return ret;
 		} else if (b->memory == V4L2_MEMORY_USERPTR) {
-			if (mode == FIMC_OVLY_DMA_AUTO ||
-					mode == FIMC_OVLY_NOT_FIXED)
+			if (mode == FIMC_OVLY_DMA_AUTO)
 				ctx->overlay.req_idx = FIMC_USERPTR_IDX;
 		}
-
-		/* initialize destination buffers */
-		if (mode == FIMC_OVLY_DMA_AUTO || mode == FIMC_OVLY_NOT_FIXED) {
-			ret = fimc_outdev_set_dst_buf(ctrl, ctx);
-			if (ret)
-				return ret;
-		}
-
 		ctx->is_requested = 1;
 	}
 
@@ -1504,15 +1465,6 @@ int fimc_s_ctrl_output(struct file *filp, void *fh, struct v4l2_control *c)
 		ret = fimc_set_dst_info(ctrl, ctx,
 					(struct fimc_buf *)c->value);
 		break;
-
-	case V4L2_CID_GET_PHY_SRC_YADDR:
-		c->value = ctx->src[c->value].base[FIMC_ADDR_Y];
-		break;
-
-	case V4L2_CID_GET_PHY_SRC_CADDR:
-		c->value = ctx->src[c->value].base[FIMC_ADDR_CB];
-		break;
-
 	default:
 		fimc_err("Invalid control id: %d\n", c->id);
 		ret = -EINVAL;
@@ -1688,6 +1640,13 @@ int fimc_streamon_output(void *fh)
 	if (ctx->overlay.mode == FIMC_OVLY_NOT_FIXED)
 		ctx->overlay.mode = FIMC_OVLY_MODE;
 
+	/* initialize destination buffers */
+	if (ctx->overlay.mode == FIMC_OVLY_DMA_AUTO) {
+		ret = fimc_outdev_set_dst_buf(ctrl, ctx);
+		if (ret)
+			return ret;
+	}
+
 	ret = fimc_outdev_check_param(ctrl, ctx);
 	if (ret < 0) {
 		fimc_err("Fail: fimc_outdev_check_param\n");
@@ -1750,6 +1709,21 @@ int fimc_streamoff_output(void *fh)
 	if (ctrl->out->last_ctx == ctx->ctx_num)
 		ctrl->out->last_ctx = -1;
 
+	if (ctx->overlay.mode == FIMC_OVLY_DMA_AUTO) {
+		ctrl->mem.curr = ctx->dst[0].base[FIMC_ADDR_Y];
+
+		for (i = 0; i < FIMC_OUTBUFS; i++) {
+			ctx->dst[i].base[FIMC_ADDR_Y] = 0;
+			ctx->dst[i].length[FIMC_ADDR_Y] = 0;
+
+			ctx->dst[i].base[FIMC_ADDR_CB] = 0;
+			ctx->dst[i].length[FIMC_ADDR_CB] = 0;
+
+			ctx->dst[i].base[FIMC_ADDR_CR] = 0;
+			ctx->dst[i].length[FIMC_ADDR_CR] = 0;
+		}
+	}
+
 	/* check all ctx to change ctrl->status from streamon to streamoff */
 	for (i = 0; i < FIMC_MAX_CTXS; i++) {
 		if (ctrl->out->ctx[i].status == FIMC_STREAMOFF)
@@ -1766,8 +1740,7 @@ int fimc_streamoff_output(void *fh)
 		ctrl->out->last_ctx = -1;
 
 	mutex_lock(&ctrl->lock);
-	if (ctx->overlay.mode == FIMC_OVLY_DMA_AUTO &&
-				ctrl->fb.is_enable == 1) {
+	if (ctx->overlay.mode == FIMC_OVLY_DMA_AUTO && ctrl->fb.is_enable == 1) {
 		fimc_info2("WIN_OFF for FIMC%d\n", ctrl->id);
 		ret = fb_blank(registered_fb[ctx->overlay.fb_id],
 						FB_BLANK_POWERDOWN);
@@ -1801,8 +1774,7 @@ int fimc_output_set_dst_addr(struct fimc_control *ctrl,
 	memset(&buf_set, 0x00, sizeof(buf_set));
 
 	if (V4L2_PIX_FMT_NV12T == format)
-		fimc_get_nv12t_size(width, height, &y_size, &c_size,
-				ctx->rotate);
+		fimc_get_nv12t_size(width, height, &y_size, &c_size);
 
 	switch (format) {
 	case V4L2_PIX_FMT_RGB32:
@@ -1930,6 +1902,7 @@ static int fimc_qbuf_output_dma_auto(struct fimc_control *ctrl,
 	struct fb_var_screeninfo var;
 	struct fb_info *fbinfo;
 	struct s3cfb_window *win;
+	struct v4l2_rect fimd_rect;
 	struct fimc_buf_set buf_set;	/* destination addr */
 	int ret = -1, i;
 
@@ -1939,12 +1912,28 @@ static int fimc_qbuf_output_dma_auto(struct fimc_control *ctrl,
 		win = (struct s3cfb_window *)fbinfo->par;
 
 		memcpy(&var, &fbinfo->var, sizeof(struct fb_var_screeninfo));
+		memset(&fimd_rect, 0, sizeof(struct v4l2_rect));
+		ret = fimc_fimd_rect(ctrl, ctx, &fimd_rect);
+		if (ret < 0) {
+			fimc_err("fimc_fimd_rect fail\n");
+			return -EINVAL;
+		}
 
 		/* set window path & owner */
 		win->path = DATA_PATH_DMA;
 		win->owner = DMA_MEM_OTHER;
 		win->other_mem_addr = ctx->dst[1].base[FIMC_ADDR_Y];
 		win->other_mem_size = ctx->dst[1].length[FIMC_ADDR_Y];
+
+		/* Update WIN size */
+		var.xres_virtual = fimd_rect.width;
+		var.yres_virtual = fimd_rect.height;
+		var.xres = fimd_rect.width;
+		var.yres = fimd_rect.height;
+
+		/* Update WIN position */
+		win->x = fimd_rect.left;
+		win->y = fimd_rect.top;
 
 		var.activate = FB_ACTIVATE_FORCE;
 		ret = fb_set_var(fbinfo, &var);
@@ -1953,20 +1942,7 @@ static int fimc_qbuf_output_dma_auto(struct fimc_control *ctrl,
 			return -EINVAL;
 		}
 
-		mutex_lock(&ctrl->lock);
-		if (ctx->overlay.mode == FIMC_OVLY_DMA_AUTO &&
-				ctrl->fb.is_enable == 0) {
-			ret = fb_blank(registered_fb[ctx->overlay.fb_id],
-							FB_BLANK_UNBLANK);
-			if (ret < 0) {
-				fimc_warn("%s: fb_blank: fb[%d] " \
-						"mode=FB_BLANK_UNBLANK\n",
-						__func__, ctx->overlay.fb_id);
-				mutex_unlock(&ctrl->lock);
-			}
-			ctrl->fb.is_enable = 1;
-		}
-		mutex_unlock(&ctrl->lock);
+		/* fall through */
 
 	case FIMC_STREAMON_IDLE:
 		fimc_outdev_set_src_addr(ctrl, ctx->src[idx].base);
@@ -2095,15 +2071,9 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 		fimc_clk_en(ctrl, true);
 
 		ctx = &ctrl->out->ctx[ctx_num];
-		if ((ctx->overlay.mode == FIMC_OVLY_NONE_SINGLE_BUF) ||
-				(ctx->overlay.mode != FIMC_OVLY_NONE_SINGLE_BUF
-				 && ctx_num != ctrl->out->last_ctx)) {
-			ret = fimc_outdev_set_ctx_param(ctrl, ctx);
-			if (ret < 0) {
-				fimc_err("Fail: fimc_outdev_set_ctx_param\n");
-				return -EINVAL;
-			}
+		if (ctx_num != ctrl->out->last_ctx) {
 			ctrl->out->last_ctx = ctx->ctx_num;
+			fimc_outdev_set_ctx_param(ctrl, ctx);
 		}
 
 		switch (ctx->overlay.mode) {
@@ -2157,8 +2127,7 @@ int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 	}
 
 	mutex_lock(&ctrl->lock);
-	if (ctx->overlay.mode == FIMC_OVLY_DMA_AUTO &&
-			ctrl->fb.is_enable == 0) {
+	if (ctx->overlay.mode == FIMC_OVLY_DMA_AUTO && ctrl->fb.is_enable == 0) {
 		ret = fb_blank(registered_fb[ctx->overlay.fb_id],
 						FB_BLANK_UNBLANK);
 		if (ret < 0) {

@@ -116,10 +116,6 @@ static int		g_onoff = G_WLAN_SET_ON;
 wl_iw_extra_params_t	g_wl_iw_params;
 static struct mutex	wl_cache_lock;
 
-#ifdef CONFIG_US_NON_DFS_CHANNELS_ONLY
-static bool use_non_dfs_channels = true;
-#endif
-
 extern bool wl_iw_conn_status_str(uint32 event_type, uint32 status,
 	uint32 reason, char* stringBuf, uint buflen);
 #include <bcmsdbus.h>
@@ -651,31 +647,6 @@ wl_iw_get_macaddr(
 	return error;
 }
 
-static int
-wl_iw_set_country_code(struct net_device *dev, char *ccode)
-{
-	char country_code[WLC_CNTRY_BUF_SZ];
-	int ret = -1;
-
-	WL_TRACE(("%s\n", __FUNCTION__));
-	if (!ccode)
-		ccode = dhd_bus_country_get(dev);
-	strncpy(country_code, ccode, sizeof(country_code));
-	if (ccode && (country_code[0] != 0)) {
-#ifdef CONFIG_US_NON_DFS_CHANNELS_ONLY
-		if (use_non_dfs_channels && !strncmp(country_code, "US", 2))
-			strncpy(country_code, "Q2", WLC_CNTRY_BUF_SZ);
-		if (!use_non_dfs_channels && !strncmp(country_code, "Q2", 2))
-			strncpy(country_code, "US", WLC_CNTRY_BUF_SZ);
-#endif
-		ret = dev_wlc_ioctl(dev, WLC_SET_COUNTRY, &country_code, sizeof(country_code));
-		if (ret >= 0) {
-			WL_TRACE(("%s: set country %s OK\n", __FUNCTION__, country_code));
-			dhd_bus_country_set(dev, &country_code[0]);
-		}
-	}
-	return ret;
-}
 
 static int
 wl_iw_set_country(
@@ -690,25 +661,39 @@ wl_iw_set_country(
 	char *p = extra;
 	int country_offset;
 	int country_code_size;
+	wl_country_t cspec = {{0}, 0, {0}};
+	char smbuf[WLC_IOCTL_SMLEN];
 
-	WL_TRACE(("%s\n", __FUNCTION__));
+	cspec.rev = -1;
 	memset(country_code, 0, sizeof(country_code));
+	memset(smbuf, 0, sizeof(smbuf));
 
 	country_offset = strcspn(extra, " ");
 	country_code_size = strlen(extra) - country_offset;
 
 	if (country_offset != 0) {
-		strncpy(country_code, extra + country_offset + 1,
+		strncpy(country_code, extra + country_offset +1,
 			MIN(country_code_size, sizeof(country_code)));
-		error = wl_iw_set_country_code(dev, country_code);
-		if (error >= 0) {
+
+
+		memcpy(cspec.country_abbrev, country_code, WLC_CNTRY_BUF_SZ);
+		memcpy(cspec.ccode, country_code, WLC_CNTRY_BUF_SZ);
+
+		get_customized_country_code((char *)&cspec.country_abbrev, &cspec);
+
+		if ((error = dev_iw_iovar_setbuf(dev, "country", &cspec, \
+			sizeof(cspec), smbuf, sizeof(smbuf))) >= 0) {
 			p += snprintf(p, MAX_WX_STRING, "OK");
-			WL_TRACE(("%s: set country %s OK\n", __FUNCTION__, country_code));
+			WL_ERROR(("%s: set country for %s as %s rev %d is OK\n", \
+				__FUNCTION__, country_code, cspec.ccode, cspec.rev));
+			dhd_bus_country_set(dev, &cspec);
 			goto exit;
 		}
 	}
 
-	WL_ERROR(("%s: set country %s failed code %d\n", __FUNCTION__, country_code, error));
+	WL_ERROR(("%s: set country for %s as %s rev %d failed\n", \
+			__FUNCTION__, country_code, cspec.ccode, cspec.rev));
+
 	p += snprintf(p, MAX_WX_STRING, "FAIL");
 
 exit:
@@ -803,6 +788,7 @@ bool btcoex_is_sco_active(struct net_device *dev)
 
 		msleep(5);
 	}
+
 	return res;
 }
 
@@ -1087,6 +1073,7 @@ wl_iw_set_suspend(
 
 	return ret;
 }
+
 
 int
 wl_format_ssid(char* ssid_buf, uint8* ssid, int ssid_len)
@@ -5886,7 +5873,7 @@ static int iwpriv_set_cscan(struct net_device *dev, struct iw_request_info *info
 	int nssid = 0;
 	int nchan = 0;
 
-	WL_TRACE(("%s: info->cmd:%x, info->flags:%x, u.data=0x%p, u.len=%d\n",
+	WL_TRACE(("\%s: info->cmd:%x, info->flags:%x, u.data=0x%p, u.len=%d\n",
 		__FUNCTION__, info->cmd, info->flags,
 		wrqu->data.pointer, wrqu->data.length));
 
@@ -6427,16 +6414,8 @@ static int set_ap_cfg(struct net_device *dev, struct ap_profile *ap)
 	}
 
 	if (strlen(ap->country_code)) {
-		int error = 0;
-		if ((error = dev_wlc_ioctl(dev, WLC_SET_COUNTRY,
-			ap->country_code, sizeof(ap->country_code))) >= 0) {
-			WL_SOFTAP(("%s: set country %s OK\n",
-				__FUNCTION__, ap->country_code));
-			dhd_bus_country_set(dev, &ap->country_code[0]);
-		} else {
-			WL_ERROR(("%s: ERROR:%d setting country %s\n",
-				__FUNCTION__, error, ap->country_code));
-		}
+		WL_ERROR(("%s: Igonored: Country MUST be specified \
+				  COUNTRY command with \n",	__FUNCTION__));
 	} else {
 		WL_SOFTAP(("%s: Country code is not specified,"
 			" will use Radio's default\n",
@@ -7246,8 +7225,8 @@ static int wl_iw_set_priv(
 			ret = wl_iw_set_dtim_skip(dev, info, (union iwreq_data *)dwrq, extra);
 		else if (strnicmp(extra, SETSUSPEND_CMD, strlen(SETSUSPEND_CMD)) == 0)
 			ret = wl_iw_set_suspend(dev, info, (union iwreq_data *)dwrq, extra);
-        else if (strnicmp(extra, TXPOWER_SET_CMD, strlen(TXPOWER_SET_CMD)) == 0)
-            ret = wl_iw_set_txpower(dev, info, (union iwreq_data *)dwrq, extra);
+	    else if (strnicmp(extra, TXPOWER_SET_CMD, strlen(TXPOWER_SET_CMD)) == 0)
+			ret = wl_iw_set_txpower(dev, info, (union iwreq_data *)dwrq, extra);
 #if defined(PNO_SUPPORT)
 		else if (strnicmp(extra, PNOSSIDCLR_SET_CMD, strlen(PNOSSIDCLR_SET_CMD)) == 0)
 			ret = wl_iw_set_pno_reset(dev, info, (union iwreq_data *)dwrq, extra);
@@ -7257,27 +7236,39 @@ static int wl_iw_set_priv(
 			ret = wl_iw_set_pno_enable(dev, info, (union iwreq_data *)dwrq, extra);
 #endif
 #if defined(CSCAN)
-	    else if (strnicmp(extra, CSCAN_COMMAND, strlen(CSCAN_COMMAND)) == 0)
+		else if (strnicmp(extra, CSCAN_COMMAND, strlen(CSCAN_COMMAND)) == 0)
 			ret = wl_iw_set_cscan(dev, info, (union iwreq_data *)dwrq, extra);
-#endif 
+#endif
 #ifdef CUSTOMER_HW2
 		else if (strnicmp(extra, "POWERMODE", strlen("POWERMODE")) == 0)
 			ret = wl_iw_set_power_mode(dev, info, (union iwreq_data *)dwrq, extra);
-	    else if (strnicmp(extra, "BTCOEXMODE", strlen("BTCOEXMODE")) == 0) {
+		else if (strnicmp(extra, "BTCOEXMODE", strlen("BTCOEXMODE")) == 0) {
 			WL_TRACE_COEX(("%s:got Framwrork cmd: 'BTCOEXMODE'\n", __FUNCTION__));
 			ret = wl_iw_set_btcoex_dhcp(dev, info, (union iwreq_data *)dwrq, extra);
-	    }
+		}
 #else
 		else if (strnicmp(extra, "POWERMODE", strlen("POWERMODE")) == 0)
 			ret = wl_iw_set_btcoex_dhcp(dev, info, (union iwreq_data *)dwrq, extra);
 #endif
 		else if (strnicmp(extra, "GETPOWER", strlen("GETPOWER")) == 0)
 			ret = wl_iw_get_power_mode(dev, info, (union iwreq_data *)dwrq, extra);
+		else if (strnicmp(extra, RXFILTER_START_CMD, strlen(RXFILTER_START_CMD)) == 0)
+			ret = net_os_set_packet_filter(dev, 1);
+		else if (strnicmp(extra, RXFILTER_STOP_CMD, strlen(RXFILTER_STOP_CMD)) == 0)
+			ret = net_os_set_packet_filter(dev, 0);
+		else if (strnicmp(extra, RXFILTER_ADD_CMD, strlen(RXFILTER_ADD_CMD)) == 0) {
+			int filter_num = *(extra + strlen(RXFILTER_ADD_CMD) + 1) - '0';
+			ret = net_os_rxfilter_add_remove(dev, TRUE, filter_num);
+		}
+		else if (strnicmp(extra, RXFILTER_REMOVE_CMD, strlen(RXFILTER_REMOVE_CMD)) == 0) {
+			int filter_num = *(extra + strlen(RXFILTER_REMOVE_CMD) + 1) - '0';
+			ret = net_os_rxfilter_add_remove(dev, FALSE, filter_num);
+		}
 #ifdef SOFTAP
 #ifdef SOFTAP_TLV_CFG
 		else if (strnicmp(extra, SOFTAP_SET_CMD, strlen(SOFTAP_SET_CMD)) == 0) {
 		    wl_iw_softap_cfg_tlv(dev, info, (union iwreq_data *)dwrq, extra);
-	    }
+		}
 #endif
 		else if (strnicmp(extra, "ASCII_CMD", strlen("ASCII_CMD")) == 0) {
 			wl_iw_process_private_ascii_cmd(dev, info, (union iwreq_data *)dwrq, extra);
@@ -7799,9 +7790,10 @@ wl_iw_event(struct net_device *dev, wl_event_msg_t *e, void* data)
 	uint32 datalen = ntoh32(e->datalen);
 	uint32 status =  ntoh32(e->status);
 	uint32 toto;
+#if defined(ROAM_NOT_USED)
 	static uint32 roam_no_success = 0;
 	static bool roam_no_success_send = FALSE;
-
+#endif
 	memset(&wrqu, 0, sizeof(wrqu));
 	memset(extra, 0, sizeof(extra));
 
@@ -7872,10 +7864,14 @@ wl_iw_event(struct net_device *dev, wl_event_msg_t *e, void* data)
 		break;
 	case WLC_E_ROAM:
 		if (status == WLC_E_STATUS_SUCCESS) {
-			memcpy(wrqu.addr.sa_data, &e->addr.octet, ETHER_ADDR_LEN);
-			wrqu.addr.sa_family = ARPHRD_ETHER;
-			cmd = SIOCGIWAP;
+			WL_ASSOC(("%s: WLC_E_ROAM: success\n", __FUNCTION__));
+#if defined(ROAM_NOT_USED)
+			roam_no_success_send = FALSE;
+			roam_no_success = 0;
+#endif
+			goto wl_iw_event_end;
 		}
+#if defined(ROAM_NOT_USED)
 		else if (status == WLC_E_STATUS_NO_NETWORKS) {
 			roam_no_success++;
 			if ((roam_no_success == 5) && (roam_no_success_send == FALSE)) {
@@ -7890,6 +7886,7 @@ wl_iw_event(struct net_device *dev, wl_event_msg_t *e, void* data)
 				goto wl_iw_event_end;
 			}
 		}
+#endif
 		break;
 	case WLC_E_DEAUTH_IND:
 	case WLC_E_DISASSOC_IND:
@@ -7945,8 +7942,10 @@ wl_iw_event(struct net_device *dev, wl_event_msg_t *e, void* data)
 				wl_iw_send_priv_event(priv_dev, "AP_UP");
 			} else {
 				WL_TRACE(("STA_LINK_UP\n"));
+#if defined(ROAM_NOT_USED)
 				roam_no_success_send = FALSE;
 				roam_no_success = 0;
+#endif
 			}
 #endif
 			WL_TRACE(("Link UP\n"));
@@ -8074,7 +8073,6 @@ wl_iw_event(struct net_device *dev, wl_event_msg_t *e, void* data)
 #endif
 
 #if WIRELESS_EXT > 14
-	
 	memset(extra, 0, sizeof(extra));
 	if (wl_iw_check_conn_fail(e, extra, sizeof(extra))) {
 		cmd = IWEVCUSTOM;

@@ -26,8 +26,9 @@
 
 #include "mm.h"
 
-static unsigned long shared_pte_mask = L_PTE_MT_BUFFERABLE;
+static pteval_t shared_pte_mask = L_PTE_MT_BUFFERABLE;
 
+#if __LINUX_ARM_ARCH__ < 6
 /*
  * We take the easy way out of this problem - we make the
  * PTE uncacheable.  However, we leave the write buffer on.
@@ -94,6 +95,7 @@ static int adjust_pte(struct vm_area_struct *vma, unsigned long address,
 {
 	spinlock_t *ptl;
 	pgd_t *pgd;
+	pud_t *pud;
 	pmd_t *pmd;
 	pte_t *pte;
 	int ret;
@@ -102,7 +104,11 @@ static int adjust_pte(struct vm_area_struct *vma, unsigned long address,
 	if (pgd_none_or_clear_bad(pgd))
 		return 0;
 
-	pmd = pmd_offset(pgd, address);
+	pud = pud_offset(pgd, address);
+	if (pud_none_or_clear_bad(pud))
+		return 0;
+
+	pmd = pmd_offset(pud, address);
 	if (pmd_none_or_clear_bad(pmd))
 		return 0;
 
@@ -112,13 +118,13 @@ static int adjust_pte(struct vm_area_struct *vma, unsigned long address,
 	 * open-code the spin-locking.
 	 */
 	ptl = pte_lockptr(vma->vm_mm, pmd);
-	pte = pte_offset_map_nested(pmd, address);
+	pte = pte_offset_map(pmd, address);
 	do_pte_lock(ptl);
 
 	ret = do_adjust_pte(vma, address, pfn, pte);
 
 	do_pte_unlock(ptl);
-	pte_unmap_nested(pte);
+	pte_unmap(pte);
 
 	return ret;
 }
@@ -165,7 +171,7 @@ make_coherent(struct address_space *mapping, struct vm_area_struct *vma,
  * a page table, or changing an existing PTE.  Basically, there are two
  * things that we need to take care of:
  *
- *  1. If PG_dcache_dirty is set for the page, we need to ensure
+ *  1. If PG_dcache_clean is not set for the page, we need to ensure
  *     that any cache entries for the kernels virtual memory
  *     range are written back to the page.
  *  2. If we have multiple shared mappings of the same space in
@@ -192,10 +198,8 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long addr,
 		return;
 
 	mapping = page_mapping(page);
-#ifndef CONFIG_SMP
-	if (test_and_clear_bit(PG_dcache_dirty, &page->flags))
+	if (!test_and_set_bit(PG_dcache_clean, &page->flags))
 		__flush_dcache_page(mapping, page);
-#endif
 	if (mapping) {
 		if (cache_is_vivt())
 			make_coherent(mapping, vma, addr, ptep, pfn);
@@ -203,6 +207,7 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long addr,
 			__flush_icache_all();
 	}
 }
+#endif	/* __LINUX_ARM_ARCH__ < 6 */
 
 /*
  * Check whether the write buffer has physical address aliasing

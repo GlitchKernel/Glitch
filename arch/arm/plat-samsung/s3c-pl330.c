@@ -16,6 +16,7 @@
 #include <linux/slab.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>
+#include <linux/err.h>
 
 #include <asm/hardware/pl330.h>
 
@@ -28,6 +29,7 @@
  * @node: To attach to the global list of DMACs.
  * @pi: PL330 configuration info for the DMAC.
  * @kmcache: Pool to quickly allocate xfers for all channels in the dmac.
+ * @clk: Pointer of DMAC operation clock.
  */
 struct s3c_pl330_dmac {
 	unsigned		busy_chan;
@@ -35,7 +37,7 @@ struct s3c_pl330_dmac {
 	struct list_head	node;
 	struct pl330_info	*pi;
 	struct kmem_cache	*kmcache;
-	struct clk		*dmaclk;
+	struct clk		*clk;
 };
 
 /**
@@ -66,7 +68,7 @@ struct s3c_pl330_xfer {
  * @req: Two requests to communicate with the PL330 engine.
  * @callback_fn: Callback function to the client.
  * @rqcfg: Channel configuration for the xfers.
- * @xfer_head: Pointer to the xfer to be next excecuted.
+ * @xfer_head: Pointer to the xfer to be next executed.
  * @dmac: Pointer to the DMAC that manages this channel, NULL if the
  * 	channel is available to be acquired.
  * @client: Client of this channel. NULL if the
@@ -469,7 +471,6 @@ static inline int s3c_pl330_submit(struct s3c_pl330_chan *ch,
 
 		r->x = NULL;
 
-
 		/* If both of the PL330 ping-pong buffers filled */
 		if (ret == -EAGAIN) {
 			dev_err(ch->dmac->pi->dev, "%s:%d!\n",
@@ -497,11 +498,9 @@ static void s3c_pl330_rq(struct s3c_pl330_chan *ch,
 
 	spin_lock_irqsave(&res_lock, flags);
 
-	if(!r->autoload) {
-		r->x = NULL;
+	r->x = NULL;
 
-		s3c_pl330_submit(ch, r);
-	}
+	s3c_pl330_submit(ch, r);
 
 	spin_unlock_irqrestore(&res_lock, flags);
 
@@ -514,20 +513,12 @@ static void s3c_pl330_rq(struct s3c_pl330_chan *ch,
 		res = S3C2410_RES_ERR;
 
 	/* If last request had some xfer */
-	if(!r->autoload) {
-		if (xl) {
-			xfer = container_of(xl, struct s3c_pl330_xfer, px);
-			_finish_off(xfer, res, 0);
-		} else {
-			dev_info(ch->dmac->pi->dev, "%s:%d No Xfer?!\n",
-				__func__, __LINE__);
-		}
-	} else {
-		/* Do callback */
-
+	if (xl) {
 		xfer = container_of(xl, struct s3c_pl330_xfer, px);
-		if (ch->callback_fn)
-			ch->callback_fn(NULL, xfer->token, xfer->px.bytes, res);
+		_finish_off(xfer, res, 0);
+	} else {
+		dev_info(ch->dmac->pi->dev, "%s:%d No Xfer?!\n",
+			__func__, __LINE__);
 	}
 }
 
@@ -669,80 +660,6 @@ ctrl_exit:
 }
 EXPORT_SYMBOL(s3c2410_dma_ctrl);
 
-
-
-int s3c2410_dma_enqueue_autoload(enum dma_ch id, void *token,
-			dma_addr_t addr, int size, int numofblock)
-{
-	struct s3c_pl330_chan *ch;
-	struct s3c_pl330_xfer *xfer;
-	unsigned long flags;
-	int idx, ret = 0;
-
-	spin_lock_irqsave(&res_lock, flags);
-
-	ch = id_to_chan(id);
-
-	/* Error if invalid or free channel */
-	if (!ch || chan_free(ch)) {
-		ret = -EINVAL;
-		goto enq_exit;
-	}
-
-	/* Error if size is unaligned */
-	if (ch->rqcfg.brst_size && size % (1 << ch->rqcfg.brst_size)) {
-		ret = -EINVAL;
-		goto enq_exit;
-	}
-
-	xfer = kmem_cache_alloc(ch->dmac->kmcache, GFP_ATOMIC);
-	if (!xfer) {
-		ret = -ENOMEM;
-		goto enq_exit;
-	}
-
-	xfer->token = token;
-	xfer->chan = ch;
-	xfer->px.bytes = size;
-	xfer->px.next = NULL; /* Single request */
-
-	/* For S3C DMA API, direction is always fixed for all xfers */
-	if (ch->req[0].rqtype == MEMTODEV) {
-		xfer->px.src_addr = addr;
-		xfer->px.dst_addr = ch->sdaddr;
-	} else {
-		xfer->px.src_addr = ch->sdaddr;
-		xfer->px.dst_addr = addr;
-	}
-
-	add_to_queue(ch, xfer, 0);
-
-	/* Try submitting on either request */
-	idx = (ch->lrq == &ch->req[0]) ? 1 : 0;
-
-	if (!ch->req[idx].x) {
-		ch->req[idx].autoload = numofblock;
-		s3c_pl330_submit(ch, &ch->req[idx]);
-	}
-	else {
-		ch->req[1 - idx].autoload = numofblock;
-		s3c_pl330_submit(ch, &ch->req[1 - idx]);
-	}
-	spin_unlock_irqrestore(&res_lock, flags);
-
-	if (ch->options & S3C2410_DMAF_AUTOSTART)
-		s3c2410_dma_ctrl(id, S3C2410_DMAOP_START);
-
-	return 0;
-
-enq_exit:
-	spin_unlock_irqrestore(&res_lock, flags);
-
-	return ret;
-}
-
-
-
 int s3c2410_dma_enqueue(enum dma_ch id, void *token,
 			dma_addr_t addr, int size)
 {
@@ -792,14 +709,10 @@ int s3c2410_dma_enqueue(enum dma_ch id, void *token,
 	/* Try submitting on either request */
 	idx = (ch->lrq == &ch->req[0]) ? 1 : 0;
 
-	if (!ch->req[idx].x) {
-		ch->req[idx].autoload = false;
+	if (!ch->req[idx].x)
 		s3c_pl330_submit(ch, &ch->req[idx]);
-	}
-	else {
-		ch->req[1 - idx].autoload = false;
+	else
 		s3c_pl330_submit(ch, &ch->req[1 - idx]);
-	}
 
 	spin_unlock_irqrestore(&res_lock, flags);
 
@@ -825,6 +738,7 @@ int s3c2410_dma_request(enum dma_ch id,
 	int ret = 0;
 
 	spin_lock_irqsave(&res_lock, flags);
+
 	ch = chan_acquire(id);
 	if (!ch) {
 		ret = -EBUSY;
@@ -833,11 +747,11 @@ int s3c2410_dma_request(enum dma_ch id,
 
 	dmac = ch->dmac;
 
-	clk_enable(dmac->dmaclk);
+	clk_enable(dmac->clk);
 
 	ch->pl330_chan_id = pl330_request_channel(dmac->pi);
 	if (!ch->pl330_chan_id) {
-		clk_disable(dmac->dmaclk);
+		clk_disable(dmac->clk);
 		chan_release(ch);
 		ret = -EBUSY;
 		goto req_exit;
@@ -949,7 +863,7 @@ int s3c2410_dma_free(enum dma_ch id, struct s3c2410_dma_client *client)
 	pl330_release_channel(ch->pl330_chan_id);
 
 	ch->pl330_chan_id = NULL;
-	clk_disable(ch->dmac->dmaclk);
+	clk_disable(ch->dmac->clk);
 	chan_release(ch);
 
 free_exit:
@@ -1135,7 +1049,6 @@ static int pl330_probe(struct platform_device *pdev)
 	struct s3c_pl330_platdata *pl330pd;
 	struct pl330_info *pl330_info;
 	struct resource *res;
-	struct clk *dmaclk;
 	int i, ret, irq;
 
 	pl330pd = pdev->dev.platform_data;
@@ -1159,15 +1072,6 @@ static int pl330_probe(struct platform_device *pdev)
 		goto probe_err1;
 	}
 
-	dmaclk = clk_get(&pdev->dev, "dma");
-	if (dmaclk == NULL) {
-		dev_err(&pdev->dev, "failed to find dma clock source\n");
-		ret = -ENODEV;
-		goto probe_err1;
-	}
-
-	clk_enable(dmaclk);
-
 	request_mem_region(res->start, resource_size(res), pdev->name);
 
 	pl330_info->base = ioremap(res->start, resource_size(res));
@@ -1187,19 +1091,25 @@ static int pl330_probe(struct platform_device *pdev)
 	if (ret)
 		goto probe_err4;
 
-	ret = pl330_add(pl330_info);
-	if (ret)
-		goto probe_err5;
-
 	/* Allocate a new DMAC */
 	s3c_pl330_dmac = kmalloc(sizeof(*s3c_pl330_dmac), GFP_KERNEL);
 	if (!s3c_pl330_dmac) {
 		ret = -ENOMEM;
-		goto probe_err6;
+		goto probe_err5;
 	}
 
-	/* Clock */
-	s3c_pl330_dmac->dmaclk = dmaclk;
+	/* Get operation clock and enable it */
+	s3c_pl330_dmac->clk = clk_get(&pdev->dev, "pdma");
+	if (IS_ERR(s3c_pl330_dmac->clk)) {
+		dev_err(&pdev->dev, "Cannot get operation clock.\n");
+		ret = -EINVAL;
+		goto probe_err6;
+	}
+	clk_enable(s3c_pl330_dmac->clk);
+
+	ret = pl330_add(pl330_info);
+	if (ret)
+		goto probe_err7;
 
 	/* Hook the info */
 	s3c_pl330_dmac->pi = pl330_info;
@@ -1212,7 +1122,7 @@ static int pl330_probe(struct platform_device *pdev)
 
 	if (!s3c_pl330_dmac->kmcache) {
 		ret = -ENOMEM;
-		goto probe_err7;
+		goto probe_err8;
 	}
 
 	/* Get the list of peripherals */
@@ -1236,13 +1146,16 @@ static int pl330_probe(struct platform_device *pdev)
 		pl330_info->pcfg.data_bus_width / 8, pl330_info->pcfg.num_chan,
 		pl330_info->pcfg.num_peri, pl330_info->pcfg.num_events);
 
-	clk_disable(dmaclk);
+	clk_disable(s3c_pl330_dmac->clk);
 	return 0;
 
-probe_err7:
-	kfree(s3c_pl330_dmac);
-probe_err6:
+probe_err8:
 	pl330_del(pl330_info);
+probe_err7:
+	clk_disable(s3c_pl330_dmac->clk);
+	clk_put(s3c_pl330_dmac->clk);
+probe_err6:
+	kfree(s3c_pl330_dmac);
 probe_err5:
 	free_irq(irq, pl330_info);
 probe_err4:
@@ -1250,8 +1163,6 @@ probe_err3:
 	iounmap(pl330_info->base);
 probe_err2:
 	release_mem_region(res->start, resource_size(res));
-	clk_disable(dmaclk);
-	clk_put(dmaclk);
 probe_err1:
 	kfree(pl330_info);
 
@@ -1309,9 +1220,11 @@ static int pl330_remove(struct platform_device *pdev)
 		}
 	}
 
+	/* Disable operation clock */
+	clk_put(dmac->clk);
+
 	/* Remove the DMAC */
 	list_del(&dmac->node);
-	clk_put(dmac->dmaclk);
 	kfree(dmac);
 
 	spin_unlock_irqrestore(&res_lock, flags);

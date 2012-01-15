@@ -1,12 +1,19 @@
 /*
- * sch_sfb.c    Stochastic Fair Blue
+ * net/sched/sch_sfb.c	  Stochastic Fair Blue
  *
- *		This program is free software; you can redistribute it and/or
- *		modify it under the terms of the GNU General Public License
- *		as published by the Free Software Foundation; either version
- *		2 of the License, or (at your option) any later version.
+ * Copyright (c) 2008-2011 Juliusz Chroboczek <jch@pps.jussieu.fr>
+ * Copyright (c) 2011 Eric Dumazet <eric.dumazet@gmail.com>
  *
- * Authors:	Juliusz Chroboczek <jch@pps.jussieu.fr>
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2 as published by the Free Software Foundation.
+ *
+ * W. Feng, D. Kandlur, D. Saha, K. Shin. Blue:
+ * A New Class of Active Queue Management Algorithms.
+ * U. Michigan CSE-TR-387-99, April 1999.
+ *
+ * http://www.thefengs.com/wuchang/blue/CSE-TR-387-99.pdf
+ *
  */
 
 #include <linux/module.h>
@@ -19,356 +26,408 @@
 #include <net/ip.h>
 #include <net/pkt_sched.h>
 #include <net/inet_ecn.h>
-#include <net/sfb.h>
 
-struct bucket {
-        u16 qlen;
-        u16 pm;
+/*
+ * SFB uses two B[l][n] : L x N arrays of bins (L levels, N bins per level)
+ * This implementation uses L = 8 and N = 16
+ * This permits us to split one 32bit hash (provided per packet by rxhash or
+ * external classifier) into 8 subhashes of 4 bits.
+ */
+#define SFB_BUCKET_SHIFT 4
+#define SFB_NUMBUCKETS	(1 << SFB_BUCKET_SHIFT) /* N bins per Level */
+#define SFB_BUCKET_MASK (SFB_NUMBUCKETS - 1)
+#define SFB_LEVELS	(32 / SFB_BUCKET_SHIFT) /* L */
+
+/* SFB algo uses a virtual queue, named "bin" */
+struct sfb_bucket {
+	u16		qlen; /* length of virtual queue */
+	u16		p_mark; /* marking probability */
 };
 
-struct sfb_sched_data
-{
-        u16 numhashes, numbuckets;
-        u16 rehash_interval, db_interval;
-        u16 max, target;
-        u16 increment, decrement;
-        u32 limit;
-        u32 penalty_rate, penalty_burst;
-        u32 tokens_avail;
-        psched_time_t rehash_time, token_time;
-
-        u8 hash_type;
-        u8 filter;
-        u8 double_buffering;
-        u32 perturbation[2][MAXHASHES];
-        struct bucket buckets[2][MAXHASHES][MAXBUCKETS];
-	struct Qdisc *qdisc;
-
-        __u32 earlydrop, penaltydrop, bucketdrop, queuedrop, marked;
+/* We use a double buffering right before hash change
+ * (Section 4.4 of SFB reference : moving hash functions)
+ */
+struct sfb_bins {
+	u32		  perturbation; /* jhash perturbation */
+	struct sfb_bucket bins[SFB_LEVELS][SFB_NUMBUCKETS];
 };
 
-static unsigned sfb_hash(struct sk_buff *skb, int hash, int filter,
-                         struct sfb_sched_data *q)
-{
-	u32 h, h2;
-        u8 hash_type = q->hash_type;
+struct sfb_sched_data {
+	struct Qdisc	*qdisc;
+	struct tcf_proto *filter_list;
+	unsigned long	rehash_interval;
+	unsigned long	warmup_time;	/* double buffering warmup time in jiffies */
+	u32		max;
+	u32		bin_size;	/* maximum queue length per bin */
+	u32		increment;	/* d1 */
+	u32		decrement;	/* d2 */
+	u32		limit;		/* HARD maximal queue length */
+	u32		penalty_rate;
+	u32		penalty_burst;
+	u32		tokens_avail;
+	unsigned long	rehash_time;
+	unsigned long	token_time;
 
-	switch (skb->protocol) {
-	case htons(ETH_P_IP):
-	{
-		const struct iphdr *iph = ip_hdr(skb);
-		h = hash_type == SFB_HASH_SOURCE ? 0 : iph->daddr;
-		h2 = hash_type == SFB_HASH_DEST ? 0 : iph->saddr;
-		if (hash_type == SFB_HASH_FLOW) {
-                        h2 ^= iph->protocol;
-                        if(!(iph->frag_off&htons(IP_MF|IP_OFFSET)) &&
-                           (iph->protocol == IPPROTO_TCP ||
-                            iph->protocol == IPPROTO_UDP ||
-                            iph->protocol == IPPROTO_UDPLITE ||
-                            iph->protocol == IPPROTO_SCTP ||
-                            iph->protocol == IPPROTO_DCCP ||
-                            iph->protocol == IPPROTO_ESP)) {
-                                h2 ^= *(((u32*)iph) + iph->ihl);
-                        }
-                }
-		break;
+	u8		slot;		/* current active bins (0 or 1) */
+	bool		double_buffering;
+	struct sfb_bins bins[2];
+
+	struct {
+		u32	earlydrop;
+		u32	penaltydrop;
+		u32	bucketdrop;
+		u32	queuedrop;
+		u32	childdrop;	/* drops in child qdisc */
+		u32	marked;		/* ECN mark */
+	} stats;
+};
+
+/*
+ * Each queued skb might be hashed on one or two bins
+ * We store in skb_cb the two hash values.
+ * (A zero value means double buffering was not used)
+ */
+struct sfb_skb_cb {
+	u32 hashes[2];
+};
+
+static inline struct sfb_skb_cb *sfb_skb_cb(const struct sk_buff *skb)
+{
+	BUILD_BUG_ON(sizeof(skb->cb) <
+		sizeof(struct qdisc_skb_cb) + sizeof(struct sfb_skb_cb));
+	return (struct sfb_skb_cb *)qdisc_skb_cb(skb)->data;
+}
+
+/*
+ * If using 'internal' SFB flow classifier, hash comes from skb rxhash
+ * If using external classifier, hash comes from the classid.
+ */
+static u32 sfb_hash(const struct sk_buff *skb, u32 slot)
+{
+	return sfb_skb_cb(skb)->hashes[slot];
+}
+
+/* Probabilities are coded as Q0.16 fixed-point values,
+ * with 0xFFFF representing 65535/65536 (almost 1.0)
+ * Addition and subtraction are saturating in [0, 65535]
+ */
+static u32 prob_plus(u32 p1, u32 p2)
+{
+	u32 res = p1 + p2;
+
+	return min_t(u32, res, SFB_MAX_PROB);
+}
+
+static u32 prob_minus(u32 p1, u32 p2)
+{
+	return p1 > p2 ? p1 - p2 : 0;
+}
+
+static void increment_one_qlen(u32 sfbhash, u32 slot, struct sfb_sched_data *q)
+{
+	int i;
+	struct sfb_bucket *b = &q->bins[slot].bins[0][0];
+
+	for (i = 0; i < SFB_LEVELS; i++) {
+		u32 hash = sfbhash & SFB_BUCKET_MASK;
+
+		sfbhash >>= SFB_BUCKET_SHIFT;
+		if (b[hash].qlen < 0xFFFF)
+			b[hash].qlen++;
+		b += SFB_NUMBUCKETS; /* next level */
 	}
-	case htons(ETH_P_IPV6):
-	{
-		struct ipv6hdr *iph = ipv6_hdr(skb);
-		h = hash_type == SFB_HASH_SOURCE ? 0 :
-                        iph->daddr.s6_addr32[1] ^ iph->daddr.s6_addr32[3];
-		h2 = hash_type == SFB_HASH_DEST ? 0 :
-                        iph->saddr.s6_addr32[1] ^ iph->saddr.s6_addr32[3];
-                if (hash_type == SFB_HASH_FLOW) {
-                        h2 ^= iph->nexthdr;
-                        if(iph->nexthdr == IPPROTO_TCP ||
-                           iph->nexthdr == IPPROTO_UDP ||
-                           iph->nexthdr == IPPROTO_UDPLITE ||
-                           iph->nexthdr == IPPROTO_SCTP ||
-                           iph->nexthdr == IPPROTO_DCCP ||
-                           iph->nexthdr == IPPROTO_ESP)
-                                h2 ^= *(u32*)&iph[1];
-                }
-		break;
+}
+
+static void increment_qlen(const struct sk_buff *skb, struct sfb_sched_data *q)
+{
+	u32 sfbhash;
+
+	sfbhash = sfb_hash(skb, 0);
+	if (sfbhash)
+		increment_one_qlen(sfbhash, 0, q);
+
+	sfbhash = sfb_hash(skb, 1);
+	if (sfbhash)
+		increment_one_qlen(sfbhash, 1, q);
+}
+
+static void decrement_one_qlen(u32 sfbhash, u32 slot,
+			       struct sfb_sched_data *q)
+{
+	int i;
+	struct sfb_bucket *b = &q->bins[slot].bins[0][0];
+
+	for (i = 0; i < SFB_LEVELS; i++) {
+		u32 hash = sfbhash & SFB_BUCKET_MASK;
+
+		sfbhash >>= SFB_BUCKET_SHIFT;
+		if (b[hash].qlen > 0)
+			b[hash].qlen--;
+		b += SFB_NUMBUCKETS; /* next level */
 	}
-	default:
-		h = skb->protocol;
-                if(hash_type != SFB_HASH_SOURCE)
-			h ^= (u32)(unsigned long)skb_dst(skb);
-                h2 = hash_type == SFB_HASH_FLOW ?
-                        (u32)(unsigned long)skb->sk : 0;
+}
+
+static void decrement_qlen(const struct sk_buff *skb, struct sfb_sched_data *q)
+{
+	u32 sfbhash;
+
+	sfbhash = sfb_hash(skb, 0);
+	if (sfbhash)
+		decrement_one_qlen(sfbhash, 0, q);
+
+	sfbhash = sfb_hash(skb, 1);
+	if (sfbhash)
+		decrement_one_qlen(sfbhash, 1, q);
+}
+
+static void decrement_prob(struct sfb_bucket *b, struct sfb_sched_data *q)
+{
+	b->p_mark = prob_minus(b->p_mark, q->decrement);
+}
+
+static void increment_prob(struct sfb_bucket *b, struct sfb_sched_data *q)
+{
+	b->p_mark = prob_plus(b->p_mark, q->increment);
+}
+
+static void sfb_zero_all_buckets(struct sfb_sched_data *q)
+{
+	memset(&q->bins, 0, sizeof(q->bins));
+}
+
+/*
+ * compute max qlen, max p_mark, and avg p_mark
+ */
+static u32 sfb_compute_qlen(u32 *prob_r, u32 *avgpm_r, const struct sfb_sched_data *q)
+{
+	int i;
+	u32 qlen = 0, prob = 0, totalpm = 0;
+	const struct sfb_bucket *b = &q->bins[q->slot].bins[0][0];
+
+	for (i = 0; i < SFB_LEVELS * SFB_NUMBUCKETS; i++) {
+		if (qlen < b->qlen)
+			qlen = b->qlen;
+		totalpm += b->p_mark;
+		if (prob < b->p_mark)
+			prob = b->p_mark;
+		b++;
+	}
+	*prob_r = prob;
+	*avgpm_r = totalpm / (SFB_LEVELS * SFB_NUMBUCKETS);
+	return qlen;
+}
+
+
+static void sfb_init_perturbation(u32 slot, struct sfb_sched_data *q)
+{
+	q->bins[slot].perturbation = net_random();
+}
+
+static void sfb_swap_slot(struct sfb_sched_data *q)
+{
+	sfb_init_perturbation(q->slot, q);
+	q->slot ^= 1;
+	q->double_buffering = false;
+}
+
+/* Non elastic flows are allowed to use part of the bandwidth, expressed
+ * in "penalty_rate" packets per second, with "penalty_burst" burst
+ */
+static bool sfb_rate_limit(struct sk_buff *skb, struct sfb_sched_data *q)
+{
+	if (q->penalty_rate == 0 || q->penalty_burst == 0)
+		return true;
+
+	if (q->tokens_avail < 1) {
+		unsigned long age = min(10UL * HZ, jiffies - q->token_time);
+
+		q->tokens_avail = (age * q->penalty_rate) / HZ;
+		if (q->tokens_avail > q->penalty_burst)
+			q->tokens_avail = q->penalty_burst;
+		q->token_time = jiffies;
+		if (q->tokens_avail < 1)
+			return true;
 	}
 
-        return jhash_2words(h, h2, q->perturbation[filter][hash]) %
-                q->numbuckets;
-
+	q->tokens_avail--;
+	return false;
 }
 
-static inline u16 prob_plus(u16 p1, u16 p2)
+static bool sfb_classify(struct sk_buff *skb, struct sfb_sched_data *q,
+			 int *qerr, u32 *salt)
 {
-        return p1 < SFB_MAX_PROB - p2 ? p1 + p2 : SFB_MAX_PROB;
+	struct tcf_result res;
+	int result;
+
+	result = tc_classify(skb, q->filter_list, &res);
+	if (result >= 0) {
+#ifdef CONFIG_NET_CLS_ACT
+		switch (result) {
+		case TC_ACT_STOLEN:
+		case TC_ACT_QUEUED:
+			*qerr = NET_XMIT_SUCCESS | __NET_XMIT_STOLEN;
+		case TC_ACT_SHOT:
+			return false;
+		}
+#endif
+		*salt = TC_H_MIN(res.classid);
+		return true;
+	}
+	return false;
 }
 
-static inline u16 prob_minus(u16 p1, u16 p2)
-{
-        return p1 > p2 ? p1 - p2 : 0;
-}
-
-static void
-increment_one_qlen(struct sk_buff *skb, int filter, struct sfb_sched_data *q)
-{
-        int i;
-        for(i = 0; i < q->numhashes; i++) {
-                unsigned hash = sfb_hash(skb, i, filter, q);
-                if(q->buckets[filter][i][hash].qlen < 0xFFFF)
-                        q->buckets[filter][i][hash].qlen++;
-        }
-}
-
-static void
-increment_qlen(struct sk_buff *skb, struct sfb_sched_data *q)
-{
-        increment_one_qlen(skb, q->filter, q);
-        if(q->double_buffering)
-                increment_one_qlen(skb, !q->filter, q);
-}
-
-static void
-decrement_one_qlen(struct sk_buff *skb, int filter, struct sfb_sched_data *q)
-{
-        int i;
-        for(i = 0; i < q->numhashes; i++) {
-                unsigned hash = sfb_hash(skb, i, filter, q);
-                if(q->buckets[filter][i][hash].qlen > 0)
-                    q->buckets[filter][i][hash].qlen--;
-        }
-}
-
-static void
-decrement_qlen(struct sk_buff *skb, struct sfb_sched_data *q)
-{
-        decrement_one_qlen(skb, q->filter, q);
-        if(q->double_buffering)
-                decrement_one_qlen(skb, !q->filter, q);
-}
-
-static inline void
-decrement_prob(int filter, int bucket, unsigned hash, struct sfb_sched_data *q)
-{
-        q->buckets[filter][bucket][hash].pm =
-                prob_minus(q->buckets[filter][bucket][hash].pm,
-                           q->decrement);
-}
-
-static inline void
-increment_prob(int filter, int bucket, unsigned hash, struct sfb_sched_data *q)
-{
-        q->buckets[filter][bucket][hash].pm =
-                prob_plus(q->buckets[filter][bucket][hash].pm,
-                           q->increment);
-}
-
-static void
-zero_all_buckets(int filter, struct sfb_sched_data *q)
-{
-        int i, j;
-        for(i = 0; i < MAXHASHES; i++) {
-                for(j = 0; j < MAXBUCKETS; j++) {
-                        q->buckets[filter][i][j].pm = 0;
-                        q->buckets[filter][i][j].qlen = 0;
-                }
-        }
-}
-
-static void
-compute_qlen(u16 *qlen_r, u16 *prob_r, struct sfb_sched_data *q)
-{
-        int i, j, filter = q->filter;
-        u16 qlen = 0, prob = 0;
-        for(i = 0; i < q->numhashes; i++) {
-                for(j = 0; j < q->numbuckets; j++) {
-                        if(qlen < q->buckets[filter][i][j].qlen)
-                                qlen = q->buckets[filter][i][j].qlen;
-                        if(qlen < q->buckets[filter][i][j].pm)
-                                prob = q->buckets[filter][i][j].pm;
-                }
-        }
-        *qlen_r = qlen;
-        *prob_r = prob;
-}
-
-
-static void
-init_perturbation(int filter, struct sfb_sched_data *q)
-{
-        get_random_bytes(q->perturbation[filter],
-                         sizeof(q->perturbation[filter]));
-}
-
-static void
-swap_buffers(struct sfb_sched_data *q)
-{
-        q->filter = !q->filter;
-        zero_all_buckets(!q->filter, q);
-        init_perturbation(!q->filter, q);
-        q->double_buffering = 0;
-}
-
-static int rate_limit(struct sk_buff *skb, psched_time_t now,
-                      struct sfb_sched_data* q)
-{
-        if(q->penalty_rate == 0 || q->penalty_burst == 0)
-                return 1;
-
-        if(q->tokens_avail < 1) {
-                psched_tdiff_t age;
-
-                age = psched_tdiff_bounded(now, q->token_time,
-                                           256 * PSCHED_TICKS_PER_SEC);
-                q->tokens_avail =
-                        (age * q->penalty_rate / PSCHED_TICKS_PER_SEC);
-                if(q->tokens_avail > q->penalty_burst)
-                        q->tokens_avail = q->penalty_burst;
-                q->token_time = now;
-                if(q->tokens_avail < 1)
-                        return 1;
-        }
-
-        q->tokens_avail--;
-        return 0;
-}
-
-static int sfb_enqueue(struct sk_buff *skb, struct Qdisc* sch)
+static int sfb_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 {
 
 	struct sfb_sched_data *q = qdisc_priv(sch);
-        struct Qdisc *child = q->qdisc;
-        psched_time_t now;
-        int filter;
-        u16 minprob = SFB_MAX_PROB;
-        u16 minqlen = (u16)(~0);
-        u32 r;
-        int ret, i;
+	struct Qdisc *child = q->qdisc;
+	int i;
+	u32 p_min = ~0;
+	u32 minqlen = ~0;
+	u32 r, slot, salt, sfbhash;
+	int ret = NET_XMIT_SUCCESS | __NET_XMIT_BYPASS;
 
-        now = psched_get_time();
+	if (q->rehash_interval > 0) {
+		unsigned long limit = q->rehash_time + q->rehash_interval;
 
-        if(q->rehash_interval > 0) {
-                psched_tdiff_t age;
-                age = psched_tdiff_bounded(now, q->rehash_time,
-                                           q->rehash_interval *
-                                           PSCHED_TICKS_PER_SEC);
-                if(unlikely(age >= q->rehash_interval * PSCHED_TICKS_PER_SEC)) {
-                        swap_buffers(q);
-                        q->rehash_time = now;
-                }
-                if(unlikely(!q->double_buffering && q->db_interval > 0 &&
-                            age >= (q->rehash_interval - q->db_interval) *
-                            PSCHED_TICKS_PER_SEC))
-                        q->double_buffering = 1;
-        }
+		if (unlikely(time_after(jiffies, limit))) {
+			sfb_swap_slot(q);
+			q->rehash_time = jiffies;
+		} else if (unlikely(!q->double_buffering && q->warmup_time > 0 &&
+				    time_after(jiffies, limit - q->warmup_time))) {
+			q->double_buffering = true;
+		}
+	}
 
-        filter = q->filter;
+	if (q->filter_list) {
+		/* If using external classifiers, get result and record it. */
+		if (!sfb_classify(skb, q, &ret, &salt))
+			goto other_drop;
+	} else {
+		salt = skb_get_rxhash(skb);
+	}
 
-        for(i = 0; i < q->numhashes; i++) {
-                unsigned hash = sfb_hash(skb, i, filter, q);
-                if(q->buckets[filter][i][hash].qlen == 0)
-                        decrement_prob(filter, i, hash, q);
-                else if(unlikely(q->buckets[filter][i][hash].qlen >= q->target))
-                        increment_prob(filter, i, hash, q);
-                if(minqlen > q->buckets[filter][i][hash].qlen)
-                        minqlen = q->buckets[filter][i][hash].qlen;
-                if(minprob > q->buckets[filter][i][hash].pm)
-                        minprob = q->buckets[filter][i][hash].pm;
-        }
+	slot = q->slot;
 
-        if(q->double_buffering) {
-                for(i = 0; i < q->numhashes; i++) {
-                        unsigned hash = sfb_hash(skb, i, !filter, q);
-                        if(q->buckets[!filter][i][hash].qlen == 0)
-                                decrement_prob(!filter, i, hash, q);
-                        else if(unlikely(q->buckets[!filter][i][hash].qlen >=
-                                         q->target))
-                                increment_prob(!filter, i, hash, q);
-                }
-        }
-        
-        if(unlikely(minqlen >= q->max || sch->q.qlen >= q->limit)) {
-                sch->qstats.overlimits++;
-                if(likely(minqlen >= q->max))
-                        q->bucketdrop++;
-                else
-                        q->queuedrop++;
-                goto drop;
-        }
+	sfbhash = jhash_1word(salt, q->bins[slot].perturbation);
+	if (!sfbhash)
+		sfbhash = 1;
+	sfb_skb_cb(skb)->hashes[slot] = sfbhash;
 
-        if(unlikely(minprob >= SFB_MAX_PROB)) {
-                /* Inelastic flow */
-                if(rate_limit(skb, now, q)) {
-                        sch->qstats.overlimits++;
-                        q->penaltydrop++;
-                        goto drop;
-                }
-                goto enqueue;
-        }
+	for (i = 0; i < SFB_LEVELS; i++) {
+		u32 hash = sfbhash & SFB_BUCKET_MASK;
+		struct sfb_bucket *b = &q->bins[slot].bins[i][hash];
 
-        r = net_random() & SFB_MAX_PROB;
+		sfbhash >>= SFB_BUCKET_SHIFT;
+		if (b->qlen == 0)
+			decrement_prob(b, q);
+		else if (b->qlen >= q->bin_size)
+			increment_prob(b, q);
+		if (minqlen > b->qlen)
+			minqlen = b->qlen;
+		if (p_min > b->p_mark)
+			p_min = b->p_mark;
+	}
 
-        if(unlikely(r < minprob)) {
-                if(unlikely(minprob > SFB_MAX_PROB / 2)) {
-                        /* If we're marking that many packets, then either
-                           this flow is unresponsive, or we're badly congested.
-                           In either case, we want to start dropping packets. */
-                        if(r < (minprob - SFB_MAX_PROB / 2) * 2) {
-                                q->earlydrop++;
-                                goto drop;
-                        }
-                }
-                if(INET_ECN_set_ce(skb)) {
-                        q->marked++;
-                } else {
-                        q->earlydrop++;
-                        goto drop;
-                }
-        }
+	slot ^= 1;
+	sfb_skb_cb(skb)->hashes[slot] = 0;
 
- enqueue:
-        ret = qdisc_enqueue(skb, child);
-        if(likely(ret == NET_XMIT_SUCCESS)) {
-                sch->q.qlen++;
-                increment_qlen(skb, q);
-		sch->bstats.packets++;
-		sch->bstats.bytes += skb->len;
-                sch->qstats.backlog += skb->len;
-        } else if(net_xmit_drop_count(ret)) {
-                q->queuedrop++;
-                sch->qstats.drops++;
-        }
-        return ret;
+	if (unlikely(minqlen >= q->max || sch->q.qlen >= q->limit)) {
+		sch->qstats.overlimits++;
+		if (minqlen >= q->max)
+			q->stats.bucketdrop++;
+		else
+			q->stats.queuedrop++;
+		goto drop;
+	}
 
- drop:
-        qdisc_drop(skb, sch);
-        return NET_XMIT_CN;
+	if (unlikely(p_min >= SFB_MAX_PROB)) {
+		/* Inelastic flow */
+		if (q->double_buffering) {
+			sfbhash = jhash_1word(salt, q->bins[slot].perturbation);
+			if (!sfbhash)
+				sfbhash = 1;
+			sfb_skb_cb(skb)->hashes[slot] = sfbhash;
+
+			for (i = 0; i < SFB_LEVELS; i++) {
+				u32 hash = sfbhash & SFB_BUCKET_MASK;
+				struct sfb_bucket *b = &q->bins[slot].bins[i][hash];
+
+				sfbhash >>= SFB_BUCKET_SHIFT;
+				if (b->qlen == 0)
+					decrement_prob(b, q);
+				else if (b->qlen >= q->bin_size)
+					increment_prob(b, q);
+			}
+		}
+		if (sfb_rate_limit(skb, q)) {
+			sch->qstats.overlimits++;
+			q->stats.penaltydrop++;
+			goto drop;
+		}
+		goto enqueue;
+	}
+
+	r = net_random() & SFB_MAX_PROB;
+
+	if (unlikely(r < p_min)) {
+		if (unlikely(p_min > SFB_MAX_PROB / 2)) {
+			/* If we're marking that many packets, then either
+			 * this flow is unresponsive, or we're badly congested.
+			 * In either case, we want to start dropping packets.
+			 */
+			if (r < (p_min - SFB_MAX_PROB / 2) * 2) {
+				q->stats.earlydrop++;
+				goto drop;
+			}
+		}
+		if (INET_ECN_set_ce(skb)) {
+			q->stats.marked++;
+		} else {
+			q->stats.earlydrop++;
+			goto drop;
+		}
+	}
+
+enqueue:
+	ret = qdisc_enqueue(skb, child);
+	if (likely(ret == NET_XMIT_SUCCESS)) {
+		sch->q.qlen++;
+		increment_qlen(skb, q);
+	} else if (net_xmit_drop_count(ret)) {
+		q->stats.childdrop++;
+		sch->qstats.drops++;
+	}
+	return ret;
+
+drop:
+	qdisc_drop(skb, sch);
+	return NET_XMIT_CN;
+other_drop:
+	if (ret & __NET_XMIT_BYPASS)
+		sch->qstats.drops++;
+	kfree_skb(skb);
+	return ret;
 }
 
-static struct sk_buff *sfb_dequeue(struct Qdisc* sch)
+static struct sk_buff *sfb_dequeue(struct Qdisc *sch)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
-        struct Qdisc *child = q->qdisc;
+	struct Qdisc *child = q->qdisc;
 	struct sk_buff *skb;
 
 	skb = child->dequeue(q->qdisc);
 
-        if(skb) {
-                sch->q.qlen--;
-		sch->qstats.backlog -= skb->len;
-                decrement_qlen(skb, q);
-        }
+	if (skb) {
+		qdisc_bstats_update(sch, skb);
+		sch->q.qlen--;
+		decrement_qlen(skb, q);
+	}
 
-        return skb;
+	return skb;
 }
 
-static struct sk_buff *sfb_peek(struct Qdisc* sch)
+static struct sk_buff *sfb_peek(struct Qdisc *sch)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
 	struct Qdisc *child = q->qdisc;
@@ -378,122 +437,94 @@ static struct sk_buff *sfb_peek(struct Qdisc* sch)
 
 /* No sfb_drop -- impossible since the child doesn't return the dropped skb. */
 
-static void sfb_reset(struct Qdisc* sch)
+static void sfb_reset(struct Qdisc *sch)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
 
 	qdisc_reset(q->qdisc);
-        sch->q.qlen = 0;
-        sch->qstats.backlog = 0;
-        q->filter = 0;
-        q->double_buffering = 0;
-        zero_all_buckets(0, q);
-        zero_all_buckets(1, q);
-        init_perturbation(q->filter, q);
+	sch->q.qlen = 0;
+	q->slot = 0;
+	q->double_buffering = false;
+	sfb_zero_all_buckets(q);
+	sfb_init_perturbation(0, q);
 }
 
 static void sfb_destroy(struct Qdisc *sch)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
+
+	tcf_destroy_chain(&q->filter_list);
 	qdisc_destroy(q->qdisc);
-        q->qdisc = NULL;
 }
 
 static const struct nla_policy sfb_policy[TCA_SFB_MAX + 1] = {
 	[TCA_SFB_PARMS]	= { .len = sizeof(struct tc_sfb_qopt) },
 };
 
+static const struct tc_sfb_qopt sfb_default_ops = {
+	.rehash_interval = 600 * MSEC_PER_SEC,
+	.warmup_time = 60 * MSEC_PER_SEC,
+	.limit = 0,
+	.max = 25,
+	.bin_size = 20,
+	.increment = (SFB_MAX_PROB + 500) / 1000, /* 0.1 % */
+	.decrement = (SFB_MAX_PROB + 3000) / 6000,
+	.penalty_rate = 10,
+	.penalty_burst = 20,
+};
+
 static int sfb_change(struct Qdisc *sch, struct nlattr *opt)
 {
-        struct sfb_sched_data *q = qdisc_priv(sch);
-	struct Qdisc *child = NULL;
+	struct sfb_sched_data *q = qdisc_priv(sch);
+	struct Qdisc *child;
 	struct nlattr *tb[TCA_SFB_MAX + 1];
-	struct tc_sfb_qopt *ctl;
-        u16 numhashes, numbuckets, rehash_interval, db_interval;
-        u8 hash_type;
-        u32 limit;
-        u16 max, target;
-        u16 increment, decrement;
-        u32 penalty_rate, penalty_burst;
+	const struct tc_sfb_qopt *ctl = &sfb_default_ops;
+	u32 limit;
 	int err;
 
-	if (opt == NULL) {
-                numhashes = 6;
-                numbuckets = 32;
-                hash_type = SFB_HASH_FLOW;
-                rehash_interval = 600;
-                db_interval = 60;
-                limit = 0;
-                max = 25;
-                target = 20;
-                increment = (SFB_MAX_PROB + 1000) / 2000;
-                decrement = (SFB_MAX_PROB + 10000) / 20000;
-                penalty_rate = 10;
-                penalty_burst = 20;
-        } else {
-                err = nla_parse_nested(tb, TCA_SFB_MAX, opt, sfb_policy);
-		if(err < 0)
-                        return -EINVAL;
+	if (opt) {
+		err = nla_parse_nested(tb, TCA_SFB_MAX, opt, sfb_policy);
+		if (err < 0)
+			return -EINVAL;
 
-                if (tb[TCA_SFB_PARMS] == NULL)
-		    return -EINVAL;
+		if (tb[TCA_SFB_PARMS] == NULL)
+			return -EINVAL;
 
-                ctl = nla_data(tb[TCA_SFB_PARMS]);
-
-                numhashes = ctl->numhashes;
-                numbuckets = ctl->numbuckets;
-                rehash_interval = ctl->rehash_interval;
-                db_interval = ctl->db_interval;
-                hash_type = ctl->hash_type;
-                limit = ctl->limit;
-                max = ctl->max;
-                target = ctl->target;
-                increment = ctl->increment;
-                decrement = ctl->decrement;
-                penalty_rate = ctl->penalty_rate;
-                penalty_burst = ctl->penalty_burst;
-        }
-
-        if(numbuckets <= 0 || numbuckets > MAXBUCKETS)
-                numbuckets = MAXBUCKETS;
-        if(numhashes <= 0 || numhashes > MAXHASHES)
-                numhashes = MAXHASHES;
-        if(hash_type >= __SFB_HASH_MAX)
-                hash_type = SFB_HASH_FLOW;
-        if(limit == 0)
-                limit = qdisc_dev(sch)->tx_queue_len;
-	if(limit == 0)
-		limit = 1;
-
-        child = fifo_create_dflt(sch, &pfifo_qdisc_ops, limit);
-        if(IS_ERR(child))
-		return PTR_ERR(child);
-                
-        sch_tree_lock(sch);
-	if(child) {
-		qdisc_tree_decrease_qlen(q->qdisc, q->qdisc->q.qlen);
-		qdisc_destroy(q->qdisc);
-		q->qdisc = child;
+		ctl = nla_data(tb[TCA_SFB_PARMS]);
 	}
 
-        q->numhashes = numhashes;
-        q->numbuckets = numbuckets;
-        q->rehash_interval = rehash_interval;
-        q->db_interval = db_interval;
-        q->hash_type = hash_type;
-        q->limit = limit;
-        q->increment = increment;
-        q->decrement = decrement;
-        q->max = max;
-        q->target = target;
-        q->penalty_rate = penalty_rate;
-        q->penalty_burst = penalty_burst;
+	limit = ctl->limit;
+	if (limit == 0)
+		limit = max_t(u32, qdisc_dev(sch)->tx_queue_len, 1);
 
-        q->filter = 0;
-        q->double_buffering = 0;
-        zero_all_buckets(0, q);
-        zero_all_buckets(1, q);
-        init_perturbation(q->filter, q);
+	child = fifo_create_dflt(sch, &pfifo_qdisc_ops, limit);
+	if (IS_ERR(child))
+		return PTR_ERR(child);
+
+	sch_tree_lock(sch);
+
+	qdisc_tree_decrease_qlen(q->qdisc, q->qdisc->q.qlen);
+	qdisc_destroy(q->qdisc);
+	q->qdisc = child;
+
+	q->rehash_interval = msecs_to_jiffies(ctl->rehash_interval);
+	q->warmup_time = msecs_to_jiffies(ctl->warmup_time);
+	q->rehash_time = jiffies;
+	q->limit = limit;
+	q->increment = ctl->increment;
+	q->decrement = ctl->decrement;
+	q->max = ctl->max;
+	q->bin_size = ctl->bin_size;
+	q->penalty_rate = ctl->penalty_rate;
+	q->penalty_burst = ctl->penalty_burst;
+	q->tokens_avail = ctl->penalty_burst;
+	q->token_time = jiffies;
+
+	q->slot = 0;
+	q->double_buffering = false;
+	sfb_zero_all_buckets(q);
+	sfb_init_perturbation(0, q);
+	sfb_init_perturbation(1, q);
 
 	sch_tree_unlock(sch);
 
@@ -502,30 +533,29 @@ static int sfb_change(struct Qdisc *sch, struct nlattr *opt)
 
 static int sfb_init(struct Qdisc *sch, struct nlattr *opt)
 {
-      	struct sfb_sched_data *q = qdisc_priv(sch);
+	struct sfb_sched_data *q = qdisc_priv(sch);
 
-        q->qdisc = &noop_qdisc;
-        return sfb_change(sch, opt);
+	q->qdisc = &noop_qdisc;
+	return sfb_change(sch, opt);
 }
 
 static int sfb_dump(struct Qdisc *sch, struct sk_buff *skb)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
-	struct nlattr *opts = NULL;
-	struct tc_sfb_qopt opt = { .numhashes = q->numhashes,
-                                   .numbuckets = q->numbuckets,
-                                   .rehash_interval = q->rehash_interval,
-                                   .db_interval = q->db_interval,
-                                   .hash_type = q->hash_type,
-                                   .limit = q->limit,
-                                   .max = q->max,
-                                   .target = q->target,
-                                   .increment = q->increment,
-                                   .decrement = q->decrement,
-                                   .penalty_rate = q->penalty_rate,
-                                   .penalty_burst = q->penalty_burst,
-        };
+	struct nlattr *opts;
+	struct tc_sfb_qopt opt = {
+		.rehash_interval = jiffies_to_msecs(q->rehash_interval),
+		.warmup_time = jiffies_to_msecs(q->warmup_time),
+		.limit = q->limit,
+		.max = q->max,
+		.bin_size = q->bin_size,
+		.increment = q->increment,
+		.decrement = q->decrement,
+		.penalty_rate = q->penalty_rate,
+		.penalty_burst = q->penalty_burst,
+	};
 
+	sch->qstats.backlog = q->qdisc->qstats.backlog;
 	opts = nla_nest_start(skb, TCA_OPTIONS);
 	NLA_PUT(skb, TCA_SFB_PARMS, sizeof(opt), &opt);
 	return nla_nest_end(skb, opts);
@@ -539,21 +569,23 @@ static int sfb_dump_stats(struct Qdisc *sch, struct gnet_dump *d)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
 	struct tc_sfb_xstats st = {
-		.earlydrop = q->earlydrop,
-		.penaltydrop = q->penaltydrop,
-		.bucketdrop = q->bucketdrop,
-		.marked = q->marked
+		.earlydrop = q->stats.earlydrop,
+		.penaltydrop = q->stats.penaltydrop,
+		.bucketdrop = q->stats.bucketdrop,
+		.queuedrop = q->stats.queuedrop,
+		.childdrop = q->stats.childdrop,
+		.marked = q->stats.marked,
 	};
 
-        compute_qlen(&st.maxqlen, &st.maxprob, q);
+	st.maxqlen = sfb_compute_qlen(&st.maxprob, &st.avgprob, q);
 
 	return gnet_stats_copy_app(d, &st, sizeof(st));
 }
-        
+
 static int sfb_dump_class(struct Qdisc *sch, unsigned long cl,
 			  struct sk_buff *skb, struct tcmsg *tcm)
 {
-        return -ENOSYS;
+	return -ENOSYS;
 }
 
 static int sfb_graft(struct Qdisc *sch, unsigned long arg, struct Qdisc *new,
@@ -565,7 +597,8 @@ static int sfb_graft(struct Qdisc *sch, unsigned long arg, struct Qdisc *new,
 		new = &noop_qdisc;
 
 	sch_tree_lock(sch);
-	*old = xchg(&q->qdisc, new);
+	*old = q->qdisc;
+	q->qdisc = new;
 	qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
 	qdisc_reset(*old);
 	sch_tree_unlock(sch);
@@ -575,6 +608,7 @@ static int sfb_graft(struct Qdisc *sch, unsigned long arg, struct Qdisc *new,
 static struct Qdisc *sfb_leaf(struct Qdisc *sch, unsigned long arg)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
+
 	return q->qdisc;
 }
 
@@ -585,7 +619,6 @@ static unsigned long sfb_get(struct Qdisc *sch, u32 classid)
 
 static void sfb_put(struct Qdisc *sch, unsigned long arg)
 {
-	return;
 }
 
 static int sfb_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
@@ -611,8 +644,23 @@ static void sfb_walk(struct Qdisc *sch, struct qdisc_walker *walker)
 	}
 }
 
-static struct Qdisc_class_ops sfb_class_ops =
+static struct tcf_proto **sfb_find_tcf(struct Qdisc *sch, unsigned long cl)
 {
+	struct sfb_sched_data *q = qdisc_priv(sch);
+
+	if (cl)
+		return NULL;
+	return &q->filter_list;
+}
+
+static unsigned long sfb_bind(struct Qdisc *sch, unsigned long parent,
+			      u32 classid)
+{
+	return 0;
+}
+
+
+static const struct Qdisc_class_ops sfb_class_ops = {
 	.graft		=	sfb_graft,
 	.leaf		=	sfb_leaf,
 	.get		=	sfb_get,
@@ -620,10 +668,13 @@ static struct Qdisc_class_ops sfb_class_ops =
 	.change		=	sfb_change_class,
 	.delete		=	sfb_delete,
 	.walk		=	sfb_walk,
+	.tcf_chain	=	sfb_find_tcf,
+	.bind_tcf	=	sfb_bind,
+	.unbind_tcf	=	sfb_put,
 	.dump		=	sfb_dump_class,
 };
 
-struct Qdisc_ops sfb_qdisc_ops = {
+static struct Qdisc_ops sfb_qdisc_ops __read_mostly = {
 	.id		=	"sfb",
 	.priv_size	=	sizeof(struct sfb_sched_data),
 	.cl_ops		=	&sfb_class_ops,
@@ -654,4 +705,5 @@ module_exit(sfb_module_exit)
 
 MODULE_DESCRIPTION("Stochastic Fair Blue queue discipline");
 MODULE_AUTHOR("Juliusz Chroboczek");
+MODULE_AUTHOR("Eric Dumazet");
 MODULE_LICENSE("GPL");

@@ -2,13 +2,9 @@
 #define LINUX_HARDIRQ_H
 
 #include <linux/preempt.h>
-#ifdef CONFIG_PREEMPT
-#include <linux/smp_lock.h>
-#endif
 #include <linux/lockdep.h>
 #include <linux/ftrace_irq.h>
 #include <asm/hardirq.h>
-#include <asm/system.h>
 
 /*
  * We put the hardirq and softirq counter into the preemption
@@ -98,10 +94,8 @@
 #define in_nmi()	(preempt_count() & NMI_MASK)
 
 #if defined(CONFIG_PREEMPT)
-# define PREEMPT_INATOMIC_BASE kernel_locked()
 # define PREEMPT_CHECK_OFFSET 1
 #else
-# define PREEMPT_INATOMIC_BASE 0
 # define PREEMPT_CHECK_OFFSET 0
 #endif
 
@@ -112,7 +106,7 @@
  * used in the general case to determine whether sleeping is possible.
  * Do not use in_atomic() in driver code.
  */
-#define in_atomic()	((preempt_count() & ~PREEMPT_ACTIVE) != PREEMPT_INATOMIC_BASE)
+#define in_atomic()	((preempt_count() & ~PREEMPT_ACTIVE) != 0)
 
 /*
  * Check whether we were atomic before we did preempt_disable():

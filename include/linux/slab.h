@@ -105,9 +105,6 @@ void kmem_cache_destroy(struct kmem_cache *);
 int kmem_cache_shrink(struct kmem_cache *);
 void kmem_cache_free(struct kmem_cache *, void *);
 unsigned int kmem_cache_size(struct kmem_cache *);
-const char *kmem_cache_name(struct kmem_cache *);
-int kern_ptr_validate(const void *ptr, unsigned long size);
-int kmem_ptr_validate(struct kmem_cache *cachep, const void *ptr);
 
 /*
  * Please use this macro to create slab caches. Simply specify the
@@ -268,7 +265,8 @@ static inline void *kmem_cache_alloc_node(struct kmem_cache *cachep,
  * allocator where we care about the real place the memory allocation
  * request comes from.
  */
-#if defined(CONFIG_DEBUG_SLAB) || defined(CONFIG_SLUB)
+#if defined(CONFIG_DEBUG_SLAB) || defined(CONFIG_SLUB) || \
+	(defined(CONFIG_SLAB) && defined(CONFIG_TRACING))
 extern void *__kmalloc_track_caller(size_t, gfp_t, unsigned long);
 #define kmalloc_track_caller(size, flags) \
 	__kmalloc_track_caller(size, flags, _RET_IP_)
@@ -286,7 +284,8 @@ extern void *__kmalloc_track_caller(size_t, gfp_t, unsigned long);
  * standard allocator where we care about the real place the memory
  * allocation request comes from.
  */
-#if defined(CONFIG_DEBUG_SLAB) || defined(CONFIG_SLUB)
+#if defined(CONFIG_DEBUG_SLAB) || defined(CONFIG_SLUB) || \
+	(defined(CONFIG_SLAB) && defined(CONFIG_TRACING))
 extern void *__kmalloc_node_track_caller(size_t, gfp_t, int, unsigned long);
 #define kmalloc_node_track_caller(size, flags, node) \
 	__kmalloc_node_track_caller(size, flags, node, \
@@ -311,23 +310,6 @@ static inline void *kmem_cache_zalloc(struct kmem_cache *k, gfp_t flags)
 	return kmem_cache_alloc(k, flags | __GFP_ZERO);
 }
 
-/*
- * NOTE: no new callers of this function should be implemented!
- * All memory allocations should be failable whenever possible.
- */
-static inline void *kmem_cache_zalloc_nofail(struct kmem_cache *k, gfp_t flags)
-{
-	void *ret;
-
-	for (;;) {
-		ret = kmem_cache_zalloc(k, flags);
-		if (ret)
-			return ret;
-		WARN_ON_ONCE(get_order(kmem_cache_size(k)) >
-						PAGE_ALLOC_COSTLY_ORDER);
-	}
-}
-
 /**
  * kzalloc - allocate memory. The memory is set to zero.
  * @size: how many bytes of memory are required.
@@ -347,57 +329,6 @@ static inline void *kzalloc(size_t size, gfp_t flags)
 static inline void *kzalloc_node(size_t size, gfp_t flags, int node)
 {
 	return kmalloc_node(size, flags | __GFP_ZERO, node);
-}
-
-/**
- * kmalloc_nofail - infinitely loop until kmalloc() succeeds.
- * @size: how many bytes of memory are required.
- * @flags: the type of memory to allocate (see kmalloc).
- *
- * NOTE: no new callers of this function should be implemented!
- * All memory allocations should be failable whenever possible.
- */
-static inline void *kmalloc_nofail(size_t size, gfp_t flags)
-{
-	void *ret;
-
-	for (;;) {
-		ret = kmalloc(size, flags);
-		if (ret)
-			return ret;
-		WARN_ON_ONCE(get_order(size) > PAGE_ALLOC_COSTLY_ORDER);
-	}
-}
-
-/**
- * kcalloc_nofail - infinitely loop until kcalloc() succeeds.
- * @n: number of elements.
- * @size: element size.
- * @flags: the type of memory to allocate (see kcalloc).
- *
- * NOTE: no new callers of this function should be implemented!
- * All memory allocations should be failable whenever possible.
- */
-static inline void *kcalloc_nofail(size_t n, size_t size, gfp_t flags)
-{
-	void *ret;
-
-	for (;;) {
-		ret = kcalloc(n, size, flags);
-		if (ret)
-			return ret;
-		WARN_ON_ONCE(get_order(size) > PAGE_ALLOC_COSTLY_ORDER);
-	}
-}
-
-/**
- * kzalloc_nofail - infinitely loop until kzalloc() succeeds.
- * @size: how many bytes of memory are required.
- * @flags: the type of memory to allocate (see kzalloc).
- */
-static inline void *kzalloc_nofail(size_t size, gfp_t flags)
-{
-	return kmalloc_nofail(size, flags | __GFP_ZERO);
 }
 
 void __init kmem_cache_init_late(void);

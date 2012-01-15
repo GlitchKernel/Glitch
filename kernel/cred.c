@@ -1,4 +1,4 @@
-/* Task credentials management - see Documentation/credentials.txt
+/* Task credentials management - see Documentation/security/credentials.txt
  *
  * Copyright (C) 2008 Red Hat, Inc. All Rights Reserved.
  * Written by David Howells (dhowells@redhat.com)
@@ -22,10 +22,6 @@
 #define kdebug(FMT, ...) \
 	printk("[%-5.5s%5u] "FMT"\n", current->comm, current->pid ,##__VA_ARGS__)
 #else
-static inline __attribute__((format(printf, 1, 2)))
-void no_printk(const char *fmt, ...)
-{
-}
 #define kdebug(FMT, ...) \
 	no_printk("[%-5.5s%5u] "FMT"\n", current->comm, current->pid ,##__VA_ARGS__)
 #endif
@@ -39,7 +35,7 @@ static struct kmem_cache *cred_jar;
 static struct thread_group_cred init_tgcred = {
 	.usage	= ATOMIC_INIT(2),
 	.tgid	= 0,
-	.lock	= SPIN_LOCK_UNLOCKED,
+	.lock	= __SPIN_LOCK_UNLOCKED(init_cred.tgcred.lock),
 };
 #endif
 
@@ -53,11 +49,12 @@ struct cred init_cred = {
 	.magic			= CRED_MAGIC,
 #endif
 	.securebits		= SECUREBITS_DEFAULT,
-	.cap_inheritable	= CAP_INIT_INH_SET,
+	.cap_inheritable	= CAP_EMPTY_SET,
 	.cap_permitted		= CAP_FULL_SET,
-	.cap_effective		= CAP_INIT_EFF_SET,
-	.cap_bset		= CAP_INIT_BSET,
+	.cap_effective		= CAP_FULL_SET,
+	.cap_bset		= CAP_FULL_SET,
 	.user			= INIT_USER,
+	.user_ns		= &init_user_ns,
 	.group_info		= &init_groups,
 #ifdef CONFIG_KEYS
 	.tgcred			= &init_tgcred,
@@ -329,7 +326,7 @@ EXPORT_SYMBOL(prepare_creds);
 
 /*
  * Prepare credentials for current to perform an execve()
- * - The caller must hold current->cred_guard_mutex
+ * - The caller must hold ->cred_guard_mutex
  */
 struct cred *prepare_exec_creds(void)
 {
@@ -388,8 +385,6 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
 	struct cred *new;
 	int ret;
 
-	mutex_init(&p->cred_guard_mutex);
-
 	if (
 #ifdef CONFIG_KEYS
 		!p->cred->thread_keyring &&
@@ -415,6 +410,11 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
 		if (ret < 0)
 			goto error_put;
 	}
+
+	/* cache user_ns in cred.  Doesn't need a refcount because it will
+	 * stay pinned by cred->user
+	 */
+	new->user_ns = new->user->user_ns;
 
 #ifdef CONFIG_KEYS
 	/* new threads get their own thread keyrings if their parent already

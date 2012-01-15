@@ -54,11 +54,11 @@ EXPORT_SYMBOL(irq_stat);
 
 static struct softirq_action softirq_vec[NR_SOFTIRQS] __cacheline_aligned_in_smp;
 
-static DEFINE_PER_CPU(struct task_struct *, ksoftirqd);
+DEFINE_PER_CPU(struct task_struct *, ksoftirqd);
 
 char *softirq_to_name[NR_SOFTIRQS] = {
 	"HI", "TIMER", "NET_TX", "NET_RX", "BLOCK", "BLOCK_IOPOLL",
-	"TASKLET", "SCHED", "HRTIMER",	"RCU"
+	"TASKLET", "SCHED", "HRTIMER", "RCU"
 };
 
 /*
@@ -67,10 +67,10 @@ char *softirq_to_name[NR_SOFTIRQS] = {
  * to the pending events, so lets the scheduler to balance
  * the softirq load for us.
  */
-void wakeup_softirqd(void)
+static void wakeup_softirqd(void)
 {
 	/* Interrupts are disabled: no need to stop preemption */
-	struct task_struct *tsk = __get_cpu_var(ksoftirqd);
+	struct task_struct *tsk = __this_cpu_read(ksoftirqd);
 
 	if (tsk && tsk->state != TASK_RUNNING)
 		wake_up_process(tsk);
@@ -229,18 +229,20 @@ restart:
 
 	do {
 		if (pending & 1) {
+			unsigned int vec_nr = h - softirq_vec;
 			int prev_count = preempt_count();
-			kstat_incr_softirqs_this_cpu(h - softirq_vec);
 
-			trace_softirq_entry(h, softirq_vec);
+			kstat_incr_softirqs_this_cpu(vec_nr);
+
+			trace_softirq_entry(vec_nr);
 			h->action(h);
-			trace_softirq_exit(h, softirq_vec);
+			trace_softirq_exit(vec_nr);
 			if (unlikely(prev_count != preempt_count())) {
-				printk(KERN_ERR "huh, entered softirq %td %s %p"
+				printk(KERN_ERR "huh, entered softirq %u %s %p"
 				       "with preempt_count %08x,"
-				       " exited with %08x?\n", h - softirq_vec,
-				       softirq_to_name[h - softirq_vec],
-				       h->action, prev_count, preempt_count());
+				       " exited with %08x?\n", vec_nr,
+				       softirq_to_name[vec_nr], h->action,
+				       prev_count, preempt_count());
 				preempt_count() = prev_count;
 			}
 
@@ -309,9 +311,29 @@ void irq_enter(void)
 }
 
 #ifdef __ARCH_IRQ_EXIT_IRQS_DISABLED
-# define invoke_softirq()	__do_softirq()
+static inline void invoke_softirq(void)
+{
+	if (!force_irqthreads)
+		__do_softirq();
+	else {
+		__local_bh_disable((unsigned long)__builtin_return_address(0),
+				SOFTIRQ_OFFSET);
+		wakeup_softirqd();
+		__local_bh_enable(SOFTIRQ_OFFSET);
+	}
+}
 #else
-# define invoke_softirq()	do_softirq()
+static inline void invoke_softirq(void)
+{
+	if (!force_irqthreads)
+		do_softirq();
+	else {
+		__local_bh_disable((unsigned long)__builtin_return_address(0),
+				SOFTIRQ_OFFSET);
+		wakeup_softirqd();
+		__local_bh_enable(SOFTIRQ_OFFSET);
+	}
+}
 #endif
 
 /*
@@ -386,8 +408,8 @@ void __tasklet_schedule(struct tasklet_struct *t)
 
 	local_irq_save(flags);
 	t->next = NULL;
-	*__get_cpu_var(tasklet_vec).tail = t;
-	__get_cpu_var(tasklet_vec).tail = &(t->next);
+	*__this_cpu_read(tasklet_vec.tail) = t;
+	__this_cpu_write(tasklet_vec.tail, &(t->next));
 	raise_softirq_irqoff(TASKLET_SOFTIRQ);
 	local_irq_restore(flags);
 }
@@ -400,8 +422,8 @@ void __tasklet_hi_schedule(struct tasklet_struct *t)
 
 	local_irq_save(flags);
 	t->next = NULL;
-	*__get_cpu_var(tasklet_hi_vec).tail = t;
-	__get_cpu_var(tasklet_hi_vec).tail = &(t->next);
+	*__this_cpu_read(tasklet_hi_vec.tail) = t;
+	__this_cpu_write(tasklet_hi_vec.tail,  &(t->next));
 	raise_softirq_irqoff(HI_SOFTIRQ);
 	local_irq_restore(flags);
 }
@@ -412,8 +434,8 @@ void __tasklet_hi_schedule_first(struct tasklet_struct *t)
 {
 	BUG_ON(!irqs_disabled());
 
-	t->next = __get_cpu_var(tasklet_hi_vec).head;
-	__get_cpu_var(tasklet_hi_vec).head = t;
+	t->next = __this_cpu_read(tasklet_hi_vec.head);
+	__this_cpu_write(tasklet_hi_vec.head, t);
 	__raise_softirq_irqoff(HI_SOFTIRQ);
 }
 
@@ -424,9 +446,9 @@ static void tasklet_action(struct softirq_action *a)
 	struct tasklet_struct *list;
 
 	local_irq_disable();
-	list = __get_cpu_var(tasklet_vec).head;
-	__get_cpu_var(tasklet_vec).head = NULL;
-	__get_cpu_var(tasklet_vec).tail = &__get_cpu_var(tasklet_vec).head;
+	list = __this_cpu_read(tasklet_vec.head);
+	__this_cpu_write(tasklet_vec.head, NULL);
+	__this_cpu_write(tasklet_vec.tail, &__get_cpu_var(tasklet_vec).head);
 	local_irq_enable();
 
 	while (list) {
@@ -447,8 +469,8 @@ static void tasklet_action(struct softirq_action *a)
 
 		local_irq_disable();
 		t->next = NULL;
-		*__get_cpu_var(tasklet_vec).tail = t;
-		__get_cpu_var(tasklet_vec).tail = &(t->next);
+		*__this_cpu_read(tasklet_vec.tail) = t;
+		__this_cpu_write(tasklet_vec.tail, &(t->next));
 		__raise_softirq_irqoff(TASKLET_SOFTIRQ);
 		local_irq_enable();
 	}
@@ -459,9 +481,9 @@ static void tasklet_hi_action(struct softirq_action *a)
 	struct tasklet_struct *list;
 
 	local_irq_disable();
-	list = __get_cpu_var(tasklet_hi_vec).head;
-	__get_cpu_var(tasklet_hi_vec).head = NULL;
-	__get_cpu_var(tasklet_hi_vec).tail = &__get_cpu_var(tasklet_hi_vec).head;
+	list = __this_cpu_read(tasklet_hi_vec.head);
+	__this_cpu_write(tasklet_hi_vec.head, NULL);
+	__this_cpu_write(tasklet_hi_vec.tail, &__get_cpu_var(tasklet_hi_vec).head);
 	local_irq_enable();
 
 	while (list) {
@@ -482,8 +504,8 @@ static void tasklet_hi_action(struct softirq_action *a)
 
 		local_irq_disable();
 		t->next = NULL;
-		*__get_cpu_var(tasklet_hi_vec).tail = t;
-		__get_cpu_var(tasklet_hi_vec).tail = &(t->next);
+		*__this_cpu_read(tasklet_hi_vec.tail) = t;
+		__this_cpu_write(tasklet_hi_vec.tail, &(t->next));
 		__raise_softirq_irqoff(HI_SOFTIRQ);
 		local_irq_enable();
 	}
@@ -553,7 +575,7 @@ static void __tasklet_hrtimer_trampoline(unsigned long data)
 /**
  * tasklet_hrtimer_init - Init a tasklet/hrtimer combo for softirq callbacks
  * @ttimer:	 tasklet_hrtimer which is initialized
- * @function:	 hrtimer callback funtion which gets called from softirq context
+ * @function:	 hrtimer callback function which gets called from softirq context
  * @which_clock: clock id (CLOCK_MONOTONIC/CLOCK_REALTIME)
  * @mode:	 hrtimer mode (HRTIMER_MODE_ABS/HRTIMER_MODE_REL)
  */
@@ -719,7 +741,6 @@ static int run_ksoftirqd(void * __bind_cpu)
 {
 	set_current_state(TASK_INTERRUPTIBLE);
 
-	current->flags |= PF_KSOFTIRQD;
 	while (!kthread_should_stop()) {
 		preempt_disable();
 		if (!local_softirq_pending()) {
@@ -736,7 +757,10 @@ static int run_ksoftirqd(void * __bind_cpu)
 			   don't process */
 			if (cpu_is_offline((long)__bind_cpu))
 				goto wait_to_die;
-			do_softirq();
+			local_irq_disable();
+			if (local_softirq_pending())
+				__do_softirq();
+			local_irq_enable();
 			preempt_enable_no_resched();
 			cond_resched();
 			preempt_disable();
@@ -800,16 +824,16 @@ static void takeover_tasklets(unsigned int cpu)
 
 	/* Find end, append list for that CPU. */
 	if (&per_cpu(tasklet_vec, cpu).head != per_cpu(tasklet_vec, cpu).tail) {
-		*(__get_cpu_var(tasklet_vec).tail) = per_cpu(tasklet_vec, cpu).head;
-		__get_cpu_var(tasklet_vec).tail = per_cpu(tasklet_vec, cpu).tail;
+		*__this_cpu_read(tasklet_vec.tail) = per_cpu(tasklet_vec, cpu).head;
+		this_cpu_write(tasklet_vec.tail, per_cpu(tasklet_vec, cpu).tail);
 		per_cpu(tasklet_vec, cpu).head = NULL;
 		per_cpu(tasklet_vec, cpu).tail = &per_cpu(tasklet_vec, cpu).head;
 	}
 	raise_softirq_irqoff(TASKLET_SOFTIRQ);
 
 	if (&per_cpu(tasklet_hi_vec, cpu).head != per_cpu(tasklet_hi_vec, cpu).tail) {
-		*__get_cpu_var(tasklet_hi_vec).tail = per_cpu(tasklet_hi_vec, cpu).head;
-		__get_cpu_var(tasklet_hi_vec).tail = per_cpu(tasklet_hi_vec, cpu).tail;
+		*__this_cpu_read(tasklet_hi_vec.tail) = per_cpu(tasklet_hi_vec, cpu).head;
+		__this_cpu_write(tasklet_hi_vec.tail, per_cpu(tasklet_hi_vec, cpu).tail);
 		per_cpu(tasklet_hi_vec, cpu).head = NULL;
 		per_cpu(tasklet_hi_vec, cpu).tail = &per_cpu(tasklet_hi_vec, cpu).head;
 	}
@@ -829,7 +853,10 @@ static int __cpuinit cpu_callback(struct notifier_block *nfb,
 	switch (action) {
 	case CPU_UP_PREPARE:
 	case CPU_UP_PREPARE_FROZEN:
-		p = kthread_create(run_ksoftirqd, hcpu, "ksoftirqd/%d", hotcpu);
+		p = kthread_create_on_node(run_ksoftirqd,
+					   hcpu,
+					   cpu_to_node(hotcpu),
+					   "ksoftirqd/%d", hotcpu);
 		if (IS_ERR(p)) {
 			printk("ksoftirqd for %i failed\n", hotcpu);
 			return notifier_from_errno(PTR_ERR(p));
@@ -851,7 +878,9 @@ static int __cpuinit cpu_callback(struct notifier_block *nfb,
 			     cpumask_any(cpu_online_mask));
 	case CPU_DEAD:
 	case CPU_DEAD_FROZEN: {
-		struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
+		static const struct sched_param param = {
+			.sched_priority = MAX_RT_PRIO-1
+		};
 
 		p = per_cpu(ksoftirqd, hotcpu);
 		per_cpu(ksoftirqd, hotcpu) = NULL;
@@ -881,25 +910,6 @@ static __init int spawn_ksoftirqd(void)
 }
 early_initcall(spawn_ksoftirqd);
 
-#ifdef CONFIG_SMP
-/*
- * Call a function on all processors
- */
-int on_each_cpu(void (*func) (void *info), void *info, int wait)
-{
-	int ret = 0;
-
-	preempt_disable();
-	ret = smp_call_function(func, info, wait);
-	local_irq_disable();
-	func(info);
-	local_irq_enable();
-	preempt_enable();
-	return ret;
-}
-EXPORT_SYMBOL(on_each_cpu);
-#endif
-
 /*
  * [ These __weak aliases are kept in a separate compilation unit, so that
  *   GCC does not inline them incorrectly. ]
@@ -910,17 +920,14 @@ int __init __weak early_irq_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_GENERIC_HARDIRQS
 int __init __weak arch_probe_nr_irqs(void)
 {
-	return 0;
+	return NR_IRQS_LEGACY;
 }
 
 int __init __weak arch_early_irq_init(void)
 {
 	return 0;
 }
-
-int __weak arch_init_chip_data(struct irq_desc *desc, int node)
-{
-	return 0;
-}
+#endif
