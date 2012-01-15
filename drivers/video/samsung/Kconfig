@@ -7,11 +7,21 @@ config FB_S3C
 	select FB_CFB_FILLRECT
 	select FB_CFB_COPYAREA
 	select FB_CFB_IMAGEBLIT
-	select FRAMEBUFFER_CONSOLE_DETECT_PRIMARY if VT
+	select FRAMEBUFFER_CONSOLE_DETECT_PRIMARY if VT && FRAMEBUFFER_CONSOLE
 	depends on FB && ARCH_S5PV210
 	default n
 	---help---
 	  This enables support for Samsung Display Controller (FIMD)
+
+config DEV_BOOTLOGO
+        bool "Development builds bootlogo"
+        depends on MACH_ARIES
+	default y
+
+config FB_S3C_UNLOCKED_REFRESH
+        bool "Unlocked screen refresh rate to 68Hz"
+        depends on FB_S3C
+	default n
 
 config FB_S3C_SPLASH_SCREEN
         bool "SPLASH_SCREEN on LCD"

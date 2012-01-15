@@ -235,6 +235,7 @@ static const struct attribute_group fsa9480_group = {
 	.attrs = fsa9480_attributes,
 };
 
+int dock_status = 0;
 
 static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 {
@@ -290,11 +291,28 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 			if (pdata->deskdock_cb)
 				pdata->deskdock_cb(FSA9480_ATTACHED);
 
+#if defined(CONFIG_MACH_ARIES)
+#if defined(CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_FASCINATE)
+                        ret = i2c_smbus_write_byte_data(client,
+                                        FSA9480_REG_MANSW1, SW_AUDIO);
+                        if (ret < 0)
+                                dev_err(&client->dev,
+                                        "%s: err %d\n", __func__, ret);
+#else
+                        ret = i2c_smbus_write_byte_data(client,
+                                        FSA9480_REG_MANSW1, SW_VAUDIO);
+                        if (ret < 0)
+                                dev_err(&client->dev,
+                                        "%s: err %d\n", __func__, ret);
+#endif
+#else
+
 			ret = i2c_smbus_write_byte_data(client,
 					FSA9480_REG_MANSW1, SW_DHOST);
 			if (ret < 0)
 				dev_err(&client->dev,
 					"%s: err %d\n", __func__, ret);
+#endif
 
 			ret = i2c_smbus_read_byte_data(client,
 					FSA9480_REG_CTRL);
@@ -311,6 +329,36 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 		} else if (val2 & DEV_JIG_UART_ON) {
 			if (pdata->cardock_cb)
 				pdata->cardock_cb(FSA9480_ATTACHED);
+			dock_status = 1;
+
+#if defined(CONFIG_MACH_ARIES)
+#if defined(CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_FASCINATE)
+                        ret = i2c_smbus_write_byte_data(client,
+                                        FSA9480_REG_MANSW1, SW_AUDIO);
+
+                        if (ret < 0)
+                                dev_err(&client->dev,
+                                        "%s: err %d\n", __func__, ret);
+#else
+                        ret = i2c_smbus_write_byte_data(client,
+                                        FSA9480_REG_MANSW1, SW_VAUDIO);
+                        if (ret < 0)
+                                dev_err(&client->dev,
+                                        "%s: err %d\n", __func__, ret);
+#endif
+                        ret = i2c_smbus_read_byte_data(client,
+                                        FSA9480_REG_CTRL);
+                        if (ret < 0)
+                                dev_err(&client->dev,
+                                        "%s: err %d\n", __func__, ret);
+
+                        ret = i2c_smbus_write_byte_data(client,
+                                FSA9480_REG_CTRL, ret & ~CON_MANUAL_SW);
+                        if (ret < 0)
+                                dev_err(&client->dev,
+                                        "%s: err %d\n", __func__, ret);
+#endif
+
 		}
 	/* Detached */
 	} else {
@@ -352,12 +400,37 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 		} else if (usbsw->dev2 & DEV_JIG_UART_ON) {
 			if (pdata->cardock_cb)
 				pdata->cardock_cb(FSA9480_DETACHED);
+			dock_status = 0;
+
+#if defined(CONFIG_MACH_ARIES)
+                        ret = i2c_smbus_read_byte_data(client,
+                                        FSA9480_REG_CTRL);
+                        if (ret < 0)
+                                dev_err(&client->dev,
+                                        "%s: err %d\n", __func__, ret);
+
+                        ret = i2c_smbus_write_byte_data(client,
+                                        FSA9480_REG_CTRL, ret | CON_MANUAL_SW);
+                        if (ret < 0)
+                                dev_err(&client->dev,
+                                        "%s: err %d\n", __func__, ret);
+#endif
+
 		}
 	}
 
 	usbsw->dev1 = val1;
 	usbsw->dev2 = val2;
 }
+
+int fsa9480_get_dock_status(void)
+{
+	if (dock_status)
+		return 1;
+	else
+		return 0;
+}
+EXPORT_SYMBOL(fsa9480_get_dock_status);
 
 static void fsa9480_reg_init(struct fsa9480_usbsw *usbsw)
 {

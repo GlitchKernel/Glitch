@@ -1,0 +1,63 @@
+mount("yaffs2", "MTD", "system", "/system");
+show_progress(0.200000, 0);
+ui_print(" 						  ");
+ui_print("Cleaning scripts, OC settings and old modules...");
+delete("/system/etc/init.d/04modules");
+delete("/system/etc/init.d/91logger");
+delete("/system/etc/init.d/logcat_module");
+delete("/system/etc/init.d/*volt*");
+delete("/system/etc/init.d/S97ramscript");
+delete("/system/etc/init.d/S_volt_scheduler");
+delete("/system/etc/init.d/S70zipalign");
+delete("/system/etc/init.d/S90scheduler");
+delete("/system/etc/init.d/S99finish");
+delete("/system/etc/init.d/89system_tweak");
+delete("/system/etc/init.d/98system_tweak");
+delete("/system/etc/init.d/S89system_tweak");
+delete("/system/etc/init.d/S98system_tweak");
+delete("/system/etc/init.d/S90screenstate_scaling");
+delete("/system/etc/init.d/90screenstate_scaling");
+delete("/system/etc/init.d/S91voltctrl");
+delete("/system/etc/init.d/98screenstate_scaling");
+delete("/system/etc/init.d/S98screenstate_scaling");
+delete("/system/etc/init.d/S99screenstate_scaling");
+package_extract_dir("script", "/tmp/script");
+set_perm(0, 0, 755, "/tmp/script/cleaningmodules");
+run_program("/tmp/script/cleaningmodules");
+
+
+ui_print("		                                  ");
+ui_print("Cleaning cache partition...			  ");
+delete_recursive("/cache");
+ui_print("		                                  ");
+ui_print("Cleaning dalvik-cache...		      	  ");
+delete_recursive("/data/dalvik-cache");
+
+
+ui_print("                                                ");
+ui_print("       .:@@@@@@`@@ +@+ +@@        :@-        	  ");
+ui_print("      -@@@/--:/.@@ @@@-@@@-``.--.`@@@-..`    	  ");
+ui_print("      +@@@      @@ @@@ @@@//@@@++-@@@/@@@    	  ");
+ui_print("      /@@@  -@@/@@ @@@.@@@/@@@    @@+ .@@    	  ");
+ui_print("      .@@@/-@@@/@@@@@@@@@-.@@@-.-:@@+ -@@    	  ");
+ui_print("       .+@@@@@- `` /@@/@@  +@@@@@/@@: `@@    	  ");
+ui_print("                                             	  ");
+ui_print("INSTALLING GLITCH KERNEL... PLEASE WAIT 	  ");
+show_progress(0.500000, 0);
+package_extract_file("bml_over_mtd", "/tmp/bml_over_mtd");
+set_perm(0, 0, 0777, "/tmp/bml_over_mtd");
+package_extract_file("bml_over_mtd.sh", "/tmp/bml_over_mtd.sh");
+set_perm(0, 0, 0777, "/tmp/bml_over_mtd.sh");
+show_progress(0.200000, 10);
+package_extract_dir("system/", "/system/");
+set_perm(0, 1000, 0777, "/system/bin/logcat-on");
+set_perm(0, 1000, 0777, "/system/bin/logcat-off");
+set_perm(0, 0, 0777, "/system/bin/sysinit");
+set_perm_recursive(0, 2000, 0755, 0750, "/system/etc/init.d");
+show_progress(0.200000, 10);
+assert(package_extract_file("boot.img", "/tmp/boot.img"),
+       write_raw_image("/tmp/boot.img", "boot"),
+       run_program("/tmp/bml_over_mtd.sh", "boot", "72", "reservoir", "2004", "/tmp/boot.img"),
+       delete("/tmp/boot.img"));
+show_progress(0.100000, 0);
+unmount("/system");

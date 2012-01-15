@@ -329,6 +329,7 @@
 #define SIG_MDNIE_VIDEO_COLD_MODE			3
 #define SIG_MDNIE_CAMERA_MODE				4
 #define SIG_MDNIE_NAVI						5
+#define SIG_MDNIE_BYPASS_MODE				6
 
 
 int s3c_mdnie_init(void);

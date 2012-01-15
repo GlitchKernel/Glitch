@@ -226,7 +226,7 @@ static int fimc_outdev_set_src_buf(struct fimc_control *ctrl,
 		size = PAGE_ALIGN(y_size + cb_size);
 		break;
 	case V4L2_PIX_FMT_NV12T:
-		fimc_get_nv12t_size(width, height, &y_size, &cb_size);
+		fimc_get_nv12t_size(width, height, &y_size, &cb_size, 0);
 		size = PAGE_ALIGN(y_size + cb_size);
 		break;
 	case V4L2_PIX_FMT_NV16:
@@ -1774,7 +1774,7 @@ int fimc_output_set_dst_addr(struct fimc_control *ctrl,
 	memset(&buf_set, 0x00, sizeof(buf_set));
 
 	if (V4L2_PIX_FMT_NV12T == format)
-		fimc_get_nv12t_size(width, height, &y_size, &c_size);
+		fimc_get_nv12t_size(width, height, &y_size, &c_size, ctx->rotate);
 
 	switch (format) {
 	case V4L2_PIX_FMT_RGB32:

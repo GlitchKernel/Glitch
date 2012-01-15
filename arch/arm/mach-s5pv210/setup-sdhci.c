@@ -145,7 +145,11 @@ void s5pv210_adjust_sdhci_cfg_card(struct s3c_sdhci_platdata *pdata,
 void universal_sdhci2_cfg_ext_cd(void)
 {
 	printk(KERN_DEBUG "Universal :SD Detect configuration\n");
-	s3c_gpio_setpull(S5PV210_GPH3(4), S3C_GPIO_PULL_NONE);
+#if defined(CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_VIBRANT)
+    s3c_gpio_setpull(S5PV210_GPH3(4), S3C_GPIO_PULL_UP);
+#else
+    s3c_gpio_setpull(S5PV210_GPH3(4), S3C_GPIO_PULL_NONE);
+#endif
 	irq_set_irq_type(IRQ_EINT(28), IRQ_TYPE_EDGE_BOTH);
 }
 
@@ -155,6 +159,10 @@ static struct s3c_sdhci_platdata hsmmc0_platdata = {
 	.host_caps	= MMC_CAP_8_BIT_DATA,
 #endif
 };
+
+#if defined(CONFIG_S3C_DEV_HSMMC1)
+static struct s3c_sdhci_platdata hsmmc1_platdata = { 0 };
+#endif
 
 #if defined(CONFIG_S3C_DEV_HSMMC2)
 static struct s3c_sdhci_platdata hsmmc2_platdata = {
@@ -192,6 +200,9 @@ static int ext_cd_cleanup_hsmmc##num(void (*notify_func)( \
 	return 0; \
 }
 
+#ifdef CONFIG_S3C_DEV_HSMMC1
+DEFINE_MMC_CARD_NOTIFIER(1)
+#endif
 #ifdef CONFIG_S3C_DEV_HSMMC2
 DEFINE_MMC_CARD_NOTIFIER(2)
 #endif
@@ -207,6 +218,10 @@ void sdhci_s3c_force_presence_change(struct platform_device *pdev)
 {
 	void (*notify_func)(struct platform_device *, int state) = NULL;
 	mutex_lock(&notify_lock);
+#ifdef CONFIG_S3C_DEV_HSMMC1
+	if (pdev == &s3c_device_hsmmc1)
+		notify_func = hsmmc1_notify_func;
+#endif
 #ifdef CONFIG_S3C_DEV_HSMMC2
 	if (pdev == &s3c_device_hsmmc2)
 		notify_func = hsmmc2_notify_func;
@@ -227,10 +242,19 @@ EXPORT_SYMBOL_GPL(sdhci_s3c_force_presence_change);
 void s3c_sdhci_set_platdata(void)
 {
 #if defined(CONFIG_S3C_DEV_HSMMC)
-	if (machine_is_herring()) { /* TODO: move to mach-herring.c */
+	if (machine_is_herring() || machine_is_aries()) { /* TODO: move to mach-herring.c */
 		hsmmc0_platdata.cd_type = S3C_SDHCI_CD_PERMANENT;
 	}
 	s3c_sdhci0_set_platdata(&hsmmc0_platdata);
+#endif
+#if defined(CONFIG_S3C_DEV_HSMMC1)
+	if (machine_is_aries()) {
+		hsmmc1_platdata.cd_type = S3C_SDHCI_CD_EXTERNAL;
+		hsmmc1_platdata.ext_cd_init = ext_cd_init_hsmmc1;
+		hsmmc1_platdata.ext_cd_cleanup = ext_cd_cleanup_hsmmc1;
+		hsmmc1_platdata.built_in = 1;
+	}
+	s3c_sdhci1_set_platdata(&hsmmc1_platdata);
 #endif
 #if defined(CONFIG_S3C_DEV_HSMMC2)
 	if (machine_is_herring()) {
@@ -249,10 +273,17 @@ void s3c_sdhci_set_platdata(void)
 		}
 	}
 
+	if (machine_is_aries()) {
+		hsmmc2_platdata.cd_type = S3C_SDHCI_CD_GPIO;
+		hsmmc2_platdata.ext_cd_gpio = S5PV210_GPH3(4);
+		hsmmc2_platdata.ext_cd_gpio_invert = true;
+		universal_sdhci2_cfg_ext_cd();
+	}
+
 	s3c_sdhci2_set_platdata(&hsmmc2_platdata);
 #endif
 #if defined(CONFIG_S3C_DEV_HSMMC3)
-	if (machine_is_herring()) {
+	if (machine_is_herring() || machine_is_aries()) {
 		hsmmc3_platdata.cd_type = S3C_SDHCI_CD_EXTERNAL;
 		hsmmc3_platdata.ext_cd_init = ext_cd_init_hsmmc3;
 		hsmmc3_platdata.ext_cd_cleanup = ext_cd_cleanup_hsmmc3;

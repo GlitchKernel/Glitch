@@ -483,7 +483,7 @@ extern void fimc_dma_free(struct fimc_control *ctrl,
 extern u32 fimc_mapping_rot_flip(u32 rot, u32 flip);
 extern int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift);
 extern void fimc_get_nv12t_size(int img_hres, int img_vres,
-					int *y_size, int *cb_size);
+					int *y_size, int *cb_size, int rotate);
 extern void fimc_clk_en(struct fimc_control *ctrl, bool on);
 
 /* camera */

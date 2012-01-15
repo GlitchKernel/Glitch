@@ -39,6 +39,10 @@
 
 #define ID_BLOCK_SIZE			7
 
+// Accidental touch key prevention (see cypress-touchkey.c)
+unsigned int touch_state_val = 0;
+EXPORT_SYMBOL(touch_state_val);
+
 struct object_t {
 	u8 object_type;
 	u16 i2c_address;
@@ -349,6 +353,7 @@ static irqreturn_t mxt224_irq_thread(int irq, void *ptr)
 			data->fingers[id].z = -1;
 			data->fingers[id].w = msg[5];
 			data->finger_mask |= 1U << id;
+			touch_state_val = 0;
 		} else if ((msg[1] & DETECT_MSG_MASK) && (msg[1] &
 				(PRESS_MSG_MASK | MOVE_MSG_MASK))) {
 			data->fingers[id].z = msg[6];
@@ -358,6 +363,7 @@ static irqreturn_t mxt224_irq_thread(int irq, void *ptr)
 			data->fingers[id].y = ((msg[3] << 4) |
 					(msg[4] & 0xF)) >> data->y_dropbits;
 			data->finger_mask |= 1U << id;
+			touch_state_val = 1;
 		} else if ((msg[1] & SUPPRESS_MSG_MASK) &&
 			   (data->fingers[id].z != -1)) {
 			data->fingers[id].z = -1;
@@ -386,6 +392,7 @@ static int mxt224_internal_suspend(struct mxt224_data *data)
 	if (ret)
 		return ret;
 
+	touch_state_val = 0;
 
 	for (i = 0; i < data->num_fingers; i++)
 		data->fingers[i].z = -1;

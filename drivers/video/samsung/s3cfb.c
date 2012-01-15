@@ -39,6 +39,23 @@
 #endif
 #include "s3cfb.h"
 
+#ifdef CONFIG_MACH_ARIES
+
+#ifdef CONFIG_DEV_BOOTLOGO
+#include "logo_rgb24_wvga_portrait_dev.h"
+#else
+//#include "logo_rgb24_wvga_portrait.h"
+#include "logo_rgb24_wvga_portrait_custom.h"
+#endif
+
+#include <mach/regs-clock.h>
+#endif
+
+#ifdef CONFIG_FB_S3C_MDNIE
+#include "s3cfb_mdnie.h"
+#include <linux/delay.h>
+#endif
+
 #if (CONFIG_FB_S3C_NUM_OVLY_WIN >= CONFIG_FB_S3C_DEFAULT_WINDOW)
 #error "FB_S3C_NUM_OVLY_WIN should be less than FB_S3C_DEFAULT_WINDOW"
 #endif
@@ -95,6 +112,7 @@ static int s3cfb_draw_logo(struct fb_info *fb)
 		}
 	}
 #endif
+#ifndef CONFIG_MACH_ARIES
 	if (bootloaderfb) {
 		u8 *logo_virt_buf;
 		logo_virt_buf = ioremap_nocache(bootloaderfb,
@@ -104,6 +122,12 @@ static int s3cfb_draw_logo(struct fb_info *fb)
 				fb->var.yres * fb->fix.line_length);
 		iounmap(logo_virt_buf);
 	}
+#else /*CONFIG_SAMSUNG_GALAXYS*/
+	if (readl(S5P_INFORM5)) //LPM_CHARGING mode
+		memcpy(fb->screen_base, charging, fb->var.yres * fb->fix.line_length);
+	else
+		memcpy(fb->screen_base, LOGO_RGB24, fb->var.yres * fb->fix.line_length);
+#endif
 	return 0;
 }
 #endif
@@ -1004,6 +1028,11 @@ static int __devinit s3cfb_probe(struct platform_device *pdev)
 
 	s3cfb_set_vsync_interrupt(fbdev, 1);
 	s3cfb_set_global_interrupt(fbdev, 1);
+
+#ifdef CONFIG_FB_S3C_MDNIE
+	s3c_mdnie_setup();
+#endif
+
 	s3cfb_init_global(fbdev);
 
 	if (s3cfb_alloc_framebuffer(fbdev)) {
@@ -1017,7 +1046,12 @@ static int __devinit s3cfb_probe(struct platform_device *pdev)
 	}
 
 	s3cfb_set_clock(fbdev);
+#ifdef CONFIG_FB_S3C_MDNIE
+	mDNIe_Mode_Set();
+#endif
 	s3cfb_set_window(fbdev, pdata->default_win, 1);
+
+	s3cfb_set_alpha_value_width(fbdev, pdata->default_win);
 
 	s3cfb_display_on(fbdev);
 
@@ -1034,8 +1068,10 @@ static int __devinit s3cfb_probe(struct platform_device *pdev)
 	if (pdata->backlight_on)
 		pdata->backlight_on(pdev);
 #endif
+#ifndef CONFIG_MACH_ARIES
 	if (!bootloaderfb && pdata->reset_lcd)
 		pdata->reset_lcd(pdev);
+#endif
 #endif
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
@@ -1149,8 +1185,17 @@ void s3cfb_early_suspend(struct early_suspend *h)
 		container_of(h, struct s3cfb_global, early_suspend);
 
 	pr_debug("s3cfb_early_suspend is called\n");
+#ifdef CONFIG_FB_S3C_MDNIE
+	writel(0,fbdev->regs + 0x27c);
+	msleep(20);
+	writel(0x2, S5P_MDNIE_SEL);
+	s3c_mdnie_stop();
+#endif
 
 	s3cfb_display_off(fbdev);
+#ifdef CONFIG_FB_S3C_MDNIE
+	s3c_mdnie_off();
+#endif
 	clk_disable(fbdev->clock);
 #if defined(CONFIG_FB_S3C_TL2796)
 	lcd_cfg_gpio_early_suspend();
@@ -1194,8 +1239,17 @@ void s3cfb_late_resume(struct early_suspend *h)
 		pdata->cfg_gpio(pdev);
 
 	clk_enable(fbdev->clock);
+#ifdef CONFIG_FB_S3C_MDNIE
+	writel(0x1, S5P_MDNIE_SEL);
+	writel(3,fbdev->regs + 0x27c);
+#endif
 	s3cfb_init_global(fbdev);
 	s3cfb_set_clock(fbdev);
+#ifdef CONFIG_FB_S3C_MDNIE
+	s3c_mdnie_init_global(fbdev);
+	s3c_mdnie_start(fbdev);
+#endif
+	s3cfb_set_alpha_value_width(fbdev, pdata->default_win);
 
 	s3cfb_display_on(fbdev);
 

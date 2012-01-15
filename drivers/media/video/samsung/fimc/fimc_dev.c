@@ -797,13 +797,19 @@ int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift)
 }
 
 void fimc_get_nv12t_size(int img_hres, int img_vres,
-				int *y_size, int *cb_size)
+				int *y_size, int *cb_size, int rotate)
 {
 	int remain;
 	int y_hres_byte, y_vres_byte;
 	int cb_hres_byte, cb_vres_byte;
 	int y_hres_roundup, y_vres_roundup;
 	int cb_hres_roundup, cb_vres_roundup;
+
+	if (rotate == 90 || rotate == 270) {
+		int tmp = img_hres;
+		img_hres = img_vres;
+		img_vres = tmp;
+	}
 
 	/* to make 'img_hres and img_vres' be 16 multiple */
 	remain = img_hres % 16;

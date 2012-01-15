@@ -42,7 +42,7 @@
 #define MAPPING_SIZE 0x10000
 #define SGX540_IRQ IRQ_3D
 
-#define SYS_SGX_CLOCK_SPEED					(200000000)
+#define SYS_SGX_CLOCK_SPEED					(250000000)
 #define SYS_SGX_HWRECOVERY_TIMEOUT_FREQ		(100) // 10ms (100hz)
 #define SYS_SGX_PDS_TIMER_FREQ				(1000) // 1ms (1000hz)
 #ifndef SYS_SGX_ACTIVE_POWER_LATENCY_MS
@@ -89,10 +89,12 @@ IMG_UINT32   PVRSRV_BridgeDispatchKM( IMG_UINT32  Ioctl,
  * In arch/arm/mach-s5pv210/cpufreq.c, the bus speed is only lowered when the
  * CPU freq is below 200MHz.
  */
-#define MIN_CPU_KHZ_FREQ 200000
 
 static struct clk *g3d_clock;
 static struct regulator *g3d_pd_regulator;
+
+#ifdef CONFIG_PVR_LIMIT_MINFREQ
+#define MIN_CPU_KHZ_FREQ 200000
 
 static int limit_adjust_cpufreq_notifier(struct notifier_block *nb,
 					 unsigned long event, void *data)
@@ -113,13 +115,15 @@ static int limit_adjust_cpufreq_notifier(struct notifier_block *nb,
 static struct notifier_block cpufreq_limit_notifier = {
 	.notifier_call = limit_adjust_cpufreq_notifier,
 };
+#endif
 
 static PVRSRV_ERROR EnableSGXClocks(void)
 {
 	regulator_enable(g3d_pd_regulator);
 	clk_enable(g3d_clock);
+#ifdef CONFIG_PVR_LIMIT_MINFREQ
 	cpufreq_update_policy(current_thread_info()->cpu);
-
+#endif
 	return PVRSRV_OK;
 }
 
@@ -127,8 +131,9 @@ static PVRSRV_ERROR DisableSGXClocks(void)
 {
 	clk_disable(g3d_clock);
 	regulator_disable(g3d_pd_regulator);
+#ifdef CONFIG_PVR_LIMIT_MINFREQ
 	cpufreq_update_policy(current_thread_info()->cpu);
-
+#endif
 	return PVRSRV_OK;
 }
 
@@ -531,8 +536,10 @@ PVRSRV_ERROR SysFinalise(IMG_VOID)
 
 #if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
 	DisableSGXClocks();
+#ifdef CONFIG_PVR_LIMIT_MINFREQ
 	cpufreq_register_notifier(&cpufreq_limit_notifier,
 				  CPUFREQ_POLICY_NOTIFIER);
+#endif
 #endif 
 
 	return PVRSRV_OK;
@@ -563,9 +570,11 @@ PVRSRV_ERROR SysDeinitialise (SYS_DATA *psSysData)
 
 #if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
 	/* TODO: regulator and clk put. */
+#ifdef CONFIG_PVR_LIMIT_MINFREQ
 	cpufreq_unregister_notifier(&cpufreq_limit_notifier,
 				    CPUFREQ_POLICY_NOTIFIER);
 	cpufreq_update_policy(current_thread_info()->cpu);
+#endif
 #endif
 
 #if defined(SYS_USING_INTERRUPTS)

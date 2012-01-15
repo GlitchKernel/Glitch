@@ -36,6 +36,7 @@
 #define PLAYBACK_ACTIVE		0x01
 #define CAPTURE_ACTIVE		0x02
 #define CALL_ACTIVE		0x04
+#define FMRADIO_ACTIVE		0x08
 
 #define PCM_STREAM_DEACTIVE	0x00
 #define PCM_STREAM_PLAYBACK	0x01
@@ -73,6 +74,7 @@ Codec Output Path BIT
 #define PLAYBACK_RING_HP	(0x01 << 7)
 #define PLAYBACK_RING_SPK_HP	(0x01 << 8)
 #define PLAYBACK_HP_NO_MIC  (0x01 << 9)
+#define PLAYBACK_EXTRA_DOCK_SPEAKER (0x01 << 10)
 
 #define VOICECALL_RCV		(0x01 << 1)
 #define VOICECALL_SPK		(0x01 << 2)
@@ -96,16 +98,34 @@ Codec Output Path BIT
 #define RECORDING_VC_HP		(0x01 << 11)
 #define RECORDING_VC_BT		(0x01 << 12)
 
+#define FMRADIO_HP		(0x01 << 1)
+#define FMRADIO_SPK		(0x01 << 2)
+#define FMRADIO_SPK_HP		(0x01 << 3)
+
+#define PLAYBACK_GAIN_CDMA_NUM 48
 #define PLAYBACK_GAIN_NUM 43
+
 #define VOICECALL_GAIN_NUM 38
 #define RECORDING_GAIN_NUM 32
 #define GAIN_CODE_NUM 13
+#define FMRADIO_GAIN_NUM	34
+
+#define DCS_NUM 5
+
+
+#define CMD_FMR_INPUT_DEACTIVE		0 /* Codec Input PGA off */
+#define CMD_FMR_INPUT_ACTIVE		1 /* Codec Input PGA on */
+#define CMD_FMR_FLAG_CLEAR		2 /* Radio flag clear for shutdown */
+#define CMD_FMR_END			3 /* Codec off in FM radio mode */
+#define CMD_CALL_FLAG_CLEAR		4 /* Call flag clear for shutdown */
+#define CMD_CALL_END			5 /* Codec off in call mode */
+
 /*
  * Definitions of enum type
  */
 enum audio_path	{
 	OFF, RCV, SPK, HP, HP_NO_MIC, BT, SPK_HP,
-	RING_SPK, RING_HP, RING_NO_MIC, RING_SPK_HP
+	RING_SPK, RING_HP, RING_NO_MIC, RING_SPK_HP, EXTRA_DOCK_SPEAKER
 };
 enum call_path		{
 	CALL_OFF, CALL_RCV, CALL_SPK, CALL_HP,
@@ -113,6 +133,8 @@ enum call_path		{
 	CALL_TTY_HCO, CALL_TTY_FULL
 };
 enum mic_path		{MAIN, SUB, BT_REC, MIC_OFF};
+enum fmradio_path		{FMR_OFF, FMR_SPK, FMR_HP, FMR_DUAL_MIX};
+enum fmradio_mix_path		{FMR_MIX_OFF, FMR_MIX_DUAL};
 enum power_state	{CODEC_OFF, CODEC_ON };
 enum ringtone_state	{RING_OFF, RING_ON};
 enum input_source_state	{DEFAULT, RECOGNITION, CAMCORDER, VOICE_COMMUNICATION};
@@ -131,6 +153,8 @@ enum wm8994_dc_servo_slots {
 	DCS_MEDIA = 0,
 	DCS_VOICE = 1,
 	DCS_SPK_HP = 2,
+	DCS_FMRADIO = 3,
+	DCS_FMRADIO_SPK_HP = 4,
 };
 
 struct wm8994_priv {
@@ -146,6 +170,8 @@ struct wm8994_priv {
 	unsigned int  stream_state;
 	enum audio_path cur_path;
 	enum mic_path rec_path;
+	enum fmradio_path fmradio_path;
+	enum fmradio_mix_path fmr_mix_path;
 	enum power_state power_state;
 	enum input_source_state input_source;
 	enum ringtone_state ringtone_active;
@@ -193,6 +219,7 @@ void wm8994_set_playback_headset(struct snd_soc_codec *codec);
 void wm8994_set_playback_speaker(struct snd_soc_codec *codec);
 void wm8994_set_playback_bluetooth(struct snd_soc_codec *codec);
 void wm8994_set_playback_speaker_headset(struct snd_soc_codec *codec);
+void wm8994_set_playback_extra_dock_speaker(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_common_setting(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_receiver(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_headset(struct snd_soc_codec *codec);
@@ -202,6 +229,13 @@ void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_tty_vco(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_tty_hco(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_tty_full(struct snd_soc_codec *codec);
+void wm8994_disable_fmradio_path(struct snd_soc_codec *codec,
+	enum fmradio_path path);
+void wm8994_set_fmradio_input_active(struct snd_soc_codec *codec, int on);
+void wm8994_set_fmradio_common(struct snd_soc_codec *codec);
+void wm8994_set_fmradio_headset(struct snd_soc_codec *codec);
+void wm8994_set_fmradio_speaker(struct snd_soc_codec *codec);
+void wm8994_set_fmradio_speaker_headset_mix(struct snd_soc_codec *codec);
 int wm8994_set_codec_gain(struct snd_soc_codec *codec, u16 mode, u16 device);
 extern int gain_code_check(void);
 #endif

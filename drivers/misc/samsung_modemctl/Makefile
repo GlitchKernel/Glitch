@@ -1,1 +1,2 @@
-obj-y += modem_ctl.o modem_io.o modem_dbg.o
+all:
+	cp built-in.443stock_samsung_modemctl built-in.o

@@ -553,6 +553,20 @@ static ssize_t show_scaling_setspeed(struct cpufreq_policy *policy, char *buf)
 	return policy->governor->show_setspeed(policy, buf);
 }
 
+#ifdef CONFIG_CUSTOM_VOLTAGE
+extern ssize_t customvoltage_armvolt_read(struct device * dev, struct device_attribute * attr, char * buf);
+extern ssize_t customvoltage_armvolt_write(struct device * dev, struct device_attribute * attr, const char * buf, size_t size);
+
+static ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
+	return customvoltage_armvolt_read(NULL, NULL, buf);
+}
+
+static ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
+					const char *buf, size_t count) {
+	return customvoltage_armvolt_write(NULL, NULL, buf, count);
+}
+#endif
+
 /**
  * show_scaling_driver - show the current cpufreq HW/BIOS limitation
  */
@@ -582,6 +596,9 @@ cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
+#ifdef CONFIG_CUSTOM_VOLTAGE
+cpufreq_freq_attr_rw(UV_mV_table);
+#endif
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -595,6 +612,9 @@ static struct attribute *default_attrs[] = {
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
+#ifdef CONFIG_CUSTOM_VOLTAGE
+	&UV_mV_table.attr,
+#endif
 	NULL
 };
 

@@ -31,12 +31,19 @@
 #include <plat/gpio-cfg.h>
 #include <plat/regs-fb.h>
 #include <linux/earlysuspend.h>
+#include <linux/miscdevice.h>
 
 #define SLEEPMSEC		0x1000
 #define ENDDEF			0x2000
 #define DEFMASK		0xFF00
 
 #define NUM_GAMMA_REGS	21
+
+#define U32_MAX (~(u32)0)
+
+#ifdef CONFIG_FB_S3C_MDNIE
+extern void init_mdnie_class(void);
+#endif
 
 static const struct tl2796_gamma_adj_points default_gamma_adj_points = {
 	.v0 = BV_0,
@@ -67,6 +74,14 @@ struct s5p_lcd{
 	struct dentry *debug_dir;
 };
 
+struct s5p_lcd *lcd_;
+
+// Secondary user-tunable color multiplier
+u32 color_mult[3] = { U32_MAX, U32_MAX, U32_MAX };
+
+// v0 offset hack from supercurio's "Voodoo Color"
+u32 hacky_v1_offset[3] = {0, 0, 0};
+
 static u32 gamma_lookup(struct s5p_lcd *lcd, u8 brightness, u32 val, int c)
 {
 	int i;
@@ -88,6 +103,9 @@ static u32 gamma_lookup(struct s5p_lcd *lcd, u8 brightness, u32 val, int c)
 		do_div(tmp, 255);
 
 		tmp *= lcd->color_mult[c];
+		do_div(tmp, 0xffffffff);
+
+		tmp *= color_mult[c];
 		do_div(tmp, 0xffffffff);
 
 		tmp *= (val - bv->v0);
@@ -142,7 +160,11 @@ static void setup_gamma_regs(struct s5p_lcd *lcd, u16 gamma_regs[])
 			else
 				adj = 140;
 		}
-		gamma_regs[c] = adj | 0x100;
+		// Modified version from supercurio's "Voodoo Color"
+		//   terrible shameful hack allowing to get back standard
+		//   colors without fixing the real thing properly (gamma table)
+		//   it consist on a simple (negative) offset applied on v0
+		gamma_regs[c] = (adj > hacky_v1_offset[c] && (adj <=255)) ? (adj - hacky_v1_offset[c]) | 0x100 : adj | 0x100;
 
 		v255 = vx[5] = gamma_lookup(lcd, brightness, bv->v255, c);
 		adj = 600 - 120 - DIV_ROUND_CLOSEST(600 * v255, v0);
@@ -577,6 +599,128 @@ static void tl2796_read_mtp_info(struct s5p_lcd *lcd)
 	tl2796_adjust_brightness_from_mtp(lcd);
 }
 
+static ssize_t red_multiplier_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", color_mult[0]);
+}
+
+static ssize_t red_multiplier_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		color_mult[0] = value;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
+static ssize_t green_multiplier_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", color_mult[1]);
+}
+
+static ssize_t green_multiplier_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		color_mult[1] = value;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
+static ssize_t blue_multiplier_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", color_mult[2]);
+}
+
+static ssize_t blue_multiplier_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		color_mult[2] = value;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
+static ssize_t red_v1_offset_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", hacky_v1_offset[0]);
+}
+
+static ssize_t red_v1_offset_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		hacky_v1_offset[0] = value;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
+static ssize_t green_v1_offset_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", hacky_v1_offset[1]);
+}
+
+static ssize_t green_v1_offset_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		hacky_v1_offset[1] = value;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
+static ssize_t blue_v1_offset_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", hacky_v1_offset[2]);
+}
+
+static ssize_t blue_v1_offset_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		hacky_v1_offset[2] = value;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
+static DEVICE_ATTR(red_multiplier, S_IRUGO | S_IWUGO, red_multiplier_show, red_multiplier_store);
+static DEVICE_ATTR(green_multiplier, S_IRUGO | S_IWUGO, green_multiplier_show, green_multiplier_store);
+static DEVICE_ATTR(blue_multiplier, S_IRUGO | S_IWUGO, blue_multiplier_show, blue_multiplier_store);
+static DEVICE_ATTR(red_v1_offset, S_IRUGO | S_IWUGO, red_v1_offset_show, red_v1_offset_store);
+static DEVICE_ATTR(green_v1_offset, S_IRUGO | S_IWUGO, green_v1_offset_show, green_v1_offset_store);
+static DEVICE_ATTR(blue_v1_offset, S_IRUGO | S_IWUGO, blue_v1_offset_show, blue_v1_offset_store);
+
+static struct attribute *color_tuning_attributes[] = {
+	&dev_attr_red_multiplier.attr,
+	&dev_attr_green_multiplier.attr,
+	&dev_attr_blue_multiplier.attr,
+	&dev_attr_red_v1_offset.attr,
+	&dev_attr_green_v1_offset.attr,
+	&dev_attr_blue_v1_offset.attr,
+	NULL
+};
+
+static struct attribute_group color_tuning_group = {
+	.attrs = color_tuning_attributes,
+};
+
+static struct miscdevice color_tuning_device = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "color_tuning",
+};
+
 static int __devinit tl2796_probe(struct spi_device *spi)
 {
 	struct s5p_lcd *lcd;
@@ -621,6 +765,10 @@ static int __devinit tl2796_probe(struct spi_device *spi)
 	lcd->gamma_adj_points =
 		lcd->data->gamma_adj_points ?: &default_gamma_adj_points;
 
+#ifdef CONFIG_FB_S3C_MDNIE
+	init_mdnie_class();  //set mDNIe UI mode, Outdoormode
+#endif
+
 	spi_set_drvdata(spi, lcd);
 	tl2796_read_mtp_info(lcd);
 
@@ -651,6 +799,16 @@ static int __devinit tl2796_probe(struct spi_device *spi)
 			lcd->debug_dir, lcd, &tl2796_current_gamma_fops);
 
 	pr_info("tl2796_probe successfully proved\n");
+
+	misc_register(&color_tuning_device);
+	if (sysfs_create_group(&color_tuning_device.this_device->kobj, &color_tuning_group) < 0)
+	{
+		printk("%s sysfs_create_group fail\n", __FUNCTION__);
+		pr_err("Failed to create sysfs group for device (%s)!\n", color_tuning_device.name);
+	}
+
+	// copy the pointer for use with the color tuning sysfs interface
+	lcd_ = lcd;
 
 	return 0;
 

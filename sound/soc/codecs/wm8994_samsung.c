@@ -21,6 +21,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/delay.h>
+#include <linux/fsa9480.h>
 #include <linux/pm.h>
 #include <linux/i2c.h>
 #include <linux/slab.h>
@@ -42,12 +43,18 @@
 #include "wm8994_samsung.h"
 #include "../../../arch/arm/mach-s5pv210/herring.h"
 
+#ifdef CONFIG_SND_WM8994_EXTENSIONS
+#include "wm8994_extensions.h"
+#endif
+
 #define WM8994_VERSION "0.1"
 #define SUBJECT "wm8994_samsung.c"
 
 #if defined(CONFIG_VIDEO_TV20) && defined(CONFIG_SND_S5P_WM8994_MASTER)
 #define HDMI_USE_AUDIO
 #endif
+
+bool _dockredir = false;
 
 //extern const u16 wm8994_reg_defaults[WM8994_CACHE_SIZE];
 
@@ -120,7 +127,7 @@ select_route universal_wm8994_playback_paths[] = {
 	wm8994_disable_path, wm8994_set_playback_receiver,
 	wm8994_set_playback_speaker, wm8994_set_playback_headset,
 	wm8994_set_playback_headset, wm8994_set_playback_bluetooth,
-	wm8994_set_playback_speaker_headset
+	wm8994_set_playback_speaker_headset, wm8994_set_playback_extra_dock_speaker
 };
 
 select_route universal_wm8994_voicecall_paths[] = {
@@ -176,6 +183,10 @@ int wm8994_write(struct snd_soc_codec *codec, unsigned int reg,
 {
 	u8 data[4];
 	int ret;
+
+#ifdef CONFIG_SND_WM8994_EXTENSIONS
+	value = wm8994_extensions_write(codec, reg, value);
+#endif
 
 	/* data is
 	 * D15..D9 WM8993 register offset
@@ -281,13 +292,20 @@ static int wm899x_inpga_put_volsw_vu(struct snd_kcontrol *kcontrol,
 #define MAX_VOICECALL_PATH 8
 static const char *playback_path[] = {
 	"OFF", "RCV", "SPK", "HP", "HP_NO_MIC", "BT", "SPK_HP",
-	"RING_SPK", "RING_HP", "RING_NO_MIC", "RING_SPK_HP"
+	"RING_SPK", "RING_HP", "RING_NO_MIC", "RING_SPK_HP", "EXTRA_DOCK_SPEAKER"
 };
 static const char *voicecall_path[] = { "OFF", "RCV", "SPK", "HP",
 					"HP_NO_MIC", "BT", "TTY_VCO",
 					"TTY_HCO", "TTY_FULL"};
+static const char *fmradio_path[] = {
+	"FMR_OFF", "FMR_SPK", "FMR_HP", "FMR_DUAL_MIX"
+};
 static const char *mic_path[] = { "Main Mic", "Hands Free Mic",
 					"BT Sco Mic", "MIC OFF" };
+static const char *codec_status_control[] = {
+	"FMR_VOL_0", "FMR_VOL_1", "FMR_FLAG_CLEAR", "FMR_END",
+	"CALL_FLAG_CLEAR", "CALL_END"
+};
 static const char *input_source_state[] = { "Default", "Voice Recognition",
 					"Camcorder", "Voice Communication"};
 
@@ -364,6 +382,13 @@ static int wm8994_set_path(struct snd_kcontrol *kcontrol,
 		return -ENODEV;
 	}
 
+#if defined(CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_FASCINATE)
+	if (fsa9480_get_dock_status())
+		path_num = 11;
+#endif
+	if (path_num == 4 && _dockredir)
+		path_num = 11;
+
 	switch (path_num) {
 	case OFF:
 		DEBUG_LOG("Switching off output path\n");
@@ -389,6 +414,11 @@ static int wm8994_set_path(struct snd_kcontrol *kcontrol,
 		wm8994->ringtone_active = RING_ON;
 		path_num -= 4;
 		break;
+        case EXTRA_DOCK_SPEAKER:
+                DEBUG_LOG("routing to %s\n", mc->texts[path_num]);
+                wm8994->ringtone_active = RING_OFF;
+		path_num -= 4;
+		break;
 	default:
 		DEBUG_LOG_ERR("audio path[%d] does not exists!!\n", path_num);
 		return -ENODEV;
@@ -410,6 +440,167 @@ static int wm8994_set_path(struct snd_kcontrol *kcontrol,
 
 	return 0;
 }
+
+static int wm8994_get_fmradio_path(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	int pathnum = ucontrol->value.integer.value[0];
+
+	DEBUG_LOG("wm8994_get_fmradio_path : %d", pathnum);
+
+	return 0;
+}
+
+static int wm8994_set_fmradio_path(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+	struct soc_enum *mc = (struct soc_enum *)kcontrol->private_value;
+	struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
+
+	int path_num = ucontrol->value.integer.value[0];
+
+	if (strcmp(mc->texts[path_num], fmradio_path[path_num]))
+		DEBUG_LOG("Unknown path %s\n", mc->texts[path_num]);
+
+	if (path_num == wm8994->fmradio_path) {
+		int val;
+
+		DEBUG_LOG("%s is already set. skip to set path..\n",
+			mc->texts[path_num]);
+
+		val = wm8994_read(codec, WM8994_AIF1_DAC1_FILTERS_1);
+		val &= ~(WM8994_AIF1DAC1_MUTE_MASK);
+		val |= (WM8994_AIF1DAC1_UNMUTE);
+		wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, val);
+
+		return 0;
+	}
+
+	wm8994->codec_state |= FMRADIO_ACTIVE;
+
+	switch (path_num) {
+	case FMR_SPK:
+		DEBUG_LOG("routing fmradio path to %s\n", mc->texts[path_num]);
+		wm8994->fmr_mix_path = FMR_MIX_OFF;
+		wm8994_set_fmradio_speaker(codec);
+		break;
+
+	case FMR_HP:
+		DEBUG_LOG("routing fmradio path to %s\n", mc->texts[path_num]);
+		wm8994->fmr_mix_path = FMR_MIX_OFF;
+		wm8994_set_fmradio_headset(codec);
+		break;
+
+	case FMR_DUAL_MIX:
+		DEBUG_LOG("routing fmradio path to %s\n", mc->texts[path_num]);
+		wm8994->fmr_mix_path = FMR_DUAL_MIX;
+		wm8994_set_fmradio_speaker_headset_mix(codec);
+		break;
+
+	default:
+		DEBUG_LOG("The audio path[%d] does not exists!!\n",
+			path_num);
+		return -ENODEV;
+		break;
+	}
+
+	return 0;
+}
+
+static int wm8994_get_codec_status(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+
+	return 0;
+}
+
+static void wm8994_shutdown_codec(struct snd_pcm_substream *substream, struct snd_soc_codec *codec);
+
+static int wm8994_set_codec_status(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+	struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
+	struct snd_pcm_substream tempstream;
+
+	int control_data = ucontrol->value.integer.value[0];
+
+	DEBUG_LOG("Received control_data = [0x%X]", control_data);
+
+	switch (control_data) {
+	/* FM Radio Volume zero control */
+	case CMD_FMR_INPUT_DEACTIVE:
+	case CMD_FMR_INPUT_ACTIVE:
+		if (wm8994->codec_state & FMRADIO_ACTIVE)
+			wm8994_set_fmradio_input_active(codec, control_data);
+		break;
+
+	/* To remove pop up noise for FM radio */
+	case CMD_FMR_FLAG_CLEAR:
+		DEBUG_LOG("FM Radio Flag is clear!!");
+		wm8994->codec_state &= ~(FMRADIO_ACTIVE);
+		break;
+
+	case CMD_FMR_END:
+		DEBUG_LOG("Call shutdown function forcely for FM radio!!");
+		wm8994->codec_state &= ~(FMRADIO_ACTIVE);
+		tempstream.stream = SNDRV_PCM_STREAM_PLAYBACK;
+		wm8994_shutdown_codec(&tempstream, codec);
+		break;
+
+	/* To remove pop up noise for Call */
+	case CMD_CALL_FLAG_CLEAR:
+		DEBUG_LOG("Call Flag is clear!!");
+		wm8994->codec_state &= ~(CALL_ACTIVE);
+		break;
+
+	case CMD_CALL_END:
+		DEBUG_LOG("Call shutdown function forcely for call!!");
+		wm8994->codec_state &= ~(CALL_ACTIVE);
+		tempstream.stream = SNDRV_PCM_STREAM_PLAYBACK;
+		wm8994_shutdown_codec(&tempstream, codec);
+		break;
+
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static ssize_t get_dockredir_kernel_support(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf,"%u\n",1);
+}
+
+static ssize_t store_usedock(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	unsigned short enable;
+	if (sscanf(buf, "%hu", &enable) == 1)
+	{
+		_dockredir = enable == 0 ? false : true;
+	}
+	return size;
+}
+
+static DEVICE_ATTR(usedock, S_IWUGO , NULL, store_usedock);
+static DEVICE_ATTR(dockredir_support, S_IRUGO , get_dockredir_kernel_support, NULL);
+
+static struct attribute *dockredir_attributes[] = {
+	&dev_attr_usedock.attr,
+	&dev_attr_dockredir_support.attr,
+	NULL
+};
+
+static struct attribute_group dockredir_group = {
+	.attrs = dockredir_attributes,
+};
+
+static struct miscdevice dockredir_device = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "dockredir",
+};
 
 static int wm8994_get_voice_path(struct snd_kcontrol *kcontrol,
 				 struct snd_ctl_elem_value *ucontrol)
@@ -532,6 +723,8 @@ static const struct soc_enum path_control_enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(voicecall_path), voicecall_path),
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(mic_path), mic_path),
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(input_source_state), input_source_state),
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(fmradio_path), fmradio_path),
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(codec_status_control), codec_status_control),
 };
 
 static const struct snd_kcontrol_new wm8994_snd_controls[] = {
@@ -567,6 +760,11 @@ static const struct snd_kcontrol_new wm8994_snd_controls[] = {
 	SOC_ENUM_EXT("Input Source", path_control_enum[3],
 		     wm8994_get_input_source, wm8994_set_input_source),
 
+	SOC_ENUM_EXT("FM Radio Path", path_control_enum[4],
+			wm8994_get_fmradio_path, wm8994_set_fmradio_path),
+
+	SOC_ENUM_EXT("Codec Status", path_control_enum[5],
+			wm8994_get_codec_status, wm8994_set_codec_status),
 };
 
 /* Add non-DAPM controls */
@@ -643,7 +841,11 @@ static int configure_clock(struct snd_soc_codec *codec)
 		case 8000:
 			wm8994_write(codec, WM8994_FLL1_CONTROL_2, 0x2F00);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_3, 0x3126);
+#ifdef CONFIG_PHONE_ARIES_CDMA
 			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0100);
+#else
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0105);
+#endif
 			wm8994_write(codec, WM8994_FLL1_CONTROL_5, 0x0C88);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_1,
 				WM8994_FLL1_FRACN_ENA | WM8994_FLL1_ENA);
@@ -653,7 +855,11 @@ static int configure_clock(struct snd_soc_codec *codec)
 			wm8994_write(codec, WM8994_FLL1_CONTROL_2, 0x1F00);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_3, 0x86C2);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_5, 0x0C88);
-			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x00e0);
+#ifdef CONFIG_PHONE_ARIES_CDMA
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x00E0);
+#else
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x00E5);
+#endif
 			wm8994_write(codec, WM8994_FLL1_CONTROL_1,
 				WM8994_FLL1_FRACN_ENA | WM8994_FLL1_ENA);
 			break;
@@ -662,7 +868,11 @@ static int configure_clock(struct snd_soc_codec *codec)
 			wm8994_write(codec, WM8994_FLL1_CONTROL_2, 0x1F00);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_3, 0x3126);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_5, 0x0C88);
+#ifdef CONFIG_PHONE_ARIES_CDMA
 			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0100);
+#else
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0105);
+#endif
 			wm8994_write(codec, WM8994_FLL1_CONTROL_1,
 				WM8994_FLL1_FRACN_ENA | WM8994_FLL1_ENA);
 			break;
@@ -671,7 +881,11 @@ static int configure_clock(struct snd_soc_codec *codec)
 			wm8994_write(codec, WM8994_FLL1_CONTROL_2, 0x1900);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_3, 0xE23E);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_5, 0x0C88);
+#ifdef CONFIG_PHONE_ARIES_CDMA
 			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0100);
+#else
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0105);
+#endif
 			wm8994_write(codec, WM8994_FLL1_CONTROL_1,
 				WM8994_FLL1_FRACN_ENA | WM8994_FLL1_ENA);
 			break;
@@ -680,7 +894,11 @@ static int configure_clock(struct snd_soc_codec *codec)
 			wm8994_write(codec, WM8994_FLL1_CONTROL_2, 0x0F00);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_3, 0x86C2);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_5, 0x0C88);
+#ifdef CONFIG_PHONE_ARIES_CDMA
 			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x00E0);
+#else
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x00E5);
+#endif
 			wm8994_write(codec, WM8994_FLL1_CONTROL_1,
 				WM8994_FLL1_FRACN_ENA | WM8994_FLL1_ENA);
 			break;
@@ -689,7 +907,11 @@ static int configure_clock(struct snd_soc_codec *codec)
 			wm8994_write(codec, WM8994_FLL1_CONTROL_2, 0x0F00);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_3, 0x3126);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_5, 0x0C88);
+#ifdef CONFIG_PHONE_ARIES_CDMA
 			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0100);
+#else
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0105);
+#endif
 			wm8994_write(codec, WM8994_FLL1_CONTROL_1,
 				WM8994_FLL1_FRACN_ENA | WM8994_FLL1_ENA);
 			break;
@@ -698,7 +920,11 @@ static int configure_clock(struct snd_soc_codec *codec)
 			wm8994_write(codec, WM8994_FLL1_CONTROL_2, 0x0C00);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_3, 0xE23E);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_5, 0x0C88);
+#ifdef CONFIG_PHONE_ARIES_CDMA
 			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0100);
+#else
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0105);
+#endif
 			wm8994_write(codec, WM8994_FLL1_CONTROL_1,
 				WM8994_FLL1_FRACN_ENA | WM8994_FLL1_ENA);
 			break;
@@ -707,7 +933,11 @@ static int configure_clock(struct snd_soc_codec *codec)
 			wm8994_write(codec, WM8994_FLL1_CONTROL_2, 0x0700);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_3, 0x86C2);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_5, 0x0C88);
+#ifdef CONFIG_PHONE_ARIES_CDMA
 			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x00E0);
+#else
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x00E5);
+#endif
 			wm8994_write(codec, WM8994_FLL1_CONTROL_1,
 				WM8994_FLL1_FRACN_ENA | WM8994_FLL1_ENA);
 			break;
@@ -716,7 +946,11 @@ static int configure_clock(struct snd_soc_codec *codec)
 			wm8994_write(codec, WM8994_FLL1_CONTROL_2, 0x0700);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_3, 0x3126);
 			wm8994_write(codec, WM8994_FLL1_CONTROL_5, 0x0C88);
+#ifdef CONFIG_PHONE_ARIES_CDMA
 			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0100);
+#else
+			wm8994_write(codec, WM8994_FLL1_CONTROL_4, 0x0105);
+#endif
 			wm8994_write(codec, WM8994_FLL1_CONTROL_1,
 				WM8994_FLL1_FRACN_ENA | WM8994_FLL1_ENA);
 			break;
@@ -1119,7 +1353,7 @@ static int wm8994_startup(struct snd_pcm_substream *substream,
 		msleep(50);
 		wm8994_write(codec, WM8994_POWER_MANAGEMENT_1,
 				WM8994_VMID_SEL_NORMAL | WM8994_BIAS_ENA);
-		wm8994_write(codec, WM8994_OVERSAMPLING, 0x0000);
+		wm8994_write(codec, WM8994_OVERSAMPLING, 0x0001);
 	} else
 		DEBUG_LOG("Already turned on codec!!");
 
@@ -1129,7 +1363,12 @@ static int wm8994_startup(struct snd_pcm_substream *substream,
 static void wm8994_shutdown(struct snd_pcm_substream *substream,
 			    struct snd_soc_dai *codec_dai)
 {
-	struct snd_soc_codec *codec = codec_dai->codec;
+	wm8994_shutdown_codec(substream, codec_dai->codec);
+}
+
+static void wm8994_shutdown_codec(struct snd_pcm_substream *substream,
+			    struct snd_soc_codec *codec)
+{
 	struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
 
 	DEBUG_LOG("Stream_state = [0x%X],  Codec State = [0x%X]",
@@ -1148,6 +1387,7 @@ static void wm8994_shutdown(struct snd_pcm_substream *substream,
 		DEBUG_LOG("Turn off Codec!!");
 		wm8994->pdata->set_mic_bias(false);
 		wm8994->power_state = CODEC_OFF;
+		wm8994->fmradio_path = FMR_OFF;
 		wm8994->cur_path = OFF;
 		wm8994->rec_path = MIC_OFF;
 		wm8994->ringtone_active = RING_OFF;
@@ -2907,6 +3147,8 @@ static int wm8994_init(struct wm8994_priv *wm8994_private,
 	wm8994->stream_state = PCM_STREAM_DEACTIVE;
 	wm8994->cur_path = OFF;
 	wm8994->rec_path = MIC_OFF;
+	wm8994->fmradio_path = FMR_OFF;
+	wm8994->fmr_mix_path = FMR_MIX_OFF;
 	wm8994->power_state = CODEC_OFF;
 	wm8994->input_source = DEFAULT;
 	wm8994->ringtone_active = RING_OFF;
@@ -2942,6 +3184,11 @@ static int wm8994_init(struct wm8994_priv *wm8994_private,
 
 	wm8994_add_controls(codec);
 	wm8994_add_widgets(codec);
+
+#if defined(CONFIG_SAMSUNG_VIBRANT)
+    /* DIRTY UGLY HACK */
+    wm8994_disable_rec_path(codec); /* fake a mute, that'll be followed by unmute below */
+#endif
 
 	return ret;
 
@@ -3010,12 +3257,13 @@ static int wm8994_codec_probe(struct snd_soc_codec *codec)
 			goto err_earsel;
 		}
 		gpio_direction_output(pdata->ear_sel, 0);
-	}
-	if (!herring_is_cdma_wimax_dev()) {
-		s3c_gpio_setpull(pdata->ear_sel, S3C_GPIO_PULL_NONE);
 
-		s3c_gpio_slp_cfgpin(pdata->ear_sel, S3C_GPIO_SLP_PREV);
-		s3c_gpio_slp_setpull_updown(pdata->ear_sel, S3C_GPIO_PULL_NONE);
+		if (!herring_is_cdma_wimax_dev() && !phone_is_aries_cdma()) {
+			s3c_gpio_setpull(pdata->ear_sel, S3C_GPIO_PULL_NONE);
+
+			s3c_gpio_slp_cfgpin(pdata->ear_sel, S3C_GPIO_SLP_PREV);
+			s3c_gpio_slp_setpull_updown(pdata->ear_sel, S3C_GPIO_PULL_NONE);
+		}
 	}
 	wm8994_ldo_control(pdata, 1);
 
@@ -3026,15 +3274,22 @@ static int wm8994_codec_probe(struct snd_soc_codec *codec)
 	//codec->dev = &i2c->dev;
 
 	ret = wm8994_init(wm8994_priv, pdata);
+#ifdef CONFIG_SND_WM8994_EXTENSIONS
+	wm8994_extensions_pcm_probe(codec);
+#endif
 	if (ret) {
 		dev_err(codec->dev, "failed to initialize WM8994\n");
 		goto err_init;
 	}
 
+	misc_register(&dockredir_device);
+	sysfs_create_group(&dockredir_device.this_device->kobj, &dockredir_group);
+
 	return ret;
 
 err_init:
-	gpio_free(pdata->ear_sel);
+	if (gpio_is_valid(pdata->ear_sel))
+		gpio_free(pdata->ear_sel);
 err_earsel:
 	gpio_free(pdata->ldo);
 err_ldo:

@@ -72,7 +72,7 @@
 static u8 reg_defaults[5] = {
 	0x00, /* PROX: read only register */
 	0x08, /* GAIN: large LED drive level */
-	0xC2, /* HYS: receiver sensitivity */
+	0x40, /* HYS: receiver sensitivity */
 	0x04, /* CYCLE: */
 	0x01, /* OPMOD: normal operating mode */
 };
@@ -97,6 +97,7 @@ struct gp2a_data {
 	struct mutex power_lock;
 	struct wake_lock prx_wake_lock;
 	struct workqueue_struct *wq;
+	char val_state;
 };
 
 int gp2a_i2c_write(struct gp2a_data *gp2a, u8 reg, u8 *val)
@@ -341,13 +342,23 @@ static enum hrtimer_restart gp2a_timer_func(struct hrtimer *timer)
 irqreturn_t gp2a_irq_handler(int irq, void *data)
 {
 	struct gp2a_data *ip = data;
+	u8 setting;
 	int val = gpio_get_value(ip->pdata->p_out);
 	if (val < 0) {
 		pr_err("%s: gpio_get_value error %d\n", __func__, val);
 		return IRQ_HANDLED;
 	}
 
-	gp2a_dbgmsg("gp2a: proximity val=%d\n", val);
+	if (val != ip->val_state) {
+		if (val)
+			setting = 0x40;
+		else
+			setting = 0x20;
+		gp2a_i2c_write(ip, REGS_HYS, &setting);
+	}
+
+	ip->val_state = val;
+	pr_err("gp2a: proximity val = %d\n", val);
 
 	/* 0 is close, 1 is far */
 	input_report_abs(ip->proximity_input_dev, ABS_DISTANCE, val);
@@ -371,6 +382,7 @@ static int gp2a_setup_irq(struct gp2a_data *gp2a)
 		return rc;
 	}
 
+#ifndef CONFIG_SAMSUNG_FASCINATE
 	rc = gpio_direction_input(pdata->p_out);
 	if (rc < 0) {
 		pr_err("%s: failed to set gpio %d as input (%d)\n",
@@ -379,7 +391,11 @@ static int gp2a_setup_irq(struct gp2a_data *gp2a)
 	}
 
 	irq = gpio_to_irq(pdata->p_out);
-	rc = request_irq(irq,
+#else
+	irq = pdata->p_irq;
+#endif
+
+	rc = request_threaded_irq(irq, NULL,
 			 gp2a_irq_handler,
 			 IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
 			 "proximity_int",
@@ -403,7 +419,9 @@ static int gp2a_setup_irq(struct gp2a_data *gp2a)
 	goto done;
 
 err_request_irq:
+#ifndef CONFIG_SAMSUNG_FASCINATE
 err_gpio_direction_input:
+#endif
 	gpio_free(pdata->p_out);
 done:
 	return rc;
@@ -523,6 +541,11 @@ static int gp2a_i2c_probe(struct i2c_client *client,
 		pr_err("%s: could not create sysfs group\n", __func__);
 		goto err_sysfs_create_group_light;
 	}
+
+	/* set initial proximity value as 1 */
+	input_report_abs(gp2a->proximity_input_dev, ABS_DISTANCE, 1);
+	input_sync(gp2a->proximity_input_dev);
+
 	goto done;
 
 	/* error, unwind it all */

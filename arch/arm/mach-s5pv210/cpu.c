@@ -216,7 +216,7 @@ int __init s5pv210_init(void)
 	pm_idle = s5pv210_idle;
 
 	/* set sw_reset function */
-	if (!machine_is_herring())
+	if (!(machine_is_herring() || machine_is_aries()))
 		s5p_reset_hook = s5pv210_sw_reset;
 
 	return sysdev_register(&s5pv210_sysdev);

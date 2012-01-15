@@ -587,10 +587,44 @@ source "drivers/misc/carma/Kconfig"
 config SAMSUNG_MODEMCTL
 	bool "Samsung Modem Control/IO Driver"
 
+config MODEM_HAS_CRAPPY_BOOTLOADER
+	bool "Samsung Modem Control/IO Driver Bootloader is crap"
+	depends on SAMSUNG_MODEMCTL
+	help
+	  If you use the Samsung Modem Control driver on the older
+	  SGS devices the bootloader won't tell you that it finished
+	  loading. This is a workaround for that, it only waits some
+	  time and tries to to continue.
+
 config PN544
 	bool "NXP PN544 NFC Controller Driver"
 	default n
 	help
 	  NXP PN544 Near Field Communication controller support.
+
+config SAMSUNG_PARAM
+	bool "Samsung Param Driver"
+	depends on MACH_ARIES
+	default n
+	help
+	  Driver for communication with Samsung's secondary bootloader
+
+config LIVE_OC
+       bool "Support for Live OC"
+       default y
+       help
+         Say Y here to enable Live OC
+
+config CUSTOM_VOLTAGE
+       bool "Support for Custom Voltage"
+       default y
+       help
+         Say Y here to enable Custom Voltage
+
+config BLX
+       bool "Support for Battery Life eXtender"
+       default y
+       help
+         Say Y here to enable Battery Life eXtender
 
 endif # MISC_DEVICES
