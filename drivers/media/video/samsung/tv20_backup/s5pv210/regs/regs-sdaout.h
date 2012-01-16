@@ -30,42 +30,42 @@
 #define	S5P_SDO_SCHLOCK	S5P_SDAOUT_BASE(0x0038)	//  SCH Phase Control Register 0x0000_0000
 #define	S5P_SDO_DAC	S5P_SDAOUT_BASE(0x003C)	//  DAC Configuration Register 0x0000_0000
 #define	S5P_SDO_FINFO	S5P_SDAOUT_BASE(0x0040)	// Status Register 0x0000_0002
-#define	S5P_SDO_Y0	S5P_SDAOUT_BASE(0x0044)	//  Y- AAF 1¡¯st and 23¡¯th Coefficient (AAF : Anti-Aliasing Filter) 0x0000_0000
-#define	S5P_SDO_Y1	S5P_SDAOUT_BASE(0x0048)	//  Y- AAF 2¡¯nd and 22¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y2	S5P_SDAOUT_BASE(0x004C)	//  Y- AAF 3¡¯rd and 21¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y3	S5P_SDAOUT_BASE(0x0050)	//  Y- AAF 4¡¯th and 20¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y4	S5P_SDAOUT_BASE(0x0054)	//  Y- AAF 5¡¯th and 19¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y5	S5P_SDAOUT_BASE(0x0058)	//  Y- AAF 6¡¯th and 18¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y6	S5P_SDAOUT_BASE(0x005C)	//  Y- AAF 7¡¯th and 17¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y7	S5P_SDAOUT_BASE(0x0060)	//  Y- AAF 8¡¯th and 16¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y8	S5P_SDAOUT_BASE(0x0064)	//  Y - AAF 9¡¯th and 15¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y9	S5P_SDAOUT_BASE(0x0068)	//  Y- AAF 10¡¯th and 14¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y10	S5P_SDAOUT_BASE(0x006C)	//  Y- AAF 11¡¯th and 13¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_Y11	S5P_SDAOUT_BASE(0x0070)	//  Y- AAF 12¡¯th Coefficient 0x0000_025D
-#define	S5P_SDO_CB0	S5P_SDAOUT_BASE(0x0080)	//  CB- AAF 1¡¯st and 23¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CB1	S5P_SDAOUT_BASE(0x0084)	//  CB- AAF 2¡¯nd and 22¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CB2	S5P_SDAOUT_BASE(0x0088)	//  CB- AAF 3¡¯rd and 21¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CB3	S5P_SDAOUT_BASE(0x008C)	//  CB-AAF 4¡¯th and 20¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CB4	S5P_SDAOUT_BASE(0x0090)	//  CB- AAF 5¡¯th and 19¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CB5	S5P_SDAOUT_BASE(0x0094)	//  CB- AAF 6¡¯th and 18¡¯th Coefficient 0x0000_0001
-#define	S5P_SDO_CB6	S5P_SDAOUT_BASE(0x0098)	//  CB- AAF 7¡¯th and 17¡¯th Coefficient 0x0000_0007
-#define	S5P_SDO_CB7	S5P_SDAOUT_BASE(0x009C)	//  CB- AAF 8¡¯th and 16¡¯th Coefficient 0x0000_0014
-#define	S5P_SDO_CB8	S5P_SDAOUT_BASE(0x00A0)	//  CB- AAF 9¡¯th and 15¡¯th Coefficient 0x0000_0028
-#define	S5P_SDO_CB9	S5P_SDAOUT_BASE(0x00A4)	//  CB- AAF 10¡¯th and 14¡¯th Coefficient 0x0000_003F
-#define	S5P_SDO_CB10	S5P_SDAOUT_BASE(0x00A8)	//  CB- AAF 11¡¯th and 13¡¯th Coefficient 0x0000_0052
-#define	S5P_SDO_CB11	S5P_SDAOUT_BASE(0x00AC)	//  CB- AAF 12¡¯th Coefficient 0x0000_005A
-#define	S5P_SDO_CR0	S5P_SDAOUT_BASE(0x00C0)	//  CR- AAF 1¡¯st and 23¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CR1	S5P_SDAOUT_BASE(0x00C4)	//  CR- AAF 2¡¯nd and 22¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CR2	S5P_SDAOUT_BASE(0x00C8)	//  CR- AAF 3¡¯rd and 21¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CR3	S5P_SDAOUT_BASE(0x00CC)	//  CR-AAF 4¡¯th and 20¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CR4	S5P_SDAOUT_BASE(0x00D0)	//  CR- AAF 5¡¯th and 19¡¯th Coefficient 0x0000_0000
-#define	S5P_SDO_CR5	S5P_SDAOUT_BASE(0x00D4)	//  CR- AAF 6¡¯th and 18¡¯th Coefficient 0x0000_0001
-#define	S5P_SDO_CR6	S5P_SDAOUT_BASE(0x00D8)	//  CR- AAF 7¡¯th and 17¡¯th Coefficient 0x0000_0009
-#define	S5P_SDO_CR7	S5P_SDAOUT_BASE(0x00DC)	//  CR- AAF 8¡¯th and 16¡¯th Coefficient 0x0000_001C
-#define	S5P_SDO_CR8	S5P_SDAOUT_BASE(0x00E0)	//  CR- AAF 9¡¯th and 15¡¯th Coefficient 0x0000_0039
-#define	S5P_SDO_CR9	S5P_SDAOUT_BASE(0x00E4)	//  CR- AAF 10¡¯th and 14¡¯th Coefficient 0x0000_005A
-#define	S5P_SDO_CR10	S5P_SDAOUT_BASE(0x00E8)	//  CR- AAF 11¡¯th and 13¡¯th Coefficient 0x0000_0074
-#define	S5P_SDO_CR11	S5P_SDAOUT_BASE(0x00EC)	//  CR- AAF 12¡¯th Coefficient 0x0000_007E
+#define	S5P_SDO_Y0	S5P_SDAOUT_BASE(0x0044)	//  Y- AAF 1Â¡Â¯st and 23Â¡Â¯th Coefficient (AAF : Anti-Aliasing Filter) 0x0000_0000
+#define	S5P_SDO_Y1	S5P_SDAOUT_BASE(0x0048)	//  Y- AAF 2Â¡Â¯nd and 22Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y2	S5P_SDAOUT_BASE(0x004C)	//  Y- AAF 3Â¡Â¯rd and 21Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y3	S5P_SDAOUT_BASE(0x0050)	//  Y- AAF 4Â¡Â¯th and 20Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y4	S5P_SDAOUT_BASE(0x0054)	//  Y- AAF 5Â¡Â¯th and 19Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y5	S5P_SDAOUT_BASE(0x0058)	//  Y- AAF 6Â¡Â¯th and 18Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y6	S5P_SDAOUT_BASE(0x005C)	//  Y- AAF 7Â¡Â¯th and 17Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y7	S5P_SDAOUT_BASE(0x0060)	//  Y- AAF 8Â¡Â¯th and 16Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y8	S5P_SDAOUT_BASE(0x0064)	//  Y - AAF 9Â¡Â¯th and 15Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y9	S5P_SDAOUT_BASE(0x0068)	//  Y- AAF 10Â¡Â¯th and 14Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y10	S5P_SDAOUT_BASE(0x006C)	//  Y- AAF 11Â¡Â¯th and 13Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_Y11	S5P_SDAOUT_BASE(0x0070)	//  Y- AAF 12Â¡Â¯th Coefficient 0x0000_025D
+#define	S5P_SDO_CB0	S5P_SDAOUT_BASE(0x0080)	//  CB- AAF 1Â¡Â¯st and 23Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CB1	S5P_SDAOUT_BASE(0x0084)	//  CB- AAF 2Â¡Â¯nd and 22Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CB2	S5P_SDAOUT_BASE(0x0088)	//  CB- AAF 3Â¡Â¯rd and 21Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CB3	S5P_SDAOUT_BASE(0x008C)	//  CB-AAF 4Â¡Â¯th and 20Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CB4	S5P_SDAOUT_BASE(0x0090)	//  CB- AAF 5Â¡Â¯th and 19Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CB5	S5P_SDAOUT_BASE(0x0094)	//  CB- AAF 6Â¡Â¯th and 18Â¡Â¯th Coefficient 0x0000_0001
+#define	S5P_SDO_CB6	S5P_SDAOUT_BASE(0x0098)	//  CB- AAF 7Â¡Â¯th and 17Â¡Â¯th Coefficient 0x0000_0007
+#define	S5P_SDO_CB7	S5P_SDAOUT_BASE(0x009C)	//  CB- AAF 8Â¡Â¯th and 16Â¡Â¯th Coefficient 0x0000_0014
+#define	S5P_SDO_CB8	S5P_SDAOUT_BASE(0x00A0)	//  CB- AAF 9Â¡Â¯th and 15Â¡Â¯th Coefficient 0x0000_0028
+#define	S5P_SDO_CB9	S5P_SDAOUT_BASE(0x00A4)	//  CB- AAF 10Â¡Â¯th and 14Â¡Â¯th Coefficient 0x0000_003F
+#define	S5P_SDO_CB10	S5P_SDAOUT_BASE(0x00A8)	//  CB- AAF 11Â¡Â¯th and 13Â¡Â¯th Coefficient 0x0000_0052
+#define	S5P_SDO_CB11	S5P_SDAOUT_BASE(0x00AC)	//  CB- AAF 12Â¡Â¯th Coefficient 0x0000_005A
+#define	S5P_SDO_CR0	S5P_SDAOUT_BASE(0x00C0)	//  CR- AAF 1Â¡Â¯st and 23Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CR1	S5P_SDAOUT_BASE(0x00C4)	//  CR- AAF 2Â¡Â¯nd and 22Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CR2	S5P_SDAOUT_BASE(0x00C8)	//  CR- AAF 3Â¡Â¯rd and 21Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CR3	S5P_SDAOUT_BASE(0x00CC)	//  CR-AAF 4Â¡Â¯th and 20Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CR4	S5P_SDAOUT_BASE(0x00D0)	//  CR- AAF 5Â¡Â¯th and 19Â¡Â¯th Coefficient 0x0000_0000
+#define	S5P_SDO_CR5	S5P_SDAOUT_BASE(0x00D4)	//  CR- AAF 6Â¡Â¯th and 18Â¡Â¯th Coefficient 0x0000_0001
+#define	S5P_SDO_CR6	S5P_SDAOUT_BASE(0x00D8)	//  CR- AAF 7Â¡Â¯th and 17Â¡Â¯th Coefficient 0x0000_0009
+#define	S5P_SDO_CR7	S5P_SDAOUT_BASE(0x00DC)	//  CR- AAF 8Â¡Â¯th and 16Â¡Â¯th Coefficient 0x0000_001C
+#define	S5P_SDO_CR8	S5P_SDAOUT_BASE(0x00E0)	//  CR- AAF 9Â¡Â¯th and 15Â¡Â¯th Coefficient 0x0000_0039
+#define	S5P_SDO_CR9	S5P_SDAOUT_BASE(0x00E4)	//  CR- AAF 10Â¡Â¯th and 14Â¡Â¯th Coefficient 0x0000_005A
+#define	S5P_SDO_CR10	S5P_SDAOUT_BASE(0x00E8)	//  CR- AAF 11Â¡Â¯th and 13Â¡Â¯th Coefficient 0x0000_0074
+#define	S5P_SDO_CR11	S5P_SDAOUT_BASE(0x00EC)	//  CR- AAF 12Â¡Â¯th Coefficient 0x0000_007E
 #define	S5P_SDO_MV_ON				S5P_SDAOUT_BASE(0x0100)
 #define	S5P_SDO_MV_SLINE_FIRST_EVEN		S5P_SDAOUT_BASE(0x0104)
 #define	S5P_SDO_MV_SLINE_FIRST_SPACE_EVEN	S5P_SDAOUT_BASE(0x0108)
