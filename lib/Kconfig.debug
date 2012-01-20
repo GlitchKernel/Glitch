@@ -412,7 +412,7 @@ config SLUB_STATS
 	  Try running: slabinfo -DA
 
 config SLQB_DEBUG
-	default n
+	default y
 	bool "Enable SLQB debugging support"
 	depends on SLQB
 

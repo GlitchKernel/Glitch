@@ -67,7 +67,7 @@ void s5pv210_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 		gpio_set_value(S5PV210_GPJ2(7), 1);
 	}
 
-	if (machine_is_herring() || machine_is_aries()) {
+	if (machine_is_herring()) { // This is not done for aries in the original kernel
 		gpio_direction_output(S5PV210_GPJ2(7), 1);
 		s3c_gpio_setpull(S5PV210_GPJ2(7), S3C_GPIO_PULL_NONE);
 	}

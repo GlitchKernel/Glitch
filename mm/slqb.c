@@ -3140,7 +3140,7 @@ static int __cpuinit slab_cpuup_callback(struct notifier_block *nfb,
 
 	case CPU_DOWN_PREPARE:
 	case CPU_DOWN_PREPARE_FROZEN:
-		cancel_rearming_delayed_work(&per_cpu(slqb_cache_trim_work,
+		cancel_delayed_work_sync(&per_cpu(slqb_cache_trim_work,
 					cpu));
 		per_cpu(slqb_cache_trim_work, cpu).work.func = NULL;
 		break;

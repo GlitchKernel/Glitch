@@ -147,11 +147,18 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVEX
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactiveX' governor for latency-sensitive workloads.
 
+config CPU_FREQ_DEFAULT_GOV_SMARTASS
+	bool "smartass"
+	select CPU_FREQ_GOV_SMARTASS
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+          Use the CPUFreq governor 'smartass' as default.
+
 config CPU_FREQ_DEFAULT_GOV_SMARTASS2
 	bool "smartass2"
 	select CPU_FREQ_GOV_SMARTASS2
 	help
-	 Use the CPUFreq governor 'smartassV2' as default.
+	  Use the CPUFreq governor 'smartassV2' as default.
 
 config CPU_FREQ_DEFAULT_GOV_LAZY
 	bool "lazy"
@@ -159,6 +166,30 @@ config CPU_FREQ_DEFAULT_GOV_LAZY
 	select CPU_FREQ_GOV_PERFORMANCE
 	help
 	  Use the CPUFreq governor 'lazy' as default.
+
+config CPU_FREQ_DEFAULT_GOV_SCARY
+	bool "scary"
+	select CPU_FREQ_GOV_SCARY
+	select CPU_FREQ_GOV_SCARY
+	help
+          Use the CPUFreq governor 'scary' as default.
+
+config CPU_FREQ_DEFAULT_GOV_MINMAX
+	bool "minmax"
+	select CPU_FREQ_GOV_MINMAX
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	  Use the CPUFreq governor 'minmax' as default. This minimizes the
+	  frequency jumps does by the governor. This is aimed at maximizing
+	  both perfomance and battery life.
+
+
+config CPU_FREQ_DEFAULT_GOV_LULZACTIVE
+	bool "lulzactive"
+	select CPU_FREQ_GOV_LULZACTIVE
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	  Use the CPUFreq governor 'lulzactive' as default.
 
 endchoice
 
@@ -284,12 +315,20 @@ config CPU_FREQ_GOV_INTERACTIVEX
 	help
 	  'interactiveX' - Modified version of interactive with sleep+wake code.
 
+config CPU_FREQ_GOV_SMARTASS
+	tristate "'smartass' cpufreq governor"
+	depends on CPU_FREQ
+	help
+          smartass' - a "smart" optimized governor for the hero!
+
+          If in doubt, say N.
+
 config CPU_FREQ_GOV_SMARTASS2
 	tristate "'smartassV2' cpufreq governor"
 	depends on CPU_FREQ
 	help
-	 'smartassV2' - a "smart" governor
-	 If in doubt, say N.
+	  'smartassV2' - a "smart" governor
+	  If in doubt, say N.
 
 config CPU_FREQ_GOV_CONSERVATIVE
 	tristate "'conservative' cpufreq governor"
@@ -316,6 +355,18 @@ config CPU_FREQ_GOV_CONSERVATIVE
 
 config CPU_FREQ_GOV_LAZY
 	tristate "'lazy' cpufreq governor"
+	depends on CPU_FREQ
+
+config CPU_FREQ_GOV_SCARY
+	tristate "'scary' cpufreq governor"
+	depends on CPU_FREQ
+	help
+          scary - a governor for cabbages
+
+          If in doubt, say N.
+
+config CPU_FREQ_GOV_LULZACTIVE
+	tristate "'lulzactive' cpufreq governor"
 	depends on CPU_FREQ
 
 menu "x86 CPU frequency scaling drivers"

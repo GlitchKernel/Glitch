@@ -106,7 +106,7 @@ config MCA
 
 config STACKTRACE_SUPPORT
 	bool
-	default n
+	default y
 
 config HAVE_LATENCYTOP_SUPPORT
 	bool
@@ -136,10 +136,9 @@ config GENERIC_LOCKBREAK
 
 config RWSEM_GENERIC_SPINLOCK
 	bool
-	default y
 
 config RWSEM_XCHGADD_ALGORITHM
-	bool
+	def_bool y
 
 config ARCH_HAS_ILOG2_U32
 	bool
@@ -1313,6 +1312,18 @@ config ARM_ERRATA_764369
 	  relevant cache maintenance functions and sets a specific bit
 	  in the diagnostic control register of the SCU.
 
+config PL310_ERRATA_769419
+	bool "PL310 errata: no automatic Store Buffer drain"
+	depends on CACHE_L2X0
+	help
+	  On revisions of the PL310 prior to r3p2, the Store Buffer does
+	  not automatically drain. This can cause normal, non-cacheable
+	  writes to be retained when the memory system is idle, leading
+	  to suboptimal I/O performance for drivers using coherent DMA.
+	  This option adds a write barrier to the cpu_idle loop so that,
+	  on systems with an outer cache, the store buffer is drained
+	  explicitly.
+
 endmenu
 
 menu "Kernel Features"
@@ -1637,16 +1648,6 @@ config ALIGNMENT_TRAP
 	  here, which has a severe performance impact. This is necessary for
 	  correct operation of some network protocols. With an IP-only
 	  configuration it is safe to say N, otherwise say Y.
-
-config ALLOW_CPU_ALIGNMENT
-	bool "Allow CPU-based alignment handling"
-	default y
-	help
-	  Advanced ARM processors, such as the Cortex series and ARMv7-based
-	  CPUS are capable of performing unaligned accesses for many types of
-	  memory accesses.  Typically, using a cpu-based alignment fixup is
-	  faster than doing such a fixup in software.  For best performance
-	  on advanced CPUs, say Y here.
 
 config UACCESS_WITH_MEMCPY
 	bool "Use kernel mem{cpy,set}() for {copy_to,clear}_user() (EXPERIMENTAL)"

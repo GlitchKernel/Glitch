@@ -25,3 +25,11 @@ config BCM4329_NVRAM_PATH
 	default "/proc/calibration"
 	---help---
 	  Path to the calibration file.
+
+config BCM4329_PMFAST
+	depends on BCM4329
+	bool "Low power mode PM_FAST"
+	default y
+	---help---
+	  Use low power mode PM_FAST instead of PM_MAX. Higher power
+	  consumption, but increases stability of wireless connection.

@@ -162,6 +162,7 @@ static void qeth_l3_convert_addr_to_bits(u8 *addr, u8 *bits, int len)
 			octet >>= 1;
 		}
 	}
+	rcu_read_unlock();
 }
 
 int qeth_l3_is_addr_covered_by_ipato(struct qeth_card *card,
@@ -2245,6 +2246,7 @@ qeth_l3_handle_promisc_mode(struct qeth_card *card)
 			qeth_diags_trace(card, QETH_DIAGS_CMD_TRACE_DISABLE);
 		}
 	}
+	rcu_read_unlock();
 }
 
 static void qeth_l3_set_multicast_list(struct net_device *dev)
@@ -2752,6 +2754,8 @@ int inline qeth_l3_get_cast_type(struct qeth_card *card, struct sk_buff *skb)
 		else
 			return RTN_UNSPEC;
 	}
+	rcu_read_unlock();
+
 	/* try something else */
 	if (skb->protocol == ETH_P_IPV6)
 		return (skb_network_header(skb)[24] == 0xff) ?
@@ -2847,6 +2851,7 @@ static void qeth_l3_fill_header(struct qeth_card *card, struct qeth_hdr *hdr,
 				QETH_CAST_UNICAST | QETH_HDR_PASSTHRU;
 		}
 	}
+	rcu_read_unlock();
 }
 
 static inline void qeth_l3_hdr_csum(struct qeth_card *card,

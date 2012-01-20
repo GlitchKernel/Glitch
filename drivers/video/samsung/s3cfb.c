@@ -1185,7 +1185,6 @@ void s3cfb_early_suspend(struct early_suspend *h)
 		container_of(h, struct s3cfb_global, early_suspend);
 
 	pr_debug("s3cfb_early_suspend is called\n");
-
 #ifdef CONFIG_FB_S3C_MDNIE
 	writel(0,fbdev->regs + 0x27c);
 	msleep(20);
@@ -1246,7 +1245,6 @@ void s3cfb_late_resume(struct early_suspend *h)
 #endif
 	s3cfb_init_global(fbdev);
 	s3cfb_set_clock(fbdev);
-
 #ifdef CONFIG_FB_S3C_MDNIE
 	s3c_mdnie_init_global(fbdev);
 	s3c_mdnie_start(fbdev);

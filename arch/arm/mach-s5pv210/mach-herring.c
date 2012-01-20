@@ -295,8 +295,7 @@ static struct s3cfb_lcd s6e63m0 = {
 	.p_width = 52,
 	.p_height = 86,
 	.bpp = 24,
-	.freq = 60,
-
+	.freq = 72,
 	.timing = {
 		.h_fp = 16,
 		.h_bp = 16,
@@ -321,7 +320,7 @@ static struct s3cfb_lcd nt35580 = {
 	.p_width = 52,
 	.p_height = 86,
 	.bpp = 24,
-	.freq = 60,
+	.freq = 72,
 	.timing = {
 		.h_fp = 10,
 		.h_bp = 20,
@@ -346,7 +345,7 @@ static struct s3cfb_lcd r61408 = {
 	.p_width = 52,
 	.p_height = 86,
 	.bpp = 24,
-	.freq = 60,
+	.freq = 70,
 	.timing = {
 		.h_fp = 100,
 		.h_bp = 2,
@@ -365,9 +364,15 @@ static struct s3cfb_lcd r61408 = {
 	},
 };
 
+#ifdef CONFIG_S5PV210_BIGMEM
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (5120 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (0)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (5120 * SZ_1K)
+#else
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (6144 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (9900 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (6144 * SZ_1K)
+#endif
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (36864 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (36864 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (S5PV210_LCD_WIDTH * \
@@ -710,7 +715,7 @@ static struct regulator_init_data herring_buck1_data = {
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= 1250000,
+			.uV	= 1472000,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -728,7 +733,7 @@ static struct regulator_init_data herring_buck2_data = {
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= 1100000,
+			.uV	= 1250000,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -2008,6 +2013,24 @@ static void touch_keypad_onoff(int onoff)
 		msleep(50);
 }
 
+static void touch_keypad_gpio_sleep(int onoff){
+	if(onoff == TOUCHKEY_ON){
+		/*
+		 * reconfigure gpio to activate touchkey controller vdd in sleep mode
+		 */
+		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT1);
+		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
+	} else {
+		/*
+		 * reconfigure gpio to deactivate touchkey vdd in sleep mode,
+		 * this is the default
+		 */
+		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT0);
+		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
+	}
+
+}
+
 static const int touch_keypad_code[] = {
 	KEY_MENU,
 	KEY_HOME,
@@ -2019,6 +2042,7 @@ static struct touchkey_platform_data touchkey_data = {
 	.keycode_cnt = ARRAY_SIZE(touch_keypad_code),
 	.keycode = touch_keypad_code,
 	.touchkey_onoff = touch_keypad_onoff,
+	.touchkey_sleep_onoff = touch_keypad_gpio_sleep,
 	.fw_name = "cypress-touchkey.bin",
 	.scl_pin = _3_TOUCH_SCL_28V,
 	.sda_pin = _3_TOUCH_SDA_28V,

@@ -412,15 +412,15 @@ static struct s5p_media_device aries_media_devs[] = {
 #ifdef CONFIG_CPU_FREQ
 static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 	{
-		.freq	= 1400000,
+		.freq	= 1440000,
 		.varm	= DVSARM1,
 		.vint	= DVSINT1,
 	}, {
-		.freq	= 1300000,
+		.freq	= 1304000,
 		.varm	= DVSARM2,
 		.vint	= DVSINT2,
 	}, {
-		.freq	= 1200000,
+		.freq	= 1152000,
 		.varm	= DVSARM3,
 		.vint	= DVSINT3,
 	}, {
@@ -3425,14 +3425,14 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, { /* NFC_EN */
 		.num	= S5PV210_GPH1(5),
-		.cfg	= S3C_GPIO_INPUT,
-		.val	= S3C_GPIO_SETPIN_NONE,
+		.cfg	= S3C_GPIO_OUTPUT,
+		.val	= S3C_GPIO_SETPIN_ONE,
 		.pud	= S3C_GPIO_PULL_DOWN,
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, { /* NFC_FIRM */
 		.num	= S5PV210_GPH1(6),
-		.cfg	= S3C_GPIO_INPUT,
-		.val	= S3C_GPIO_SETPIN_NONE,
+		.cfg	= S3C_GPIO_OUTPUT,
+		.val	= S3C_GPIO_SETPIN_ZERO,
 		.pud	= S3C_GPIO_PULL_DOWN,
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, {
@@ -4186,8 +4186,8 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 	{ S5PV210_GPD0(3), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_DOWN},
 
 	// GPD1 ---------------------------------------------------
-	{ S5PV210_GPD1(0), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_DOWN},
-	{ S5PV210_GPD1(1), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_DOWN},
+	{ S5PV210_GPD1(0), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_NONE},
+	{ S5PV210_GPD1(1), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_NONE},
 #if defined (CONFIG_SAMSUNG_CAPTIVATE)
 	{ S5PV210_GPD1(2), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_GPD12
 	{ S5PV210_GPD1(3), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_GPD13
@@ -4347,8 +4347,8 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 #endif
 
 	// GPJ0 ---------------------------------------------------
-	{ S5PV210_GPJ0(0), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_NONE},
-	{ S5PV210_GPJ0(1), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_NONE},
+	{ S5PV210_GPJ0(0), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_DOWN},
+	{ S5PV210_GPJ0(1), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_DOWN},
 	{ S5PV210_GPJ0(2), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_NONE},
 	{ S5PV210_GPJ0(3), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_NONE},
 	{ S5PV210_GPJ0(4), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_NONE},
@@ -4951,6 +4951,13 @@ static struct platform_device *aries_devices[] __initdata = {
 #if defined (CONFIG_SAMSUNG_CAPTIVATE)
 	&s3c_device_i2c13,
 #endif
+#ifndef CONFIG_USB_S3C_OTG_HOST
+	&s3c_device_usb_ehci,
+	&s3c_device_usb_ohci,
+#endif
+#ifdef CONFIG_USB_S3C_OTG_HOST
+	&s3c_device_usb_otghcd,
+#endif
 #ifdef CONFIG_USB_GADGET
 	&s3c_device_usbgadget,
 #endif
@@ -5194,14 +5201,21 @@ static void aries_pm_restart(char mode, const char *cmd)
 // Ugly hack to inject parameters (e.g. device serial, bootmode) into /proc/cmdline
 static void __init aries_inject_cmdline(void) {
 	char *new_command_line;
+	int bootmode = __raw_readl(S5P_INFORM6);
 	int size;
 
 	size = strlen(boot_command_line);
 	new_command_line = kmalloc(size + 40 + 11, GFP_KERNEL);
 	strcpy(new_command_line, saved_command_line);
 	size += sprintf(new_command_line + size, " androidboot.serialno=%08X%08X",
-        system_serial_high, system_serial_low);
-	size += sprintf(new_command_line + size, " bootmode=%d", __raw_readl(S5P_INFORM6));
+				system_serial_high, system_serial_low);
+
+	// Only write bootmode when less than 10 to prevent confusion with watchdog
+	// reboot (0xee = 238)
+	if (bootmode < 10) {
+		size += sprintf(new_command_line + size, " bootmode=%d", bootmode);
+	}
+
 	saved_command_line = new_command_line;
 }
 
@@ -5441,6 +5455,43 @@ void usb_host_phy_off(void)
 			S5P_USB_PHY_CONTROL);
 }
 EXPORT_SYMBOL(usb_host_phy_off);
+
+#ifdef CONFIG_USB_S3C_OTG_HOST
+
+/* Initializes OTG Phy */
+void otg_host_phy_init(void) 
+{
+	__raw_writel(__raw_readl(S5P_USB_PHY_CONTROL)
+		|(0x1<<0), S5P_USB_PHY_CONTROL); /*USB PHY0 Enable */
+	__raw_writel((__raw_readl(S3C_USBOTG_PHYPWR)
+		&~(0x3<<3)&~(0x1<<0))|(0x1<<5), S3C_USBOTG_PHYPWR);
+	__raw_writel((__raw_readl(S3C_USBOTG_PHYCLK)
+		&~(0x1<<4))|(0x7<<0), S3C_USBOTG_PHYCLK);
+
+	__raw_writel((__raw_readl(S3C_USBOTG_RSTCON)
+		&~(0x3<<1))|(0x1<<0), S3C_USBOTG_RSTCON);
+	msleep(1);
+	__raw_writel((__raw_readl(S3C_USBOTG_RSTCON)
+		&~(0x7<<0)), S3C_USBOTG_RSTCON);
+	msleep(1);
+
+	__raw_writel((__raw_readl(S3C_UDC_OTG_GUSBCFG)
+		|(0x3<<8)), S3C_UDC_OTG_GUSBCFG);
+
+//	smb136_set_otg_mode(1);
+
+	printk("otg_host_phy_int : USBPHYCTL=0x%x,PHYPWR=0x%x,PHYCLK=0x%x,USBCFG=0x%x\n", 
+		readl(S5P_USB_PHY_CONTROL), 
+		readl(S3C_USBOTG_PHYPWR),
+		readl(S3C_USBOTG_PHYCLK), 
+		readl(S3C_UDC_OTG_GUSBCFG)
+		);
+}
+EXPORT_SYMBOL(otg_host_phy_init);
+
+
+#endif
+
 #endif
 
 MACHINE_START(ARIES, "aries")

@@ -1003,10 +1003,7 @@ static void mmc_sd_remove(struct mmc_host *host)
 	BUG_ON(!host->card);
 
 	mmc_remove_card(host->card);
-
-	mmc_claim_host(host);
 	host->card = NULL;
-	mmc_release_host(host);
 }
 
 /*
@@ -1051,6 +1048,7 @@ static void mmc_sd_detect(struct mmc_host *host)
 
 		mmc_claim_host(host);
 		mmc_detach_bus(host);
+		mmc_power_off(host);
 		mmc_release_host(host);
 	}
 }

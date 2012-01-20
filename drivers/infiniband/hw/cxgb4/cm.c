@@ -1384,6 +1384,7 @@ static int pass_accept_req(struct c4iw_dev *dev, struct sk_buff *skb)
 		rss_qid = dev->rdev.lldi.rxq_ids[
 			  cxgb4_port_idx(dst->neighbour->dev) * step];
 	}
+	rcu_read_unlock();
 	if (!l2t) {
 		printk(KERN_ERR MOD "%s - failed to allocate l2t entry!\n",
 		       __func__);
@@ -1945,6 +1946,7 @@ int c4iw_connect(struct iw_cm_id *cm_id, struct iw_cm_conn_param *conn_param)
 		ep->rss_qid = ep->com.dev->rdev.lldi.rxq_ids[
 			      cxgb4_port_idx(ep->dst->neighbour->dev) * step];
 	}
+	rcu_read_unlock();
 	if (!ep->l2t) {
 		printk(KERN_ERR MOD "%s - cannot alloc l2e.\n", __func__);
 		err = -ENOMEM;

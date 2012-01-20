@@ -307,7 +307,7 @@ restart:
 			continue;
 		}
 
-		switch (teql_resolve(skb, skb_res, slave)) {
+		switch (teql_resolve(skb, skb_res, slave, slave_txq)) {
 		case 0:
 			if (__netif_tx_trylock(slave_txq)) {
 				unsigned int length = qdisc_pkt_len(skb);

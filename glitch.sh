@@ -46,6 +46,7 @@ build ()
 {
 
 tempmodem=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/misc/samsung_modemctl
+temptvout=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/media/video/samsung/tv20
 MODEM_DIR=$repo/kernel/samsung/glitch-build/modem
 
     local target=$target
@@ -56,14 +57,16 @@ MODEM_DIR=$repo/kernel/samsung/glitch-build/modem
     mkdir -p "$target_dir/usr"
     cp "$KERNEL_DIR/usr/"*.list "$target_dir/usr"
     mkdir -p "$tempmodem/modemctl"
+    mkdir -p "$temptvout"
 
-echo "Copying 443 modem files ..."
+echo "Copying 443 built-in files ..."
 if [ "$target" = fascinate ] ; then
     cp $MODEM_DIR/built-in.443cdma_samsung_modemctl $tempmodem/built-in.o
 else
     cp $MODEM_DIR/built-in.443gsm_samsung_modemctl $tempmodem/built-in.o
     cp $MODEM_DIR/built-in.443gsm_modemctl $tempmodem/modemctl/built-in.o
 fi
+    cp $MODEM_DIR/built-in.443_tvout $temptvout/built-in.o
 
     sed "s|usr/|$KERNEL_DIR/usr/|g" -i "$target_dir/usr/"*.list
     mka -C "$KERNEL_DIR" O="$target_dir" aries_${target}_defconfig HOSTCC="$CCACHE gcc"

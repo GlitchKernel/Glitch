@@ -603,16 +603,6 @@ config CGROUP_FREEZER
 	  Provides a way to freeze and unfreeze all tasks in a
 	  cgroup.
 
-config CGROUP_TIMER_SLACK
-	tristate "Timer slack cgroup subsystem"
-	help
-	  Provides a way of tasks grouping by timer slack value.
-	  Introduces per cgroup timer slack value which will override
-	  the default timer slack value once a task is attached to a
-	  cgroup.
-	  It's useful in mobile devices where certain background apps
-	  are attached to a cgroup and combined wakeups are desired.
-
 config CGROUP_DEVICE
 	bool "Device controller for cgroups"
 	help
@@ -1254,9 +1244,9 @@ config SLUB
 	   a slab allocator.
 
 config SLQB
-	bool "SLQB (Queued allocator)"
-	help
-	   SLQB is a proposed new slab allocator.
+        bool "SLQB (Queued allocator)"
+        help
+          SLQB is a proposed new slab allocator.
 
 config SLOB
 	depends on EXPERT
@@ -1314,7 +1304,7 @@ config HAVE_GENERIC_DMA_COHERENT
 config SLABINFO
 	bool
 	depends on PROC_FS
-	depends on SLAB || SLUB_DEBUG || SLQB
+	depends on SLAB || SLUB_DEBUG
 	default y
 
 config RT_MUTEXES

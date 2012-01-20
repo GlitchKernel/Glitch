@@ -599,13 +599,13 @@ int s3cfb_set_buffer_address(struct s3cfb_global *ctrl, int id)
 
 int s3cfb_set_alpha_value_width(struct s3cfb_global *ctrl, int id)
 {
-	struct fb_info *fb = ctrl->fb[id];
-	struct fb_var_screeninfo *var = &fb->var;
+       struct fb_info *fb = ctrl->fb[id];
+       struct fb_var_screeninfo *var = &fb->var;
 
-	if (var->bits_per_pixel == 32 && var->transp.length > 0)
-		writel(1, ctrl->regs + S3C_BLENDCON);
-	else
-		writel(0, ctrl->regs + S3C_BLENDCON);
+       if (var->bits_per_pixel == 32 && var->transp.length > 0)
+               writel(1, ctrl->regs + S3C_BLENDCON);
+       else
+               writel(0, ctrl->regs + S3C_BLENDCON);
 
 }
 

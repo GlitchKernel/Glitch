@@ -58,6 +58,7 @@ obj-$(CONFIG_SAMSUNG_JACK)	+= sec_jack.o
 obj-$(CONFIG_USB_SWITCH_FSA9480)	+= fsa9480.o
 obj-$(CONFIG_SAMSUNG_MODEMCTL) += samsung_modemctl/
 obj-$(CONFIG_SAMSUNG_PARAM)	+= param/
+obj-$(CONFIG_CPU_DIDLE)		+= deep_idle.o
 obj-$(CONFIG_CUSTOM_VOLTAGE)   += custom_voltage.o
 obj-$(CONFIG_LIVE_OC)    += live_oc.o
 obj-$(CONFIG_BLX)        += blx.o

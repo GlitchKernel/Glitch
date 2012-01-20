@@ -80,7 +80,7 @@ struct s5p_lcd *lcd_;
 u32 color_mult[3] = { U32_MAX, U32_MAX, U32_MAX };
 
 // v0 offset hack from supercurio's "Voodoo Color"
-u32 hacky_v0_offset[3] = {0, 0, 0};
+u32 hacky_v1_offset[3] = {0, 0, 0};
 
 static u32 gamma_lookup(struct s5p_lcd *lcd, u8 brightness, u32 val, int c)
 {
@@ -164,7 +164,7 @@ static void setup_gamma_regs(struct s5p_lcd *lcd, u16 gamma_regs[])
 		//   terrible shameful hack allowing to get back standard
 		//   colors without fixing the real thing properly (gamma table)
 		//   it consist on a simple (negative) offset applied on v0
-		gamma_regs[c] = (adj > hacky_v0_offset[c] && (adj <=255)) ? (adj - hacky_v0_offset[c]) | 0x100 : adj | 0x100;
+		gamma_regs[c] = (adj > hacky_v1_offset[c] && (adj <=255)) ? (adj - hacky_v1_offset[c]) | 0x100 : adj | 0x100;
 
 		v255 = vx[5] = gamma_lookup(lcd, brightness, bv->v255, c);
 		adj = 600 - 120 - DIV_ROUND_CLOSEST(600 * v255, v0);
@@ -647,49 +647,49 @@ static ssize_t blue_multiplier_store(struct device *dev, struct device_attribute
 	return size;
 }
 
-static ssize_t v0_red_gamma_hack_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t red_v1_offset_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u\n", hacky_v0_offset[0]);
+	return sprintf(buf, "%u\n", hacky_v1_offset[0]);
 }
 
-static ssize_t v0_red_gamma_hack_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t red_v1_offset_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	u32 value;
 	if (sscanf(buf, "%u", &value) == 1)
 	{
-		hacky_v0_offset[0] = value;
+		hacky_v1_offset[0] = value;
 		update_brightness(lcd_);
 	}
 	return size;
 }
 
-static ssize_t v0_green_gamma_hack_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t green_v1_offset_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u\n", hacky_v0_offset[1]);
+	return sprintf(buf, "%u\n", hacky_v1_offset[1]);
 }
 
-static ssize_t v0_green_gamma_hack_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t green_v1_offset_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	u32 value;
 	if (sscanf(buf, "%u", &value) == 1)
 	{
-		hacky_v0_offset[1] = value;
+		hacky_v1_offset[1] = value;
 		update_brightness(lcd_);
 	}
 	return size;
 }
 
-static ssize_t v0_blue_gamma_hack_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t blue_v1_offset_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u\n", hacky_v0_offset[2]);
+	return sprintf(buf, "%u\n", hacky_v1_offset[2]);
 }
 
-static ssize_t v0_blue_gamma_hack_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t blue_v1_offset_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	u32 value;
 	if (sscanf(buf, "%u", &value) == 1)
 	{
-		hacky_v0_offset[2] = value;
+		hacky_v1_offset[2] = value;
 		update_brightness(lcd_);
 	}
 	return size;
@@ -698,17 +698,17 @@ static ssize_t v0_blue_gamma_hack_store(struct device *dev, struct device_attrib
 static DEVICE_ATTR(red_multiplier, S_IRUGO | S_IWUGO, red_multiplier_show, red_multiplier_store);
 static DEVICE_ATTR(green_multiplier, S_IRUGO | S_IWUGO, green_multiplier_show, green_multiplier_store);
 static DEVICE_ATTR(blue_multiplier, S_IRUGO | S_IWUGO, blue_multiplier_show, blue_multiplier_store);
-static DEVICE_ATTR(v0_red_gamma_hack, S_IRUGO | S_IWUGO, v0_red_gamma_hack_show, v0_red_gamma_hack_store);
-static DEVICE_ATTR(v0_green_gamma_hack, S_IRUGO | S_IWUGO, v0_green_gamma_hack_show, v0_green_gamma_hack_store);
-static DEVICE_ATTR(v0_blue_gamma_hack, S_IRUGO | S_IWUGO, v0_blue_gamma_hack_show, v0_blue_gamma_hack_store);
+static DEVICE_ATTR(red_v1_offset, S_IRUGO | S_IWUGO, red_v1_offset_show, red_v1_offset_store);
+static DEVICE_ATTR(green_v1_offset, S_IRUGO | S_IWUGO, green_v1_offset_show, green_v1_offset_store);
+static DEVICE_ATTR(blue_v1_offset, S_IRUGO | S_IWUGO, blue_v1_offset_show, blue_v1_offset_store);
 
 static struct attribute *color_tuning_attributes[] = {
 	&dev_attr_red_multiplier.attr,
 	&dev_attr_green_multiplier.attr,
 	&dev_attr_blue_multiplier.attr,
-	&dev_attr_v0_red_gamma_hack.attr,
-	&dev_attr_v0_green_gamma_hack.attr,
-	&dev_attr_v0_blue_gamma_hack.attr,
+	&dev_attr_red_v1_offset.attr,
+	&dev_attr_green_v1_offset.attr,
+	&dev_attr_blue_v1_offset.attr,
 	NULL
 };
 

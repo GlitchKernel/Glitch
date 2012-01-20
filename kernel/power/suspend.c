@@ -310,8 +310,16 @@ int enter_state(suspend_state_t state)
  */
 int pm_suspend(suspend_state_t state)
 {
-	if (state > PM_SUSPEND_ON && state <= PM_SUSPEND_MAX)
+	if (state > PM_SUSPEND_ON && state < PM_SUSPEND_MAX)
 		return enter_state(state);
 	return -EINVAL;
 }
 EXPORT_SYMBOL(pm_suspend);
+
+#ifdef CONFIG_CPU_DIDLE
+bool suspend_ongoing(void)
+{
+    return mutex_is_locked(&pm_mutex);
+}
+EXPORT_SYMBOL(suspend_ongoing);
+#endif

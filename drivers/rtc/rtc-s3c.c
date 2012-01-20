@@ -209,6 +209,7 @@ static int s3c_rtc_settime(struct device *dev, struct rtc_time *tm)
 
 	s3c_rtc_enable(dev, 1);
 
+	clk_enable(rtc_clk);
 	writeb(bin2bcd(tm->tm_sec),  base + S3C2410_RTCSEC);
 	writeb(bin2bcd(tm->tm_min),  base + S3C2410_RTCMIN);
 	writeb(bin2bcd(tm->tm_hour), base + S3C2410_RTCHOUR);

@@ -143,4 +143,8 @@ struct max8998_platform_data {
 	struct max8998_charger_data	*charger;
 };
 
+// FOR DIRECT API
+#define LDO_USB         (0x1 << 0)
+
+
 #endif /*  __LINUX_MFD_MAX8998_H */

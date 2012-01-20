@@ -478,7 +478,7 @@ static int dhd_sleep_pm_callback(struct notifier_block *nfb, unsigned long actio
 {
 	int ret = NOTIFY_DONE;
 
-	switch (action) {
+	switch (action)	{
 		case PM_HIBERNATION_PREPARE:
 		case PM_SUSPEND_PREPARE:
 			dhd_mmc_suspend = TRUE;
@@ -523,11 +523,7 @@ static void dhd_set_packet_filter(int value, dhd_pub_t *dhd)
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 {
-#ifdef CONFIG_BCMDHD_PMFAST
-	int power_mode = PM_FAST;
-#else
 	int power_mode = PM_MAX;
-#endif
 	/* wl_pkt_filter_enable_t	enable_parm; */
 	char iovbuf[32];
 	int bcn_li_dtim = 3;

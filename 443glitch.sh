@@ -133,7 +133,7 @@ START=$(date +%s)
 
 if [ "$1" = "gsm" ] ; then
 
-	if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/samsung_modemctl_backup; then
+	if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/samsung_modemctl_backup -a -d drivers/media/video/samsung/tv20_backup; then
 
 		mv Makefile Makefile_opti
 		mv Makefile_backup Makefile
@@ -143,6 +143,9 @@ if [ "$1" = "gsm" ] ; then
 
 		mv drivers/misc/samsung_modemctl drivers/misc/samsung_modemctl_opti
 		mv drivers/misc/samsung_modemctl_backup drivers/misc/samsung_modemctl
+
+		mv drivers/media/video/samsung/tv20 drivers/media/video/samsung/tv20_opti
+		mv drivers/media/video/samsung/tv20_backup drivers/media/video/samsung/tv20
 
 		echo "Switching done. Building..."
 		echo ""
@@ -162,6 +165,11 @@ if [ "$1" = "gsm" ] ; then
 
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl $KERNEL_DIR/drivers/misc/samsung_modemctl_backup
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl_opti $KERNEL_DIR/drivers/misc/samsung_modemctl
+
+		mv $glitch443/drivers/media/video/samsung/tv20/built-in.o $MODEM_DIR/built-in.443_tvout
+
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/video/samsung/tv20_backup
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/video/samsung/tv20
 		}
 
 	echo "Done! now preparing for next build..." && {
@@ -175,6 +183,14 @@ echo "Built-in.o modem files for GSM copied"
 else
 echo "***** built-in.443gsm files are missing *****"
 echo "******** Please build old GSM *********"
+fi
+
+if [ -f $MODEM_DIR/built-in.443_tvout ]
+then
+echo "Built-in.o tv-out file copied"
+else
+echo "***** built-in.443_tvout file is missing *****"
+echo "******** Please build old tv-out *********"
 fi
 	}
 
@@ -196,6 +212,9 @@ if test -s $KERNEL_DIR/Makefile_opti -a -s $KERNEL_DIR/arch/arm/Makefile_opti -a
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl $KERNEL_DIR/drivers/misc/samsung_modemctl_backup
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl_opti $KERNEL_DIR/drivers/misc/samsung_modemctl
 
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/samsung/tv20_backup
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/samsung/tv20
+
 	echo "Let's restart the process"
 	./443glitch.sh gsm
 
@@ -204,7 +223,7 @@ fi
 else
 		if [ "$1" = "cdma" ] ; then
 
-			if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/samsung_modemctl_backup; then
+			if test -s Makefile_backup -a -s arch/arm/Makefile_backup -a -d drivers/misc/samsung_modemctl_backup -a -d drivers/media/video/samsung/tv20_backup; then
 
 		mv Makefile Makefile_opti
 		mv Makefile_backup Makefile
@@ -214,6 +233,9 @@ else
 
 		mv drivers/misc/samsung_modemctl drivers/misc/samsung_modemctl_opti
 		mv drivers/misc/samsung_modemctl_backup drivers/misc/samsung_modemctl
+
+		mv drivers/media/samsung/tv20 drivers/media/video/samsung/tv20_opti
+		mv drivers/media/samsung/tv20_backup drivers/media/video/samsung/tv20
 
 	echo "Switching done. Building..."
 	echo ""
@@ -232,6 +254,11 @@ else
 
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl $KERNEL_DIR/drivers/misc/samsung_modemctl_backup
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl_opti $KERNEL_DIR/drivers/misc/samsung_modemctl
+
+		mv $glitch443/drivers/media/video/samsung/tv20/built-in.o $MODEM_DIR/built-in.443_tvout
+
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/samsung/tv20_backup
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/samsung/tv20
 		}
 
 	echo "Done! now preparing for next build..." && {
@@ -245,6 +272,14 @@ echo "Built-in.o modem files for CDMA copied"
 else
 echo "***** built-in.443cdma files are missing *****"
 echo "******** Please build old CDMA *********"
+fi
+
+if [ -f $MODEM_DIR/built-in.443_tvout ]
+then
+echo "Built-in.o tv-out file copied"
+else
+echo "***** built-in.443_tvout file is missing *****"
+echo "******** Please build old tv-out *********"
 fi
 	}
 
@@ -266,6 +301,9 @@ if test -s $KERNEL_DIR/Makefile_opti -a -s $KERNEL_DIR/arch/arm/Makefile_opti -a
 
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl $KERNEL_DIR/drivers/misc/samsung_modemctl_backup
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl_opti $KERNEL_DIR/drivers/misc/samsung_modemctl
+
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/samsung/tv20_backup
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/samsung/tv20
 
 	echo "Let's restart the process"
 	./443glitch.sh cdma

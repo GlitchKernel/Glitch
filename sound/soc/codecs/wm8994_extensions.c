@@ -1,7 +1,7 @@
 /*
  * wm8994_extensions.c  --  WM8994 ALSA Soc Audio driver related extensions
  *
- *  Copyright (C) 2010/11 François SIMOND / twitter & XDA-developers @supercurio
+ *  Copyright (C) 2010/11 FranÃ§ois SIMOND / twitter & XDA-developers @supercurio
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
