@@ -24,6 +24,14 @@ config BCMDHD_NVRAM_PATH
 	---help---
 	  Path to the calibration file.
 
+config BCMDHD_PMFAST
+	depends on BCMDHD
+	bool "Low power mode PM_FAST"
+	default y
+	---help---
+	  Use low power mode PM_FAST instead of PM_MAX. Higher power
+	  consumption, but increases stability of wireless connection.
+
 config BCMDHD_WEXT
 	bool "Enable WEXT support"
 	depends on BCMDHD && CFG80211 = n
