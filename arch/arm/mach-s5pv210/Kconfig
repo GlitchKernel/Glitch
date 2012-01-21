@@ -25,6 +25,13 @@ config CPU_DIDLE
         help
           Enable DEEP IDLE support for S5PV210 CPU.
 
+config S5PV210_BIGMEM
+	bool "Enable Bigmem (more free RAM)"
+	default n
+	help
+	  Aggressively restrict the memory set aside on
+	  boot for FIMC, MFC and JPEG.
+
 config S5PV210_SETUP_I2C1
 	bool
 	default	y

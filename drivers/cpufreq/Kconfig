@@ -191,6 +191,32 @@ config CPU_FREQ_DEFAULT_GOV_LULZACTIVE
 	help
 	  Use the CPUFreq governor 'lulzactive' as default.
 
+config CPU_FREQ_DEFAULT_GOV_LAGFREE
+	bool "lagfree"
+	select CPU_FREQ_GOV_LAGFREE
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	  Use the CPUFreq governor 'lagfree' as default. This allows
+	  you to get a full dynamic frequency capable system by simply
+	  loading your cpufreq low-level hardware driver.
+	  Be aware that not all cpufreq drivers support the lagfree
+	  governor. If unsure have a look at the help section of the
+	  driver. Fallback governor will be the performance governor.
+
+config CPU_FREQ_DEFAULT_GOV_SMOOTHASS
+	bool "smoothass"
+	select CPU_FREQ_GOV_SMOOTHASS
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	  Use CPUFREQ smoothass as default.
+
+config CPU_FREQ_DEFAULT_GOV_VIRTUOUS
+	bool "virtuous"
+	select CPU_FREQ_GOV_VIRTUOUS
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	  Use the CPUFreq governor 'virtuous' as default.
+
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -368,6 +394,52 @@ config CPU_FREQ_GOV_SCARY
 config CPU_FREQ_GOV_LULZACTIVE
 	tristate "'lulzactive' cpufreq governor"
 	depends on CPU_FREQ
+
+config CPU_FREQ_GOV_LAGFREE
+	tristate "'lagfree' cpufreq governor"
+	depends on CPU_FREQ
+	help
+	  'lagfree' - this driver is rather similar to the 'ondemand'
+	  governor both in its source code and its purpose, the difference is
+	  its optimisation for better suitability in a battery powered
+	  environment.  The frequency is gracefully increased and decreased
+	  rather than jumping to 100% when speed is required.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called cpufreq_lagfree.
+
+	  For details, take a look at linux/Documentation/cpu-freq.
+
+	  If in doubt, say N.
+
+config CPU_FREQ_GOV_SMOOTHASS
+	tristate "'smoothass' governor"
+	depends on CPU_FREQ
+	help
+	  Slightly more aggressive smartass
+
+config CPU_FREQ_GOV_VIRTUOUS
+	tristate "'virtuous' cpufreq governor"
+	depends on CPU_FREQ
+	help
+          'virtuous' - a "slightly more agressive smart" optimized governor!
+ 
+	  If in doubt, say N.
+
+config CPU_FREQ_MIN_TICKS
+	int "Ticks between governor polling interval."
+	depends on CPU_FREQ_GOV_LAGFREE
+	default 10
+	help
+	  Minimum number of ticks between polling interval for governors.
+
+config CPU_FREQ_SAMPLING_LATENCY_MULTIPLIER
+	int "Sampling rate multiplier for governors."
+	depends on CPU_FREQ_GOV_LAGFREE
+	default 1000
+	help
+	  Sampling latency rate multiplied by the cpu switch latency.
+	  Affects governor polling.
 
 menu "x86 CPU frequency scaling drivers"
 depends on X86
