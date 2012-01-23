@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : TransferReadyQ.c
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/04
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/04   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and implements functions of TransferReadyQ.
  *  	 -# Jul 15,2008 v1.2 by SeungSoo Yang (ss1.yang@samsung.com) \n
@@ -36,7 +36,7 @@ static	trans_ready_q_t	periodic_trans_ready_q;
 static	trans_ready_q_t	nonperiodic_trans_ready_q;
 
 /******************************************************************************/
-/*! 
+/*!
  * @name	void		init_transfer_ready_q(void)
  *
  * @brief		this function initiates PeriodicTransferReadyQ and NonPeriodicTransferReadyQ.
@@ -49,15 +49,14 @@ static	trans_ready_q_t	nonperiodic_trans_ready_q;
 /******************************************************************************/
 void	init_transfer_ready_q(void)
 {
-
 	otg_dbg(OTG_DBG_SCHEDULE,"start init_transfer_ready_q\n");
-	
+
 	otg_list_init(&periodic_trans_ready_q.trans_ready_q_list_head);
 	periodic_trans_ready_q.is_periodic_transfer 		= 	true;
 	periodic_trans_ready_q.trans_ready_entry_num 	= 	0;
 	periodic_trans_ready_q.total_alloc_chnum		=	0;
 	periodic_trans_ready_q.total_perio_bus_bandwidth	=	0;
-	
+
 	otg_list_init(&nonperiodic_trans_ready_q.trans_ready_q_list_head);
 	nonperiodic_trans_ready_q.is_periodic_transfer 		= 	false;
 	nonperiodic_trans_ready_q.trans_ready_entry_num 	=	0;
@@ -69,7 +68,7 @@ void	init_transfer_ready_q(void)
 
 
 /******************************************************************************/
-/*! 
+/*!
  * @name	int   	insert_ed_to_ready_q(ed_t	*insert_ed,
  *					bool	f_isfirst)
  *
@@ -83,7 +82,7 @@ void	init_transfer_ready_q(void)
  *		USB_ERR_FAILl		-if fails to insert the insert_ed to TransferReadyQ.
  */
 /******************************************************************************/
-int   	insert_ed_to_ready_q(ed_t 	*insert_ed, 
+int   	insert_ed_to_ready_q(ed_t 	*insert_ed,
 				bool 	f_isfirst)
 {
 
@@ -95,7 +94,7 @@ int   	insert_ed_to_ready_q(ed_t 	*insert_ed,
 			otg_list_push_next(&insert_ed->trans_ready_q_list_entry,&nonperiodic_trans_ready_q.trans_ready_q_list_head);
 		}
 		else
-		{			
+		{
 			otg_list_push_prev(&insert_ed->trans_ready_q_list_entry,&nonperiodic_trans_ready_q.trans_ready_q_list_head);
 		}
 		nonperiodic_trans_ready_q.trans_ready_entry_num++;
@@ -112,9 +111,9 @@ int   	insert_ed_to_ready_q(ed_t 	*insert_ed,
 		}
 		periodic_trans_ready_q.trans_ready_entry_num++;
 	}
-	
+
 	return USB_ERR_SUCCESS;
-	
+
 }
 
 
@@ -123,7 +122,7 @@ u32	get_periodic_ready_q_entity_num(void)
 	return periodic_trans_ready_q.trans_ready_entry_num;
 }
 /******************************************************************************/
-/*! 
+/*!
  * @name	int   	remove_ed_from_ready_q(ed_t	*remove_ed)
  *
  * @brief		this function removes ed_t * from TransferReadyQ.
@@ -139,7 +138,7 @@ int   	remove_ed_from_ready_q(ed_t	*remove_ed)
 {
 //	SPINLOCK_t	SLForRemoveED_t = SPIN_LOCK_INIT;
 //	u32		uiSLFlag=0;
-	
+
 	otg_list_pop(&remove_ed->trans_ready_q_list_entry);
 
 	if(remove_ed->ed_desc.endpoint_type == BULK_TRANSFER||
@@ -157,7 +156,7 @@ int   	remove_ed_from_ready_q(ed_t	*remove_ed)
 		periodic_trans_ready_q.trans_ready_entry_num--;
 //		spin_unlock_irq_save_otg(&SLForRemoveED_t, uiSLFlag);
 	}
-	
+
 	return USB_ERR_SUCCESS;
 
 }
@@ -174,8 +173,8 @@ bool   	check_ed_on_ready_q(ed_t	*check_ed_p)
 }*/
 
 /******************************************************************************/
-/*! 
- * @name	int   	get_ed_from_ready_q(bool	f_isperiodic, 	
+/*!
+ * @name	int   	get_ed_from_ready_q(bool	f_isperiodic,
  *					td_t 	**get_ed)
  *
  * @brief		this function returns the first entity of TransferReadyQ.
@@ -184,42 +183,49 @@ bool   	check_ed_on_ready_q(ed_t	*check_ed_p)
  *
  *
  * @param	[IN]	f_isperiodic	= indicate whether Periodic or not
- *		[OUT]	get_ed		= indicate the double pointer to store the address of first entity 
+ *		[OUT]	get_ed		= indicate the double pointer to store the address of first entity
  *								on TransferReadyQ.
  *
  * @return	USB_ERR_SUCCESS	-if successes to get frist ed_t from TransferReadyQ.
- *		USB_ERR_NO_ENTITY	-if fails to get frist ed_t from TransferReadyQ 
+ *		USB_ERR_NO_ENTITY	-if fails to get frist ed_t from TransferReadyQ
  *					because there is no entity on TransferReadyQ.
  */
 /******************************************************************************/
 
-int	get_ed_from_ready_q(bool	f_isperiodic, 
+int	get_ed_from_ready_q(bool	f_isperiodic,
 				ed_t 	**get_ed)
 {
 	if(f_isperiodic)
 	{
 		otg_list_head	*transreadyq_list_entity=NULL;
-		
+
 		if(periodic_trans_ready_q.trans_ready_entry_num==0)
 		{
 			return USB_ERR_NO_ENTITY;
 		}
-		
+
 		transreadyq_list_entity = periodic_trans_ready_q.trans_ready_q_list_head.next;
-		
+
 		//if(transreadyq_list_entity!= &periodic_trans_ready_q.trans_ready_q_list_head)
 		if(!otg_list_empty(&periodic_trans_ready_q.trans_ready_q_list_head))
 		{
 			*get_ed = otg_list_get_node(transreadyq_list_entity,ed_t,trans_ready_q_list_entry);
-			otg_list_pop(transreadyq_list_entity);
-			periodic_trans_ready_q.trans_ready_entry_num--;
-			
+			if (transreadyq_list_entity->prev == LIST_POISON2 ||
+					transreadyq_list_entity->next == LIST_POISON1) {
+				printk(KERN_ERR "s3c-otg-scheduler get_ed_from_ready_q error\n");
+				periodic_trans_ready_q.trans_ready_entry_num =0;
+			}
+			else {
+				otg_list_pop(transreadyq_list_entity);
+				periodic_trans_ready_q.trans_ready_entry_num--;
+			}
+
 			return USB_ERR_SUCCESS;
 		}
 		else
 		{
 			return USB_ERR_NO_ENTITY;
-		}		
+		}
 	}
 	else
 	{
@@ -229,25 +235,30 @@ int	get_ed_from_ready_q(bool	f_isperiodic,
 		{
 			return USB_ERR_NO_ENTITY;
 		}
-		
+
 		transreadyq_list_entity = nonperiodic_trans_ready_q.trans_ready_q_list_head.next;
-		
+
 		//if(transreadyq_list_entity!= &nonperiodic_trans_ready_q.trans_ready_q_list_head)
-		if(!otg_list_empty(&nonperiodic_trans_ready_q.trans_ready_q_list_head))	
+		if(!otg_list_empty(&nonperiodic_trans_ready_q.trans_ready_q_list_head))
 		{
 			*get_ed = otg_list_get_node(transreadyq_list_entity,ed_t, trans_ready_q_list_entry);
-			
-			otg_list_pop(transreadyq_list_entity);
-			
-			nonperiodic_trans_ready_q.trans_ready_entry_num--;
-			
+			if (transreadyq_list_entity->prev == LIST_POISON2 ||
+					transreadyq_list_entity->next == LIST_POISON1) {
+				printk(KERN_ERR "s3c-otg-scheduler get_ed_from_ready_q error\n");
+				nonperiodic_trans_ready_q.trans_ready_entry_num =0;
+			}
+			else {
+				otg_list_pop(transreadyq_list_entity);
+				nonperiodic_trans_ready_q.trans_ready_entry_num--;
+			}
+
 			return USB_ERR_SUCCESS;
 		}
 		else
 		{
 			return USB_ERR_NO_ENTITY;
-		}	
+		}
 	}
 }
 
- 
+

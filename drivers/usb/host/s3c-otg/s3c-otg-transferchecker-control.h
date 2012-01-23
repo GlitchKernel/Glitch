@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : ControlTransferChecker.h
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2009/01/12
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/13   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and defines functions of ControlTransferChecker
  *
@@ -27,7 +27,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
 
-#ifndef  _CONTROL_TRANSFER_CHECKER_H   
+#ifndef  _CONTROL_TRANSFER_CHECKER_H
 #define  _CONTROL_TRANSFER_CHECKER_H
 
 /*
@@ -53,42 +53,42 @@
 extern "C"
 {
 #endif
-u8	process_control_transfer(	td_t 	*raw_td, 							
+u8	process_control_transfer(	td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_xfercompl_on_control(td_t *raw_td, 									     	
+u8	process_xfercompl_on_control(td_t *raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_chhltd_on_control(	td_t 	*raw_td, 									    
+u8	process_chhltd_on_control(	td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_ahb_on_control(	td_t 	*raw_td, 										
+u8	process_ahb_on_control(	td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_stall_on_control(	td_t 	*raw_td, 									
+u8	process_stall_on_control(	td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_nak_on_control	(td_t 	*raw_td, 								     	
+u8	process_nak_on_control	(td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_ack_on_control	(td_t 	*raw_td, 									
+u8	process_ack_on_control	(td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_nyet_on_control(	td_t 	*raw_td, 									
+u8	process_nyet_on_control(	td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_xacterr_on_control(td_t 	*raw_td, 									     
+u8	process_xacterr_on_control(td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_bblerr_on_control(	td_t 	*raw_td, 									    
+u8	process_bblerr_on_control(	td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_datatgl_on_control(td_t 	*raw_td, 									     		
+u8	process_datatgl_on_control(td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
-u8	process_indirection_on_control(	td_t 	*result_td, 
+u8	process_indirection_on_control(	td_t 	*result_td,
 					hc_info_t *hc_reg_data);
 
-u8 process_outdirection_on_control(td_t 	*result_td, 
+u8 process_outdirection_on_control(td_t 	*result_td,
 					hc_info_t *hc_reg_data);
 
 #ifdef __cplusplus
@@ -97,4 +97,3 @@ u8 process_outdirection_on_control(td_t 	*result_td,
 
 
 #endif
-

@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : s3c-otg-common-errorcode.h
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/03
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/03   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file.
  *      (2) 2008/08/18   by SeungSoo Yang ( ss1.yang@samsung.com )
@@ -29,8 +29,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
 
-#ifndef  _ERROR_CODE_DEF_H   
-#define  _ERROR_CODE_DEF_H   
+#ifndef  _ERROR_CODE_DEF_H
+#define  _ERROR_CODE_DEF_H
 
 /*
 // ----------------------------------------------------------------------------
@@ -62,6 +62,7 @@ typedef int	USB_ERROR_CODE;
 #define	USB_ERR_NODEV		-ENODEV
 #define	USB_ERR_NOMEM		-ENOMEM
 #define	USB_ERR_NOSPACE		-ENOSPC
+#define   USB_ERR_NOIO          -EIO
 
 //OTG-HCD error code
 #define	USB_ERR_NOELEMENT		-ENOENT
@@ -91,7 +92,7 @@ typedef int	USB_ERROR_CODE;
 #define	USB_ERR_STATUS_XACTERR		-EPROTO
 #define	USB_ERR_STATUS_STALL			-EPIPE
 #define	USB_ERR_STATUS_BBLERR			-EOVERFLOW
-#define	USB_ERR_STATUS_AHBERR		-EIO	
+#define	USB_ERR_STATUS_AHBERR		-EIO
 #define	USB_ERR_STATUS_FRMOVRUN_OUT		-ENOSR
 #define	USB_ERR_STATUS_FRMOVRUN_IN		-ECOMM
 #define	USB_ERR_STATUS_SHORTREAD		-EREMOTEIO

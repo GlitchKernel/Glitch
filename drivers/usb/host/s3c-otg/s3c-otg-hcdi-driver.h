@@ -1,9 +1,9 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  * @file   s3c-otg-hcdi-driver.h
  * @brief  header of s3c-otg-hcdi-driver \n
- * @version 
+ * @version
  *  -# Jun 9,2008 v1.0 by SeungSoo Yang (ss1.yang@samsung.com) \n
  *	  : Creating the initial version of this code \n
  *  -# Jul 15,2008 v1.2 by SeungSoo Yang (ss1.yang@samsung.com) \n
@@ -50,7 +50,6 @@ extern "C"
 #include <asm/irq.h>	//for IRQ_OTG
 #include <linux/clk.h>
 
-//#include <asm/io.h> //for ioremap
 
 #include "s3c-otg-common-common.h"
 #include "s3c-otg-common-regdef.h"
@@ -59,20 +58,18 @@ extern "C"
 #include "s3c-otg-hcdi-hcd.h"
 #include "s3c-otg-hcdi-kal.h"
 
-//struct	clk*		g_pOTG_clock = NULL;
-struct	usb_hcd*	g_pUsbHcd = NULL;
 
 volatile u8 *		g_pUDCBase;
 
 static const char	gHcdName[] = "EMSP_OTG_HCD";
 
-extern int otg_hcd_init_modules(void);
-extern void otg_hcd_deinit_modules(void);
+//extern int otg_hcd_init_modules(struct sec_otghost *otghost);
+//extern void otg_hcd_deinit_modules(struct sec_otghost *otghost);
 
-void otg_print_registers(void);
+//void otg_print_registers();
 
-#ifdef __cplusplus 
-} 
-#endif 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _S3C_OTG_HCDI_DRIVER_H_ */

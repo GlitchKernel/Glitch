@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : BulkTransferChecker.c
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/13
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/18   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and implements functions of BulkTransferChecker
  *
@@ -31,8 +31,8 @@
 #include "s3c-otg-isr.h"
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_bulk_transfer(td_t 	*result_td, 
+/*!
+ * @name	u8	process_bulk_transfer(td_t 	*result_td,
 					hc_info_t *hc_reg_data)
 
  *
@@ -50,7 +50,7 @@
  *		NO_ACTION	-if we don't need any action,
  */
 /******************************************************************************/
-u8	process_bulk_transfer(td_t 		*result_td, 
+u8	process_bulk_transfer(td_t 		*result_td,
 				hc_info_t 	*hc_reg_data)
 {
 	hcintn_t		hc_intr_info;
@@ -65,47 +65,47 @@ u8	process_bulk_transfer(td_t 		*result_td,
 		{
 			return_val = process_chhltd_on_bulk(result_td, hc_reg_data);
 		}
-		
+
 		else if (hc_intr_info.b.ack)
 		{
 			return_val =process_ack_on_bulk(result_td, hc_reg_data);
 		}
-		
+
 		else if (hc_intr_info.b.nak)
 		{
 			return_val =process_nak_on_bulk(result_td, hc_reg_data);
 		}
-		
+
 		else if (hc_intr_info.b.datatglerr)
 		{
 			return_val = process_datatgl_on_bulk(result_td,hc_reg_data);
-		}	
+		}
 	}
 	else
 	{
 		if(hc_intr_info.b.chhltd)
 		{
 			return_val = process_chhltd_on_bulk(result_td,  hc_reg_data);
-		
+
 		}
-		
+
 		else if(hc_intr_info.b.ack)
 		{
 			return_val =process_ack_on_bulk( result_td, hc_reg_data);
-		}		
-	}	
+		}
+	}
 
 	return return_val;
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_chhltd_on_bulk(td_t 	*result_td, 
+/*!
+ * @name	u8	process_chhltd_on_bulk(td_t 	*result_td,
  *					hc_info_t 	*hc_reg_data)
  *
  *
  * @brief		this function processes Channel Halt event according to Synopsys OTG Spec.
- *			firstly, this function checks the reason of the Channel Halt, and according to the reason, 
+ *			firstly, this function checks the reason of the Channel Halt, and according to the reason,
  *			calls the sub-functions to process the result.
  *
  *
@@ -117,7 +117,7 @@ u8	process_bulk_transfer(td_t 		*result_td,
  *		DE_ALLOCATE	-if USB Transfer is completed.
  */
 /******************************************************************************/
-u8	process_chhltd_on_bulk(td_t 		*result_td, 
+u8	process_chhltd_on_bulk(td_t 		*result_td,
 				hc_info_t 	*hc_reg_data)
 {
 #if 0
@@ -137,13 +137,13 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
 		}
 		else if(hc_reg_data->hc_int.b.xacterr)
 		{
-			return process_xacterr_on_bulk(result_td, hc_reg_data);	
+			return process_xacterr_on_bulk(result_td, hc_reg_data);
 		}
 		else
 		{
 			//Occure Error State.....
 			clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 			//Mask ack Interrupt..
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
@@ -156,14 +156,14 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
 				result_td->err_cnt = 0;
 				return DE_ALLOCATE;
 			}
-			
+
 			return RE_TRANSMIT;
 		}
 	}
 	else
 	{
 		if(hc_reg_data->hc_int.b.xfercompl)
-		{				
+		{
 			return process_xfercompl_on_bulk(result_td, hc_reg_data);
 		}
 		else if(hc_reg_data->hc_int.b.stall)
@@ -174,10 +174,10 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
 		{
 			return process_xacterr_on_bulk(result_td, hc_reg_data);
 		}
-		
+
 		else if(hc_reg_data->hc_int.b.nak)
 		{
-			return process_nak_on_bulk(result_td, hc_reg_data);			
+			return process_nak_on_bulk(result_td, hc_reg_data);
 		}
 		else if(hc_reg_data->hc_int.b.nyet)
 		{
@@ -187,7 +187,7 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
 		{
 			//occur error state...
 			clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 			//Mask ack Interrupt..
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
@@ -200,12 +200,12 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
 				result_td->err_cnt = 0;
 				return DE_ALLOCATE;
 			}
-			
+
 			return RE_TRANSMIT;
 		}
-		
 
-			
+
+
 	}
 #else
 		if(hc_reg_data->hc_int.b.xfercompl)
@@ -222,11 +222,11 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
 		}
 		else if(hc_reg_data->hc_int.b.xacterr)
 		{
-			return process_xacterr_on_bulk(result_td, hc_reg_data);	
+			return process_xacterr_on_bulk(result_td, hc_reg_data);
 		}
 		else if(hc_reg_data->hc_int.b.nak)
 		{
-			return process_nak_on_bulk(result_td, hc_reg_data);			
+			return process_nak_on_bulk(result_td, hc_reg_data);
 		}
 		else if(hc_reg_data->hc_int.b.nyet)
 		{
@@ -236,7 +236,7 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
 		{
 			//occur error state...
 			clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 			//Mask ack Interrupt..
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
@@ -249,7 +249,7 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
 				result_td->err_cnt = 0;
 				return DE_ALLOCATE;
 			}
-			
+
 			return RE_TRANSMIT;
 		}
 #endif
@@ -258,8 +258,8 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8		process_xfercompl_on_bulk(	td_t 	*result_td, 
+/*!
+ * @name	u8		process_xfercompl_on_bulk(	td_t 	*result_td,
  *							hc_info_t *hc_reg_data)
  *
  *
@@ -279,15 +279,15 @@ u8	process_chhltd_on_bulk(td_t 		*result_td,
  * @return	USB_ERR_SUCCESS
  */
 /******************************************************************************/
-u8	process_xfercompl_on_bulk(td_t 	*result_td, 
+u8	process_xfercompl_on_bulk(td_t 	*result_td,
 					hc_info_t *hc_reg_data)
 {
 	u8	ret_val=0;
-	
-	result_td->err_cnt 		= 	0;	
+
+	result_td->err_cnt 		= 	0;
 
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 	//Mask ack Interrupt..
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
@@ -308,27 +308,27 @@ u8	process_xfercompl_on_bulk(td_t 	*result_td,
 		{
 			if(result_td->transfer_flag&USB_TRANS_FLAG_NOT_SHORT)
 			{
-				result_td->error_code	=USB_ERR_STATUS_SHORTREAD;	
+				result_td->error_code	=USB_ERR_STATUS_SHORTREAD;
 			}
 			else
 			{
-				result_td->error_code	=USB_ERR_STATUS_COMPLETE;		
+				result_td->error_code	=USB_ERR_STATUS_COMPLETE;
 			}
 			ret_val = DE_ALLOCATE;
 		}
 		else
-		{	
+		{
 			ret_val = RE_SCHEDULE;
 		}
-	}	
-	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);	
+	}
+	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
 
 	if(hc_reg_data->hc_int.b.nyet)
 	{
 		//at OUT Transfer, we must re-transmit.
 		if(result_td->parent_ed_p->ed_desc.is_ep_in==false)
-		{			
-			
+		{
+
 			if(result_td->parent_ed_p->ed_desc.dev_speed == HIGH_SPEED_OTG)
 			{
 				result_td->parent_ed_p->ed_status.is_ping_enable = true;
@@ -336,17 +336,17 @@ u8	process_xfercompl_on_bulk(td_t 	*result_td,
 			else
 			{
 				result_td->parent_ed_p->ed_status.is_ping_enable = false;
-			}			
-		}	
+			}
+		}
 	}
-	
+
 	return ret_val;
-	
+
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_ahb_on_bulk(td_t 	*result_td, 
+/*!
+ * @name	u8	process_ahb_on_bulk(td_t 	*result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
@@ -359,31 +359,31 @@ u8	process_xfercompl_on_bulk(td_t 	*result_td,
  *
  * @return	USB_ERR_SUCCESS
  */
-/******************************************************************************/						     	
-u8	process_ahb_on_bulk(td_t 	*result_td, 
+/******************************************************************************/
+u8	process_ahb_on_bulk(td_t 	*result_td,
 				hc_info_t *hc_reg_data)
 {
 	result_td->err_cnt 	=0;
 	result_td->error_code	=USB_ERR_STATUS_AHBERR;
 
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_AHBErr);
-	
+
 	//Mask ack Interrupt..
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
 
 	// we just calculate the size of the transferred data on Data Stage of Bulk Transfer.
-	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);	
+	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
 	result_td->parent_ed_p->ed_status.is_ping_enable	=	false;
-	
+
 	return DE_ALLOCATE;
 
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_stall_on_bulk(td_t 	*result_td, 
+/*!
+ * @name	u8	process_stall_on_bulk(td_t 	*result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
@@ -396,7 +396,7 @@ u8	process_ahb_on_bulk(td_t 	*result_td,
  * @return	DE_ALLOCATE
  */
 /******************************************************************************/
-u8	process_stall_on_bulk(	td_t *		result_td, 
+u8	process_stall_on_bulk(	td_t *		result_td,
 				hc_info_t *	hc_reg_data)
 {
 	result_td->err_cnt 	=0;
@@ -404,24 +404,24 @@ u8	process_stall_on_bulk(	td_t *		result_td,
 
 	//this channel is stalled, So we don't process another interrupts.
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 	//Mask ack Interrupt..
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
-	
+
 	result_td->parent_ed_p->ed_status.is_ping_enable	=	false;
 	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
-		
-	update_datatgl(DATA0, result_td);	
 
-		
+	update_datatgl(DATA0, result_td);
+
+
 	return DE_ALLOCATE;
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_nak_on_bulk(td_t 	*result_td, 
+/*!
+ * @name	u8	process_nak_on_bulk(td_t 	*result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
@@ -432,12 +432,12 @@ u8	process_stall_on_bulk(	td_t *		result_td,
  *				2. masks ack/nak/DaaTglErr bit of HCINTMSK.
  *				3. clears the nak bit of HCINT
  *				4. be careful, nak of IN Transaction don't require re-transmit.
- *			If nak is occured at OUT Transaction, this function processes this interrupt as following.		
+ *			If nak is occured at OUT Transaction, this function processes this interrupt as following.
  *				1. all procedures of IN Transaction are executed.
  *				2. calculates the size of the transferred data.
  *				3. if the speed of USB Device is High-Speed, sets the ping protocol.
- *				4. update the Toggle 
- *			at OUT Transaction, this function check whether	the speed of USB Device is High-Speed or not. 
+ *				4. update the Toggle
+ *			at OUT Transaction, this function check whether	the speed of USB Device is High-Speed or not.
  *			if USB Device is High-Speed, then
  *			this function sets the ping protocol.
  *
@@ -448,11 +448,11 @@ u8	process_stall_on_bulk(	td_t *		result_td,
  *		NO_ACTION	-if the direction of the Transfer is IN
  */
 /******************************************************************************/
-u8	process_nak_on_bulk(td_t 	*result_td, 
+u8	process_nak_on_bulk(td_t 	*result_td,
 				hc_info_t *hc_reg_data)
 {
 	result_td->err_cnt = 0;
-	
+
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
@@ -461,7 +461,7 @@ u8	process_nak_on_bulk(td_t 	*result_td,
 
 	//at OUT Transfer, we must re-transmit.
 	if(result_td->parent_ed_p->ed_desc.is_ep_in==false)
-	{			
+	{
 		result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
 
 		if(result_td->parent_ed_p->ed_desc.dev_speed == HIGH_SPEED_OTG)
@@ -472,18 +472,18 @@ u8	process_nak_on_bulk(td_t 	*result_td,
 		{
 			result_td->parent_ed_p->ed_status.is_ping_enable = false;
 		}
-		
+
 		update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
-		
+
 		return RE_TRANSMIT;
-	}	
+	}
 	return NO_ACTION;
 
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_ack_on_bulk(td_t 	*result_td, 
+/*!
+ * @name	u8	process_ack_on_bulk(td_t 	*result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
@@ -498,15 +498,15 @@ u8	process_nak_on_bulk(td_t 	*result_td,
  * @return	USB_ERR_SUCCESS
  */
 /******************************************************************************/
-u8	process_ack_on_bulk(td_t 	*result_td, 
+u8	process_ack_on_bulk(td_t 	*result_td,
 				hc_info_t *hc_reg_data)
 {
 	result_td->err_cnt = 0;
-	
+
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
-	
+
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ACK);
 
 	result_td->parent_ed_p->ed_status.is_ping_enable	=	false;
@@ -516,14 +516,14 @@ u8	process_ack_on_bulk(td_t 	*result_td,
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_nyet_on_bulk(td_t 	*result_td, 
+/*!
+ * @name	u8	process_nyet_on_bulk(td_t 	*result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
  * @brief		this function deals with the nyet event according to Synopsys OTG Spec.
  *			nyet is only occured at OUT Transaction.
- *			If nyet is occured at OUT Transaction, this function processes this interrupt as following.		
+ *			If nyet is occured at OUT Transaction, this function processes this interrupt as following.
  *				1. resets the result_td->err_cnt.
  *				2. masks ack/nak/datatglerr bit of HCINTMSK.
  *				3. clears the nyet bit of HCINT
@@ -538,7 +538,7 @@ u8	process_ack_on_bulk(td_t 	*result_td,
  * @return	RE_SCHEDULE
  */
 /******************************************************************************/
-u8	process_nyet_on_bulk(td_t 	*result_td, 
+u8	process_nyet_on_bulk(td_t 	*result_td,
 				hc_info_t *hc_reg_data)
 {
 	if(result_td->parent_ed_p->ed_desc.is_ep_in)
@@ -546,15 +546,15 @@ u8	process_nyet_on_bulk(td_t 	*result_td,
 		// Error State....
 		return NO_ACTION;
 	}
-	
+
 	result_td->err_cnt = 0;
-	
+
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
-	
+
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_NYET);
-				
+
 	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
 
 	if(result_td->parent_ed_p->ed_desc.dev_speed == HIGH_SPEED_OTG)
@@ -565,16 +565,16 @@ u8	process_nyet_on_bulk(td_t 	*result_td,
 	{
 		result_td->parent_ed_p->ed_status.is_ping_enable = false;
 	}
-	
+
 	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
-	
+
 	return RE_TRANSMIT;
 
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_xacterr_on_bulk(	td_t 	*result_td, 
+/*!
+ * @name	u8	process_xacterr_on_bulk(	td_t 	*result_td,
  *						hc_info_t *hc_reg_data)
  *
  *
@@ -583,7 +583,7 @@ u8	process_nyet_on_bulk(td_t 	*result_td,
  *			if the Error Counter is less than the RETRANSMIT_THRESHOLD.
  *			the reasons of xacterr is Timeout/CRC error/false EOP.
  *			the procedure to process xacterr is as following.
- *				1. increses the result_td->err_cnt 
+ *				1. increses the result_td->err_cnt
  *				2. check whether the result_td->err_cnt is equal to 3.
  *				2. unmasks ack/nak/datatglerr bit of HCINTMSK.
  *				3. clears the xacterr bit of HCINT
@@ -598,7 +598,7 @@ u8	process_nyet_on_bulk(td_t 	*result_td,
  *		DE_ALLOCATE	-if the error count is equal to 3
  */
 /******************************************************************************/
-u8	process_xacterr_on_bulk(	td_t 	*result_td, 									       
+u8	process_xacterr_on_bulk(	td_t 	*result_td,
 					hc_info_t *hc_reg_data)
 {
 	u8	ret_val = 0;
@@ -618,9 +618,9 @@ u8	process_xacterr_on_bulk(	td_t 	*result_td,
 		result_td->err_cnt = 0 ;
 		result_td->error_code = USB_ERR_STATUS_XACTERR;
 	}
-	
+
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_DataTglErr);
-				
+
 	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
 
 	if(result_td->parent_ed_p->ed_desc.is_ep_in==false)
@@ -632,25 +632,25 @@ u8	process_xacterr_on_bulk(	td_t 	*result_td,
 		else
 		{
 			result_td->parent_ed_p->ed_status.is_ping_enable = false;
-		}	
+		}
 	}
 
-	
+
 	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
-	
+
 	return ret_val;
 
 }
 
 /******************************************************************************/
-/*! 
- * @name	void	process_bblerr_on_bulk(td_t *result_td, 
+/*!
+ * @name	void	process_bblerr_on_bulk(td_t *result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
  * @brief		this function deals with the Babble event according to Synopsys OTG Spec.
  *			babble error is occured when the buffer to receive data to be transmit is overflow.
- *			So, babble error can be just occured at IN Transaction. 
+ *			So, babble error can be just occured at IN Transaction.
  *			when Babble Error is occured, we should stop the USB Transfer, and return the fact
  *			to Application.
  *
@@ -660,7 +660,7 @@ u8	process_xacterr_on_bulk(	td_t 	*result_td,
  * @return	DE_ALLOCATE
  */
 /******************************************************************************/
-u8	process_bblerr_on_bulk(td_t	*result_td, 									      
+u8	process_bblerr_on_bulk(td_t	*result_td,
 				hc_info_t *hc_reg_data)
 {
 
@@ -668,28 +668,28 @@ u8	process_bblerr_on_bulk(td_t	*result_td,
 	{
 		return NO_ACTION;
 	}
-	
+
 	result_td->err_cnt 	=0;
 	result_td->error_code	=USB_ERR_STATUS_BBLERR;
 
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 	//Mask ack Interrupt..
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
 
-	result_td->parent_ed_p->ed_status.is_ping_enable	=false;	
-	result_td->transferred_szie += calc_transferred_size(false, result_td, hc_reg_data);		
-	
+	result_td->parent_ed_p->ed_status.is_ping_enable	=false;
+	result_td->transferred_szie += calc_transferred_size(false, result_td, hc_reg_data);
+
 	return DE_ALLOCATE;
 
 
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_datatgl_on_bulk(	td_t 	*result_td, 
+/*!
+ * @name	u8	process_datatgl_on_bulk(	td_t 	*result_td,
  *					   	hc_info_t *hc_reg_data)
  *
  *
@@ -704,7 +704,7 @@ u8	process_bblerr_on_bulk(td_t	*result_td,
  * @return	NO_ACTION
  */
 /******************************************************************************/
-u8	process_datatgl_on_bulk(td_t	*result_td, 
+u8	process_datatgl_on_bulk(td_t	*result_td,
 				 hc_info_t 	*hc_reg_data)
 {
 	result_td->err_cnt = 0;

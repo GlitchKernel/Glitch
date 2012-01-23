@@ -8,6 +8,7 @@
  *
  */
 
+#include <linux/host_notify.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/module.h>
@@ -2966,8 +2967,8 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 			}
 			if (r) {
 				dev_err(&udev->dev,
-					"device descriptor read/64, error %d\n",
-					r);
+					"device descriptor read/64, error %d %d\n",
+					r, udev->descriptor.bMaxPacketSize0);
 				retval = -EMSGSIZE;
 				continue;
 			}
@@ -3334,6 +3335,10 @@ static void hub_port_connect_change(struct usb_hub *hub, int port1,
 				spin_lock_irq(&device_state_lock);
 				hdev->children[port1-1] = NULL;
 				spin_unlock_irq(&device_state_lock);
+#ifdef CONFIG_USB_HOST_NOTIFY
+                                if(hcd->host_notify)
+                                        host_state_notify(&hcd->ndev, NOTIFY_HOST_UNKNOWN);
+#endif
 			}
 		}
 

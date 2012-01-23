@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : CommonTransferChecker.h
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/12
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/12   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and defines functions of CommonTransferChecker
  *
@@ -27,7 +27,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
 
-#ifndef  _COMMON_TRANSFER_CHECKER_H   
+#ifndef  _COMMON_TRANSFER_CHECKER_H
 #define  _COMMON_TRANSFER_CHECKER_H
 
 /*
@@ -60,9 +60,9 @@ extern "C"
 #endif
 
 //void	init_done_transfer_checker (void);
-void	do_transfer_checker (void);
-int	release_trans_resource(td_t *done_td);
-u32	calc_transferred_size(bool 	f_is_complete,	
+void	do_transfer_checker (struct sec_otghost *otghost);
+int	release_trans_resource(struct sec_otghost *otghost, td_t *done_td);
+u32	calc_transferred_size(bool 	f_is_complete,
 				td_t 	*td,
 				hc_info_t *hc_info);
 void	update_frame_number(td_t *result_td);

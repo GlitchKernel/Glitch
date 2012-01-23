@@ -45,8 +45,10 @@ CROSS_PREFIX=$CROSS_PREFIX_GLITCH
 build ()
 {
 
+formodules=$repo/kernel/samsung/glitch-build/kernel/$target
 tempmodem=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/misc/samsung_modemctl
 temptvout=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/media/video/samsung/tv20
+tempusbhost=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/usb/host/s3c-otg
 MODEM_DIR=$repo/kernel/samsung/glitch-build/modem
 
     local target=$target
@@ -58,6 +60,7 @@ MODEM_DIR=$repo/kernel/samsung/glitch-build/modem
     cp "$KERNEL_DIR/usr/"*.list "$target_dir/usr"
     mkdir -p "$tempmodem/modemctl"
     mkdir -p "$temptvout"
+    mkdir -p "$tempusbhost"
 
 echo "Copying 443 built-in files ..."
 if [ "$target" = fascinate ] ; then
@@ -67,6 +70,7 @@ else
     cp $MODEM_DIR/built-in.443gsm_modemctl $tempmodem/modemctl/built-in.o
 fi
     cp $MODEM_DIR/built-in.443_tvout $temptvout/built-in.o
+    cp $MODEM_DIR/built-in.443_usbhost $tempusbhost/built-in.o
 
     sed "s|usr/|$KERNEL_DIR/usr/|g" -i "$target_dir/usr/"*.list
     mka -C "$KERNEL_DIR" O="$target_dir" aries_${target}_defconfig HOSTCC="$CCACHE gcc"
@@ -101,10 +105,16 @@ REL=CM9-${target}-Glitch-$(date +%Y%m%d.%H%M).zip
 	mkdir  -p system/etc/glitch-config || exit 1
 	echo "inactive" > system/etc/glitch-config/screenstate_scaling || exit 1
 	echo "conservative" > system/etc/glitch-config/sleep_governor || exit 1
+
+	# Copying modules
 	cp logger.module system/lib/modules/logger.ko
-	for module in "${MODULES[@]}" ; do
-		cp "$target_dir/$module" \; 2>/dev/null
-	done
+	cp $formodules/crypto/ansi_cprng.ko system/lib/modules/ansi_cprng.ko
+	cp $formodules/crypto/md4.ko system/lib/modules/md4.ko
+	cp $formodules/drivers/media/video/gspca/gspca_main.ko system/lib/modules/gspca_main.ko
+	cp $formodules/fs/cifs/cifs.ko system/lib/modules/cifs.ko
+	cp $formodules/fs/fuse/fuse.ko system/lib/modules/fuse.ko
+	cp $formodules/fs/nls/nls_utf8.ko system/lib/modules/nls_utf8.ko
+
 	cp S99screenstate_scaling system/etc/init.d/ || exit 1
 	cp 90call_vol system/etc/init.d/ || exit 1
 	cp logcat_module system/etc/init.d/ || exit 1

@@ -40,6 +40,7 @@
 #include <plat/jpeg.h>
 #include <mach/media.h>
 #include <s3cfb.h>
+#include <linux/host_notify.h>
 
 /* RTC */
 static struct resource s5p_rtc_resource[] = {

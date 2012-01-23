@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : DoneTransferChecker.h
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/12
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/12   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and defines functions of S3CDoneTransferChecker
  *
@@ -27,7 +27,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
 
-#ifndef  _DONE_TRANSFER_CHECKER_H   
+#ifndef  _DONE_TRANSFER_CHECKER_H
 #define  _DONE_TRANSFER_CHECKER_H
 
 /*
@@ -63,4 +63,4 @@ extern "C"
 
 
 
- 
+

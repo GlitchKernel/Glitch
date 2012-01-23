@@ -1,9 +1,9 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  * @file   s3c-otg-hcdi-list.h
  * @brief  list functions for otg \n
- * @version 
+ * @version
  *  -# Jun 9,2008 v1.0 by SeungSoo Yang (ss1.yang@samsung.com) \n
  *	  : Creating the initial version of this code \n
  *  -# Jul 15,2008 v1.2 by SeungSoo Yang (ss1.yang@samsung.com) \n
@@ -51,158 +51,150 @@ typedef   struct  list_head    otg_list_head;
 
 /**
  * void	otg_list_push_next(otg_list_head *new_node_p, otg_list_head *list_head_p)
- * 
+ *
  * @brief push a list node into the next of head
- * 
+ *
  * @param [in] new_node_p : node to be pushed
  * @param [in] otg_list_head : target list head
- * 
+ *
  * @return void \n
  */
 
-static	inline	
-void	otg_list_push_next(otg_list_head *new_node_p, otg_list_head *list_head_p) 
-{     
-	otg_dbg(OTG_DBG_OTGHCDI_LIST, 
-		"otg_list_push_next \n");		
+static	inline
+void	otg_list_push_next(otg_list_head *new_node_p, otg_list_head *list_head_p)
+{
+	otg_dbg(OTG_DBG_OTGHCDI_LIST, "otg_list_push_next \n");
 	list_add(new_node_p, list_head_p);
-} 
+}
 //-------------------------------------------------------------------------------
 
 /**
  * void	otg_list_push_prev(otg_list_head *new_node_p, otg_list_head *list_head_p)
- * 
+ *
  * @brief push a list node into the previous of head
- * 
+ *
  * @param [in] new_node_p : node to be pushed
  * @param [in] otg_list_head : target list head
- * 
+ *
  * @return void \n
  */
-static	inline	
-void	otg_list_push_prev(otg_list_head *new_node_p, otg_list_head *list_head_p) 
-{     
-	otg_dbg(OTG_DBG_OTGHCDI_LIST, 
-		"otg_list_push_prev \n");
+static	inline
+void	otg_list_push_prev(otg_list_head *new_node_p, otg_list_head *list_head_p)
+{
+	otg_dbg(OTG_DBG_OTGHCDI_LIST, "otg_list_push_prev \n");
 	list_add_tail(new_node_p, list_head_p);
-} 
+}
 //-------------------------------------------------------------------------------
 
 /**
  * void	otg_list_pop(otg_list_head *list_entity_p)
- * 
+ *
  * @brief pop a list node
- * 
+ *
  * @param [in] new_node_p : node to be poped
  * @param [in] otg_list_head : target list head
- * 
+ *
  * @return void \n
  */
-static	inline	
-void	otg_list_pop(otg_list_head *list_entity_p) 
-{     
-	otg_dbg(OTG_DBG_OTGHCDI_LIST, 
-		"otg_list_pop \n");		
+static	inline
+void	otg_list_pop(otg_list_head *list_entity_p)
+{
+	otg_dbg(OTG_DBG_OTGHCDI_LIST, "otg_list_pop \n");
 	list_del(list_entity_p);
-} 
+}
 //-------------------------------------------------------------------------------
 
 /**
  * void	otg_list_move_next(otg_list_head *node_p, otg_list_head *list_head_p)
- * 
+ *
  * @brief move a list to next of head
- * 
+ *
  * @param [in] new_node_p : node to be moved
  * @param [in] otg_list_head : target list head
- * 
+ *
  * @return void \n
  */
-static	inline	
-void	otg_list_move_next(otg_list_head *node_p, otg_list_head *list_head_p) 
-{     
-	otg_dbg(OTG_DBG_OTGHCDI_LIST, 
-		"otg_list_move_next \n");		
+static	inline
+void	otg_list_move_next(otg_list_head *node_p, otg_list_head *list_head_p)
+{
+	otg_dbg(OTG_DBG_OTGHCDI_LIST, "otg_list_move_next \n");
 	list_move(node_p, list_head_p);
-} 
+}
 //-------------------------------------------------------------------------------
 
 /**
  * void	otg_list_move_prev(otg_list_head *node_p, otg_list_head *list_head_p)
- * 
+ *
  * @brief move a list to previous of head
- * 
+ *
  * @param [in] new_node_p : node to be moved
  * @param [in] otg_list_head : target list head
- * 
+ *
  * @return void \n
  */
-static	inline	
-void	otg_list_move_prev(otg_list_head *node_p, otg_list_head *list_head_p) 
-{ 
-	otg_dbg(OTG_DBG_OTGHCDI_LIST, 
-		"otg_list_move_prev \n");		
+static	inline
+void	otg_list_move_prev(otg_list_head *node_p, otg_list_head *list_head_p)
+{
+	otg_dbg(OTG_DBG_OTGHCDI_LIST, "otg_list_move_prev \n");
 	list_move_tail(node_p, list_head_p);
-} 
+}
 //-------------------------------------------------------------------------------
 
 /**
  * bool	otg_list_empty(otg_list_head *list_head_p)
- * 
+ *
  * @brief check a list empty or not
- * 
+ *
  * @param [in] list_head_p : node to check
- * 
+ *
  * @return true : empty list \n
  * 		   false : not empty list
  */
-static	inline	
-bool	otg_list_empty(otg_list_head *list_head_p) 
-{ 
-    
-	otg_dbg(OTG_DBG_OTGHCDI_LIST, 
-		"otg_list_empty \n");		
+static	inline
+bool	otg_list_empty(otg_list_head *list_head_p)
+{
+
+	otg_dbg(OTG_DBG_OTGHCDI_LIST, "otg_list_empty \n");
 	if(list_empty(list_head_p))
 		return true;
 	return false;
-} 
+}
 //-------------------------------------------------------------------------------
 
 /**
  * void	otg_list_merge(otg_list_head *list_p, otg_list_head *head_p)
- * 
+ *
  * @brief merge two list
- * 
- * @param [in] list_p : a head 
+ *
+ * @param [in] list_p : a head
  * @param [in] head_p : target list head
- * 
+ *
  * @return void \n
  */
-static	inline	
-void	otg_list_merge(otg_list_head *list_p, otg_list_head *head_p) 
-{     
-	otg_dbg(OTG_DBG_OTGHCDI_LIST, 
-		"otg_list_merge \n");			
+static	inline
+void	otg_list_merge(otg_list_head *list_p, otg_list_head *head_p)
+{
+	otg_dbg(OTG_DBG_OTGHCDI_LIST, "otg_list_merge \n");
 	list_splice(list_p, head_p);
-} 
+}
 //-------------------------------------------------------------------------------
 
 /**
  * void    otg_list_init(otg_list_head *list_p)
- * 
+ *
  * @brief initialize a list
- * 
+ *
  * @param [in] list_p : node to be initialized
- * 
+ *
  * @return void \n
  */
-static	inline	
-void    otg_list_init(otg_list_head *list_p) 
-{     
-	otg_dbg(OTG_DBG_OTGHCDI_LIST, 
-		"otg_list_init \n");		
+static	inline
+void    otg_list_init(otg_list_head *list_p)
+{
+	otg_dbg(OTG_DBG_OTGHCDI_LIST, "otg_list_init \n");
 	list_p->next = list_p;
 	list_p->prev = list_p;
-} 
+}
 //-------------------------------------------------------------------------------
 
 /*
@@ -218,8 +210,8 @@ void	otg_list_merge(otg_list_head *list_p, otg_list_head *head_p);
 void    otg_list_init(otg_list_head *list_p);
 */
 
-#ifdef __cplusplus 
-} 
-#endif 
+#ifdef __cplusplus
+}
+#endif
 #endif /* _S3C_OTG_HCDI_LIST_H_ */
 

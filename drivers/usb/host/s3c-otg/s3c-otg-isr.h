@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   :s3c-otg-isr.h
@@ -6,7 +6,7 @@
  *  [Author]      : Jang Kyu Hyeok { kyuhyeok.jang@samsung.com }
  *  [Department]  : System LSI Division/Embedded S/W Platform
  *  [Created Date]: 2008/06/18
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/18   by Jang Kyu Hyeok { kyuhyeok.jang@samsung.com }
  *          - Created this file and defines functions of Scheduler
  *
@@ -45,9 +45,9 @@ extern "C"
 #include "s3c-otg-roothub.h"
 #include "s3c-otg-oci.h"
 
-__inline__ void otg_handle_interrupt(void);
+__inline__ void otg_handle_interrupt(struct usb_hcd *hcd);
 
-void process_port_intr(void);
+void process_port_intr(struct usb_hcd *hcd);
 
 void mask_channel_interrupt(u32 ch_num, u32 mask_info);
 
@@ -63,9 +63,9 @@ extern void enable_sof(void);
 
 extern void disable_sof(void);
 
-#ifdef __cplusplus 
-} 
-#endif 
+#ifdef __cplusplus
+}
+#endif
 #endif /* _ISR_H_ */
 
 

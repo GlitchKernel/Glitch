@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : s3c-otg-common-datastruct.h
@@ -6,11 +6,11 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/03
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/03   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and defines Data Structure to be managed by Transfer.
  *      (2) 2008/08/18   by SeungSoo Yang ( ss1.yang@samsung.com )
- *          - modifying ED structure 
+ *          - modifying ED structure
  *
  ****************************************************************************/
 /****************************************************************************
@@ -29,8 +29,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
 
-#ifndef  _DATA_STRUCT_DEF_H   
-#define  _DATA_STRUCT_DEF_H   
+#ifndef  _DATA_STRUCT_DEF_H
+#define  _DATA_STRUCT_DEF_H
 
 /*
 // ----------------------------------------------------------------------------
@@ -38,6 +38,8 @@
 // ----------------------------------------------------------------------------
 */
 
+#include <linux/wakelock.h>
+#include <plat/s5p-otghost.h>
 //#include "s3c-otg-common-typedef.h"
 #include "s3c-otg-hcdi-list.h"
 
@@ -49,92 +51,13 @@ extern "C"
 {
 #endif
 
-typedef struct
-{
-	u32 apll_lock;		// 0x00
-	u32 MPLL_LOCK;		// 0x04
-	u32 EPLL_LOCK;		// 0x08
-	u32 APLL_CON;		// 0x0c
-
-	u32 MPLL_CON;		// 0x10
-	u32 EPLL_CON0;		// 0x14
-	u32 EPLL_CON1;		// 0x18
-	u32 CLK_SRC;			// 0x1c
-
-	u32 CLK_DIV0;		// 0x20
-	u32 CLK_DIV1;		// 0x24
-	u32 CLK_DIV2;		// 0x28
-	u32 CLK_OUT;			// 0x2c
-
-	u32 HCLK_GATE;		// 0x30
-	u32 PCLK_GATE;		// 0x34
-	u32 SCLK_GATE;		// 0x38
-	u32 PAD0;			// 0x3c
-
-	u32 PAD1[48];			// 0x40~0xff
-
-	u32 AHB_CON0;		// 0x100
-	u32 AHB_CON1;		// 0x104
-	u32 AHB_CON2;		// 0x108
-	u32 PAD2;			// 0x10c
-
-	u32 SDMA_SEL;		// 0x110
-	u32 SW_RST;			// 0x114
-	u32 SYS_ID;			// 0x118
-	u32 PAD3;			// 0x11c
-
-	u32 MEM_SYS_CFG;	// 0x120
-	u32 QOS_OVERRIDE0;	// 0x124
-	u32 QOS_OVERRIDE1;	// 0x128
-	u32 MEM_CFG_STAT;	// 0x12c
-
-	u32 PAD4[436];		// 0x130~0x7ff
-
-	u32 PAD5;			// 0x800
-	u32 PWR_CFG;		// 0x804
-	u32 EINT_MASK;		// 0x808
-	u32 PAD6;			// 0x80c
-
-	u32 NORMAL_CFG;		// 0x810
-	u32 STOP_CFG;		// 0x814
-	u32 SLEEP_CFG;		// 0x818
-	u32 PAD7;			// 0x81c
-
-	u32 OSC_FREQ;		// 0x820
-	u32 OSC_STABLE;		// 0x824
-	u32 PWR_STABLE;		// 0x828
-	u32 FPC_STABLE;		// 0x82c
-
-	u32 MTC_STABLE;		// 0x830
-	u32 PAD8[3];			// 0x834~0x83f
-
-	u32 PAD9[48];			// 0x840~0x8ff
-
-	u32 OTHERS;			// 0x900
-	u32 RST_STAT;		// 0x904
-	u32 WAKEUP_STAT;	// 0x908
-	u32 BLK_PWR_STAT;	// 0x90c
-
-	u32 PAD10[60];		// 0x910~0x9ff
-
-	u32 INFORM0;			// 0xa00
-	u32 INFORM1;			// 0xa04
-	u32 INFORM2;			// 0xa08
-	u32 INFORM3;			// 0xa0c
-
-	u32 INFORM4;			// 0xa10
-	u32 INFORM5;			// 0xa14
-	u32 INFORM6;			// 0xa18
-	u32 INFORM7;			// 0xa1c
-} S3C6400_SYSCON_REG, *PS3C6400_SYSCON_REG;
-
 typedef union _hcintmsk_t
 {
-	// raw register data 
+	// raw register data
 	u32 d32;
 
-	// register bits 
-	struct 
+	// register bits
+	struct
 	{
 		unsigned xfercompl		: 1;
 		unsigned chhltd			: 1;
@@ -203,7 +126,7 @@ typedef struct  standard_dev_req_info
 	bool            		is_data_stage;
 	u8          			conrol_transfer_stage;
 	u32        			vir_standard_dev_req_addr;
-	u32       	 		phy_standard_dev_req_addr;    
+	u32       	 		phy_standard_dev_req_addr;
 }standard_dev_req_info_t;
 
 
@@ -211,7 +134,7 @@ typedef struct control_data_tgl_t
 {
 	u8			setup_tgl;
 	u8			data_tgl;
-	u8			status_tgl;	
+	u8			status_tgl;
 }control_data_tgl_t;
 
 
@@ -229,7 +152,7 @@ typedef struct ed_status
 
 
 typedef struct ed_desc
-{ 
+{
 	u8	device_addr;
 	u8	endpoint_num;
 	bool	is_ep_in;
@@ -274,10 +197,10 @@ typedef struct stransfer
 
 typedef struct ed
 {
-	u32		ed_id;    
+	u32		ed_id;
 	bool		is_halted;
 	bool		is_need_to_insert_scheduler;
-	ed_dest_t	ed_desc; 
+	ed_dest_t	ed_desc;
 	ed_status_t	ed_status;
 	otg_list_head	ed_list_entry;
 	otg_list_head	td_list_entry;
@@ -290,11 +213,11 @@ typedef struct ed
 
 typedef struct td
 {
-	u32				td_id; 
+	u32				td_id;
 	ed_t				*parent_ed_p;
 	void				*call_back_func_p;
 	void				*call_back_func_param_p;
-	bool				is_transferring; 
+	bool				is_transferring;
 	bool				is_transfer_done;
 	u32				transferred_szie;
 	bool		                   	is_standard_dev_req;
@@ -307,7 +230,7 @@ typedef struct td
 	USB_ERROR_CODE		error_code;
 	u32				err_cnt;
 	otg_list_head			td_list_entry;
-	
+
 	//Isochronous Transfer Specific
 	u32				isoch_packet_num;
 	isoch_packet_desc_t		*isoch_packet_desc_p;
@@ -325,13 +248,13 @@ typedef struct td
 //Define Data Structures of Scheduler.
 typedef struct trans_ready_q
 {
-bool		is_periodic_transfer;
-otg_list_head	trans_ready_q_list_head;
-u32		trans_ready_entry_num;
+	bool		is_periodic_transfer;
+	otg_list_head	trans_ready_q_list_head;
+	u32		trans_ready_entry_num;
 
-//In case of Periodic Transfer
-u32		total_perio_bus_bandwidth;
-u8		total_alloc_chnum;
+	//In case of Periodic Transfer
+	u32		total_perio_bus_bandwidth;
+	u8		total_alloc_chnum;
 }trans_ready_q_t;//, *trans_ready_q_t *,**trans_ready_q_t **;
 
 
@@ -340,7 +263,7 @@ u8		total_alloc_chnum;
 #define MAX_COUNT 10000
 #define INT_ALL	0xffffffff
 
-typedef union _haint_t 
+typedef union _haint_t
 {
 	u32	d32;
 	struct
@@ -370,7 +293,7 @@ typedef union _gresetctl_t
 	/** raw register data */
 	u32 d32;
 	/** register bits */
-	struct 
+	struct
 	{
 		unsigned csftrst			: 1;
 		unsigned hsftrst			: 1;
@@ -381,7 +304,7 @@ typedef union _gresetctl_t
 		unsigned txfnum				: 5;
 		unsigned reserved11_29		: 19;
 		unsigned dmareq				: 1;
-		unsigned ahbidle			: 1;				 
+		unsigned ahbidle			: 1;
 	} b;
 } gresetctl_t;
 
@@ -527,7 +450,7 @@ typedef union _hcfg_t
 	u32 d32;
 
 	/** register bits */
-	struct 
+	struct
 	{
 		/** FS/LS Phy Clock Select */
 		unsigned fslspclksel	: 2;
@@ -546,7 +469,7 @@ typedef union _hprt_t
 	/** raw register data */
 	u32 d32;
 	/** register bits */
-	struct 
+	struct
 	{
 		unsigned prtconnsts		: 1;
 		unsigned prtconndet		: 1;
@@ -612,7 +535,7 @@ typedef union _gintmsk_t
 } gintmsk_t;
 
 
-typedef struct _hc_t 
+typedef struct _hc_t
 {
 
 	u8  hc_num; 				// Host channel number used for register address lookup
@@ -690,7 +613,7 @@ typedef union _hcchar_t
 	u32 d32;
 
 	// register bits
-	struct 
+	struct
 	{
 		// Maximum packet size in bytes
 		unsigned mps		: 11;
@@ -698,9 +621,9 @@ typedef union _hcchar_t
 		// Endpoint number
 		unsigned epnum		: 4;
 
-		// 0: OUT, 1: IN 
+		// 0: OUT, 1: IN
 		unsigned epdir		: 1;
-#define HCDIR_OUT				0	
+#define HCDIR_OUT				0
 #define HCDIR_IN				1
 
 		unsigned reserved	: 1;
@@ -708,43 +631,43 @@ typedef union _hcchar_t
 		// 0: Full/high speed device, 1: Low speed device
 		unsigned lspddev	: 1;
 
-		// 0: Control, 1: Isoc, 2: Bulk, 3: Intr 
+		// 0: Control, 1: Isoc, 2: Bulk, 3: Intr
 		unsigned eptype		: 2;
 #define OTG_EP_TYPE_CONTROL	0
 #define OTG_EP_TYPE_ISOC		1
 #define OTG_EP_TYPE_BULK		2
 #define OTG_EP_TYPE_INTR		3
 
-		// Packets per frame for periodic transfers. 0 is reserved. 
+		// Packets per frame for periodic transfers. 0 is reserved.
 		unsigned multicnt	: 2;
 
-		// Device address 
+		// Device address
 		unsigned devaddr	: 7;
 
 		// Frame to transmit periodic transaction.
 		// 0: even, 1: odd
 		unsigned oddfrm		: 1;
 
-		// Channel disable 
+		// Channel disable
 		unsigned chdis		: 1;
 
-		// Channel enable 
+		// Channel enable
 		unsigned chen		: 1;
 	} b;
 } hcchar_t;
 
 typedef union _hctsiz_t
 {
-	// raw register data 
+	// raw register data
 	u32 d32;
 
-	// register bits 
-	struct 
+	// register bits
+	struct
 	{
 		// Total transfer size in bytes
 		unsigned xfersize	: 19;
 
-		// Data packets to transfer 
+		// Data packets to transfer
 		unsigned pktcnt		: 10;
 
 		// Packet ID for next data packet
@@ -768,11 +691,11 @@ typedef union _hctsiz_t
 
 typedef union _grxstsr_t
 {
-	// raw register data 
+	// raw register data
 	u32 d32;
 
-	// register bits 
-	struct 
+	// register bits
+	struct
 	{
 		unsigned chnum		: 4;
 		unsigned bcnt		: 11;
@@ -784,11 +707,11 @@ typedef union _grxstsr_t
 
 typedef union _hfir_t
 {
-	// raw register data 
+	// raw register data
 	u32 d32;
 
-	// register bits 
-	struct 
+	// register bits
+	struct
 	{
 		unsigned frint		: 16;
 		unsigned Reserved		: 16;
@@ -801,7 +724,7 @@ typedef union _hfnum_t
 	u32 d32;
 
 	// register bits
-	struct 
+	struct
 	{
 		unsigned frnum : 16;
 #define HFNUM_MAX_FRNUM 0x3FFF
@@ -814,7 +737,7 @@ typedef union grstctl_t
 	/** raw register data */
 	u32 d32;
 	/** register bits */
-	struct 
+	struct
 	{
 		unsigned csftrst		: 1;
 		unsigned hsftrst		: 1;
@@ -825,12 +748,9 @@ typedef union grstctl_t
 		unsigned txfnum			: 5;
 		unsigned reserved11_29	: 19;
 		unsigned dmareq			: 1;
-		unsigned ahbidle		: 1;				 
+		unsigned ahbidle		: 1;
 	} b;
 } grstctl_t;
-
-
-
 
 typedef	struct	hc_info
 {
@@ -845,7 +765,7 @@ typedef	struct	hc_info
 	#define USB_MAXCHILDREN (31)
 #endif
 
-typedef struct _usb_hub_descriptor_t 
+typedef struct _usb_hub_descriptor_t
 {
 	u8  desc_length;
 	u8  desc_type;
@@ -858,10 +778,8 @@ typedef struct _usb_hub_descriptor_t
 	u8  port_pwr_ctrl_mask[(USB_MAXCHILDREN + 1 + 7) / 8];
 }usb_hub_descriptor_t;
 
-
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif

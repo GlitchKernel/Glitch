@@ -1,9 +1,9 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  * @file   s3c-otg-hcdi-debug.c
  * @brief  It provides debug functions for display message \n
- * @version 
+ * @version
  *  -# Jun 9,2008 v1.0 by SeungSoo Yang (ss1.yang@samsung.com) \n
  *	  : Creating the initial version of this code \n
  *  -# Jul 15,2008 v1.2 by SeungSoo Yang (ss1.yang@samsung.com) \n
@@ -34,7 +34,7 @@ extern "C"
 {
 #endif
 
-#define OTG_DEBUG 1
+#define OTG_DEBUG
 
 #ifdef OTG_DEBUG
 #if 0
@@ -42,48 +42,47 @@ extern "C"
 #endif
 
 #define OTG_DBG_OTGHCDI_DRIVER	true
-#define OTG_DBG_OTGHCDI_HCD	false // not safe to turn on
-#define OTG_DBG_OTGHCDI_KAL	true
-#define OTG_DBG_OTGHCDI_LIST	false // too verbose
-#define OTG_DBG_OTGHCDI_MEM	false // too verbost
+#define OTG_DBG_OTGHCDI_HCD		false
+#define OTG_DBG_OTGHCDI_KAL		false
+#define OTG_DBG_OTGHCDI_LIST	false
+#define OTG_DBG_OTGHCDI_MEM		false
 
-#define OTG_DBG_TRANSFER	false
-#define OTG_DBG_SCHEDULE        false // this breaks debugging
-#define OTG_DBG_SCHEDULE2       false 
-#define OTG_DBG_SCHEDULE3       false
-#define OTG_DBG_OCI		false // too verbose
-#define OTG_DBG_DONETRASF	false
-#define OTG_DBG_ISR		false
-#define OTG_DBG_ROOTHUB		true
+#define OTG_DBG_TRANSFER		false
+#define OTG_DBG_SCHEDULE		false
+#define OTG_DBG_OCI				false
+#define OTG_DBG_DONETRASF		false
+#define OTG_DBG_ISR				false
+#define OTG_DBG_ROOTHUB			false
+
 
 #include <linux/kernel.h>	//for printk
 
 #define otg_err(is_active, msg...) \
-	do{ if ((is_active) == true)\
+	do{ if (/*(is_active) == */true)\
 		{\
-			printk("otg_err: in %s()::%05d ", __func__ , __LINE__); \
-			printk("=> " msg); \
+			pr_err("otg_err: in %s()::%05d ", __func__ , __LINE__); \
+			pr_err("=> " msg); \
 		}\
 	}while(0)
 
 #define otg_dbg(is_active, msg...) \
 	do{ if ((is_active) == true)\
 		{\
-			printk("otg_dbg: in %s()::%05d ", __func__, __LINE__); \
-			printk("=> " msg); \
+			pr_info("otg_dbg: in %s()::%05d ", __func__, __LINE__); \
+			pr_info("=> " msg); \
 		}\
 	}while(0)
 
 #else //OTG_DEBUG
 
-# define otg_err(is_active, msg...) 	do{}while(0)			
+# define otg_err(is_active, msg...) 	do{}while(0)
 # define otg_dbg(is_active, msg...)	do{}while(0)
 
 #endif
 
 
-#ifdef __cplusplus 
-} 
-#endif 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _S3C_OTG_HCDI_DEBUG_H_ */

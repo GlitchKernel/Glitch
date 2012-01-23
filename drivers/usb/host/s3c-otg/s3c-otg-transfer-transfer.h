@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : s3c-otg-transfer-transfer.h
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/03
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/03   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and defines functions of Transfer
  *  	 -# Jul 15,2008 v1.2 by SeungSoo Yang (ss1.yang@samsung.com) \n
@@ -29,7 +29,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
 
-#ifndef  _TRANSFER_H   
+#ifndef  _TRANSFER_H
 #define  _TRANSFER_H
 
 /*
@@ -53,15 +53,11 @@ extern "C"
 {
 #endif
 
-// the header pointer to indicate the ED_list to manage the ed_t to be created and initiated.
-extern	otg_list_head		ed_list_head;
-extern	u32			ref_periodic_transfer;
-
-
 void	init_transfer(void);
-void	deinit_transfer(void);
+void	deinit_transfer(struct sec_otghost *otghost);
 
-int  	issue_transfer(ed_t 			*parent_ed,
+int  	issue_transfer(struct sec_otghost *otghost,
+			ed_t 			*parent_ed,
 			void 			*call_back_func,
 			void 			*call_back_param,
 			u32			transfer_flag,
@@ -77,10 +73,11 @@ int  	issue_transfer(ed_t 			*parent_ed,
 			void                         	*td_priv,
 			unsigned int             	*return_td_addr);
 
-int  	cancel_transfer(ed_t 	*parent_ed,
+int  	cancel_transfer(struct sec_otghost *otghost,
+			ed_t 	*parent_ed,
 			td_t 	*cancel_td);
-		
-int  	cancel_all_td(ed_t 	*parent_ed);
+
+int  	cancel_all_td(struct sec_otghost *otghost, ed_t 	*parent_ed);
 
 int 	create_ed(ed_t **	new_ed);
 
@@ -99,9 +96,9 @@ int  	init_ed(ed_t *	init_ed,
 		bool		f_is_do_split,
 		void	*ep);
 
-int  	delete_ed(ed_t 		*delete_ed);
+int  	delete_ed(struct sec_otghost *otghost, ed_t *delete_ed);
 
-int  	delete_td(td_t *		delete_td);
+int  	delete_td(struct sec_otghost *otghost, td_t * delete_td);
 
 int 	create_isoch_packet_desc(	isoch_packet_desc_t 	**new_isoch_packet_desc,
 					u32   			isoch_packet_num);

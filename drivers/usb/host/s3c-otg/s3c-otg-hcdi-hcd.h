@@ -1,9 +1,9 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  * @file   s3c-otg-hcdi-hcd.h
  * @brief  header of s3c-otg-hcdi-hcd \n
- * @version 
+ * @version
  *  -# Jun 9,2008 v1.0 by SeungSoo Yang (ss1.yang@samsung.com) \n
  *	  : Creating the initial version of this code \n
  *  -# Jul 15,2008 v1.2 by SeungSoo Yang (ss1.yang@samsung.com) \n
@@ -27,7 +27,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
- 
+
 #ifndef _S3C_OTG_HCDI_HCD_H_
 #define _S3C_OTG_HCDI_HCD_H_
 
@@ -37,10 +37,9 @@ extern "C"
 #endif
 
 //for IRQ_NONE (0) IRQ_HANDLED (1) IRQ_RETVAL(x)	((x) != 0)
-#include <linux/interrupt.h>	
+#include <linux/interrupt.h>
 
 #include <linux/usb.h>
-//#include <../drivers/usb/core/hcd.h>
 
 #include "s3c-otg-hcdi-debug.h"
 #include "s3c-otg-hcdi-kal.h"
@@ -54,11 +53,7 @@ extern "C"
 #include "s3c-otg-roothub.h"
 
 //placed in ISR
-extern	void 	otg_handle_interrupt(void);
-
-int     otg_hcd_init_modules(void);
-void    otg_hcd_deinit_modules(void);
-
+//void 	otg_handle_interrupt(struct usb_hcd *hcd);
 
 irqreturn_t	s5pc110_otghcd_irq(struct usb_hcd *hcd);
 
@@ -74,24 +69,24 @@ int	s5pc110_otghcd_urb_enqueue(
 			gfp_t mem_flags);
 
 int	s5pc110_otghcd_urb_dequeue(
-			struct usb_hcd *_hcd, 
+			struct usb_hcd *_hcd,
 			struct urb *_urb,
 			int status);
 
 void	s5pc110_otghcd_endpoint_disable(
-			struct usb_hcd *hcd, 
+			struct usb_hcd *hcd,
 			struct usb_host_endpoint *ep);
 
 int	s5pc110_otghcd_hub_status_data(
-			struct usb_hcd *_hcd, 
+			struct usb_hcd *_hcd,
 			char *_buf);
 
 int	s5pc110_otghcd_hub_control(
-			struct usb_hcd *hcd, 
-			u16 	type_req, 
+			struct usb_hcd *hcd,
+			u16 	type_req,
 			u16 	value,
-			u16 	index, 
-			char *	buf, 
+			u16 	index,
+			char *	buf,
 			u16 	length);
 
 int	s5pc110_otghcd_bus_suspend(struct usb_hcd *hcd);
@@ -100,22 +95,23 @@ int	s5pc110_otghcd_start_port_reset(struct usb_hcd *hcd, unsigned port);
 
 /**
  * @struct hc_driver s5pc110_otg_hc_driver
- * 
+ *
  * @brief implementation of hc_driver for OTG HCD
- * 
+ *
  * describe in detail
  */
 static const struct hc_driver s5pc110_otg_hc_driver = {
 	.description 		=	"EMSP_OTGHCD",
 	.product_desc		=	"S3C OTGHCD",
+	.hcd_priv_size          =	sizeof(struct sec_otghost),
 
 	.irq 			= 	s5pc110_otghcd_irq,
 	.flags			=	HCD_MEMORY | HCD_USB2,
 
 	/** basic lifecycle operations	 */
-	//.reset = 
+	//.reset =
 	.start			=	s5pc110_otghcd_start,
-	//.suspend 		= 	, 
+	//.suspend 		= 	,
 	//.resume		= 	,
 	.stop			=	s5pc110_otghcd_stop,
 	.shutdown		=	s5pc110_otghcd_shutdown,
@@ -131,14 +127,26 @@ static const struct hc_driver s5pc110_otg_hc_driver = {
 	/** root hub support	 */
 	.hub_status_data	=	s5pc110_otghcd_hub_status_data,
 	.hub_control		=	s5pc110_otghcd_hub_control,
-	//.hub_irq_enable = 
+	//.hub_irq_enable =
 	.bus_suspend		=	s5pc110_otghcd_bus_suspend,
 	.bus_resume 		=	s5pc110_otghcd_bus_resume,
 	.start_port_reset 	=	s5pc110_otghcd_start_port_reset,
 };
 
-#ifdef __cplusplus 
-} 
-#endif 
+static inline struct sec_otghost *hcd_to_sec_otghost (struct usb_hcd *hcd)
+{
+        return (struct sec_otghost *) (hcd->hcd_priv);
+}
+static inline struct usb_hcd *sec_otghost_to_hcd (struct sec_otghost *otghost)
+{
+        return container_of ((void *) otghost, struct usb_hcd, hcd_priv);
+}
+
+int otg_hcd_init_modules(struct sec_otghost *otghost);
+void otg_hcd_deinit_modules(struct sec_otghost *otghost);
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* _S3C_OTG_HCDI_HCD_H_ */
 

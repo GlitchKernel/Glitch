@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   :s3c-otg-oci.h
@@ -6,7 +6,7 @@
  *  [Author]      : Jang Kyu Hyeok { kyuhyeok.jang@samsung.com }
  *  [Department]  : System LSI Division/Embedded S/W Platform
  *  [Created Date]: 2008/06/18
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/25   by Jang Kyu Hyeok { kyuhyeok.jang@samsung.com }
  *          - Added some functions and data structure of OCI
  *
@@ -26,7 +26,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
- 
+
 #ifndef _OCI_H_
 #define _OCI_H_
 
@@ -50,13 +50,13 @@ extern void otg_host_phy_init(void);
 #include <mach/regs-clock.h>
 
 //OCI interace
-int	oci_init(void);
-	
+int	oci_init(struct sec_otghost *otghost);
+
 int	oci_start(void);
 int	oci_stop(void);
 
-u8	oci_start_transfer(stransfer_t *st_t);
-int	oci_stop_transfer(u8 ch_num);
+u8	oci_start_transfer(struct sec_otghost *otghost, stransfer_t *st_t);
+int	oci_stop_transfer(struct sec_otghost *otghost, u8 ch_num);
 
 int	oci_channel_init(u8 ch_num, stransfer_t *st_t);
 u32	oci_get_frame_num(void);
@@ -80,7 +80,7 @@ void	oci_flush_rx_fifo(void);
 int	oci_core_reset(void);
 void	oci_set_global_interrupt(bool set);
 
-#ifdef __cplusplus 
-} 
-#endif 
+#ifdef __cplusplus
+}
+#endif
 #endif /* _OCI_H_ */

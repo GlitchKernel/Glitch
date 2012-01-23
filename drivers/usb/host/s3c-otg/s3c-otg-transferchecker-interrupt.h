@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : IntTransferChecker.h
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/19
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/18   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and defines functions of IntTransferChecker
  *
@@ -27,8 +27,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
 
-#ifndef  _INT_TRANSFER_CHECKER_H     
-#define  _INT_TRANSFER_CHECKER_H    
+#ifndef  _INT_TRANSFER_CHECKER_H
+#define  _INT_TRANSFER_CHECKER_H
 
 /*
 // ----------------------------------------------------------------------------
@@ -58,34 +58,34 @@ extern "C"
 u8	process_intr_transfer(td_t 	*pRawTD,
 				hc_info_t *pHCRegData);
 
-u8	process_xfercompl_on_intr(td_t 	*pRawTD, 									     	
+u8	process_xfercompl_on_intr(td_t 	*pRawTD,
 					hc_info_t *pHCRegData);
 
-u8	process_chhltd_on_intr(td_t 	*pRawTD, 									    
+u8	process_chhltd_on_intr(td_t 	*pRawTD,
 				hc_info_t *pHCRegData);
 
-u8	process_ahb_on_intr(td_t 	*pRawTD, 										
+u8	process_ahb_on_intr(td_t 	*pRawTD,
 				hc_info_t *pHCRegData);
 
-u8	process_stall_on_intr(td_t 		*pRawTD, 									
+u8	process_stall_on_intr(td_t 		*pRawTD,
 				 hc_info_t	*pHCRegData);
 
-u8	process_nak_on_intr(td_t	*pRawTD, 								     	
+u8	process_nak_on_intr(td_t	*pRawTD,
 			     hc_info_t 	*pHCRegData);
 
-u8	process_frmovrrun_on_intr(td_t	*pRawTD, 								     	
+u8	process_frmovrrun_on_intr(td_t	*pRawTD,
 					hc_info_t *pHCRegData);
 
-u8	process_ack_on_intr(td_t 	*pRawTD, 									
+u8	process_ack_on_intr(td_t 	*pRawTD,
 				hc_info_t *pHCRegData);
 
-u8	process_xacterr_on_intr(td_t 	*pRawTD, 									     
+u8	process_xacterr_on_intr(td_t 	*pRawTD,
 				   hc_info_t 	*pHCRegData);
 
-u8	process_bblerr_on_intr(td_t 		*pRawTD, 									    
+u8	process_bblerr_on_intr(td_t 		*pRawTD,
 				  hc_info_t 	*pHCRegData);
 
-u8	process_datatgl_on_intr(td_t	*pRawTD, 									     		
+u8	process_datatgl_on_intr(td_t	*pRawTD,
 				hc_info_t	*pHCRegData);
 
 #ifdef __cplusplus

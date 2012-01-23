@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : NonPeriodicTransfer.c
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/09
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/09   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and implements some functions of PeriodicTransfer.
  *  	 -# Jul 15,2008 v1.2 by SeungSoo Yang (ss1.yang@samsung.com) \n
@@ -33,11 +33,11 @@
 
 
 /******************************************************************************/
-/*! 
+/*!
  * @name	int  	init_perio_stransfer(	bool	f_is_isoch_transfer,
  *					  	td_t 	*parent_td)
  *
- * @brief		this function initiates the parent_td->cur_stransfer for Periodic Transfer and 
+ * @brief		this function initiates the parent_td->cur_stransfer for Periodic Transfer and
  *			inserts this init_td_p to init_td_p->parent_ed_p.
  *
  * @param	[IN]	f_is_isoch_transfer	= indicates whether this transfer is Isochronous or not.
@@ -59,7 +59,7 @@ int  	init_perio_stransfer(	bool	f_is_isoch_transfer,
 	otg_mem_set(&parent_td->cur_stransfer.hc_reg, 0, sizeof(hc_reg_t));
 
 	parent_td->cur_stransfer.hc_reg.hc_int_msk.b.chhltd = 1;
-	
+
 	if(f_is_isoch_transfer)
 	{
 		// initiates the STransfer usinb the IsochPacketDesc[0].
@@ -71,20 +71,20 @@ int  	init_perio_stransfer(	bool	f_is_isoch_transfer,
 	{
 		parent_td->cur_stransfer.buf_size		=(parent_td->buf_size>MAX_CH_TRANSFER_SIZE)
 							?MAX_CH_TRANSFER_SIZE
-							:parent_td->buf_size;	
-		
+							:parent_td->buf_size;
+
 		parent_td->cur_stransfer.start_phy_buf_addr	=parent_td->phy_buf_addr;
 		parent_td->cur_stransfer.start_vir_buf_addr	=parent_td->vir_buf_addr;
 	}
-	
+
 	parent_td->cur_stransfer.packet_cnt = calc_packet_cnt(parent_td->cur_stransfer.buf_size, parent_td->parent_ed_p->ed_desc.max_packet_size);
-	
+
 	return USB_ERR_SUCCESS;
 }
 
 
 /******************************************************************************/
-/*! 
+/*!
  * @name	void  	update_perio_stransfer(td_t *parent_td)
  *
  * @brief		this function updates the parent_td->cur_stransfer to be used by S3COCI.
@@ -96,36 +96,33 @@ int  	init_perio_stransfer(	bool	f_is_isoch_transfer,
  *		USB_ERR_FAIL		-if fail to update the parent_td->cur_stransfer.
  */
  /******************************************************************************/
-void  		update_perio_stransfer(td_t *parent_td)
+void update_perio_stransfer(td_t *parent_td)
 {
-	
-	switch(parent_td->parent_ed_p->ed_desc.endpoint_type)
-	{
-		case INT_TRANSFER:
-			parent_td->cur_stransfer.start_phy_buf_addr	=parent_td->phy_buf_addr+parent_td->transferred_szie;
-			parent_td->cur_stransfer.start_vir_buf_addr 	=parent_td->vir_buf_addr+parent_td->transferred_szie;
-			parent_td->cur_stransfer.buf_size		=(parent_td->buf_size>MAX_CH_TRANSFER_SIZE)
-														?MAX_CH_TRANSFER_SIZE
-														:parent_td->buf_size;	
-			break;
-			
-		case ISOCH_TRANSFER:
-			parent_td->cur_stransfer.start_phy_buf_addr	= parent_td->phy_buf_addr
-								+parent_td->isoch_packet_desc_p[parent_td->isoch_packet_index].isoch_packiet_start_addr
-								+parent_td->isoch_packet_position;
-			
-			parent_td->cur_stransfer.start_vir_buf_addr	= parent_td->vir_buf_addr
-								+parent_td->isoch_packet_desc_p[parent_td->isoch_packet_index].isoch_packiet_start_addr
-								+parent_td->isoch_packet_position;
+	switch(parent_td->parent_ed_p->ed_desc.endpoint_type) {
+	case INT_TRANSFER:
+		parent_td->cur_stransfer.start_phy_buf_addr = parent_td->phy_buf_addr+parent_td->transferred_szie;
+		parent_td->cur_stransfer.start_vir_buf_addr = parent_td->vir_buf_addr+parent_td->transferred_szie;
+		parent_td->cur_stransfer.buf_size = (parent_td->buf_size>MAX_CH_TRANSFER_SIZE)
+							?MAX_CH_TRANSFER_SIZE :parent_td->buf_size;
+		break;
 
-			parent_td->cur_stransfer.buf_size		= (parent_td->isoch_packet_desc_p[parent_td->isoch_packet_index].buf_size - parent_td->isoch_packet_position)>MAX_CH_TRANSFER_SIZE
-								?MAX_CH_TRANSFER_SIZE
-								:parent_td->isoch_packet_desc_p[parent_td->isoch_packet_index].buf_size - parent_td->isoch_packet_position;			
-				
-			break;		
-			
-		default:		
-			break;
+	case ISOCH_TRANSFER:
+		parent_td->cur_stransfer.start_phy_buf_addr = parent_td->phy_buf_addr
+							+parent_td->isoch_packet_desc_p[parent_td->isoch_packet_index].isoch_packiet_start_addr
+							+parent_td->isoch_packet_position;
+
+		parent_td->cur_stransfer.start_vir_buf_addr = parent_td->vir_buf_addr
+							+parent_td->isoch_packet_desc_p[parent_td->isoch_packet_index].isoch_packiet_start_addr
+							+parent_td->isoch_packet_position;
+
+		parent_td->cur_stransfer.buf_size = (parent_td->isoch_packet_desc_p[parent_td->isoch_packet_index].buf_size - parent_td->isoch_packet_position)>MAX_CH_TRANSFER_SIZE
+							?MAX_CH_TRANSFER_SIZE
+							:parent_td->isoch_packet_desc_p[parent_td->isoch_packet_index].buf_size - parent_td->isoch_packet_position;
+
+		break;
+
+	default:
+		break;
 	}
 }
 

@@ -45,6 +45,9 @@ CROSS_PREFIX=$CROSS_PREFIX_443
 
 build ()
 {
+
+formodules=$repo/kernel/samsung/glitch-build/kernel/CDMA-GSM
+
     local target="$1"
     echo "Building for $target"
     local target_dir="$BUILD_DIR/CDMA-GSM"
@@ -85,10 +88,16 @@ REL=CM9-$target-443-Glitch-$(date +%Y%m%d.%H%M).zip
 	mkdir  -p system/etc/glitch-config || exit 1
 	echo "inactive" > system/etc/glitch-config/screenstate_scaling || exit 1
 	echo "conservative" > system/etc/glitch-config/sleep_governor || exit 1
+
+	# Copying modules
 	cp logger.module system/lib/modules/logger.ko
-	for module in "${MODULES[@]}" ; do
-		cp "$target_dir/$module" \; 2>/dev/null
-	done
+	cp $formodules/crypto/ansi_cprng.ko system/lib/modules/ansi_cprng.ko
+	cp $formodules/crypto/md4.ko system/lib/modules/md4.ko
+	cp $formodules/drivers/media/video/gspca/gspca_main.ko system/lib/modules/gspca_main.ko
+	cp $formodules/fs/cifs/cifs.ko system/lib/modules/cifs.ko
+	cp $formodules/fs/fuse/fuse.ko system/lib/modules/fuse.ko
+	cp $formodules/fs/nls/nls_utf8.ko system/lib/modules/nls_utf8.ko
+
 	cp S99screenstate_scaling system/etc/init.d/ || exit 1
 	cp 90call_vol system/etc/init.d/ || exit 1
 	cp logcat_module system/etc/init.d/ || exit 1
@@ -147,6 +156,9 @@ if [ "$1" = "gsm" ] ; then
 		mv drivers/media/video/samsung/tv20 drivers/media/video/samsung/tv20_opti
 		mv drivers/media/video/samsung/tv20_backup drivers/media/video/samsung/tv20
 
+		mv drivers/usb/host/s3c-otg drivers/usb/host/s3c-otg_opti
+		mv drivers/usb/host/s3c-otg_backup drivers/usb/host/s3c-otg
+
 		echo "Switching done. Building..."
 		echo ""
 
@@ -170,6 +182,11 @@ if [ "$1" = "gsm" ] ; then
 
 		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/video/samsung/tv20_backup
 		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/video/samsung/tv20
+
+		mv $glitch443/drivers/usb/host/s3c-otg/built-in.o $MODEM_DIR/built-in.443_usbhost
+
+		mv $KERNEL_DIR/drivers/usb/host/s3c-otg $KERNEL_DIR/drivers/usb/host/s3c-otg_backup
+		mv $KERNEL_DIR/drivers/usb/host/s3c-otg_opti $KERNEL_DIR/drivers/usb/host/s3c-otg
 		}
 
 	echo "Done! now preparing for next build..." && {
@@ -190,6 +207,14 @@ then
 echo "Built-in.o tv-out file copied"
 else
 echo "***** built-in.443_tvout file is missing *****"
+echo "******** Please build old tv-out *********"
+fi
+
+if [ -f $MODEM_DIR/built-in.443_usbhost ]
+then
+echo "Built-in.o usbhost file copied"
+else
+echo "***** built-in.443_usbhost file is missing *****"
 echo "******** Please build old tv-out *********"
 fi
 	}
@@ -214,6 +239,9 @@ if test -s $KERNEL_DIR/Makefile_opti -a -s $KERNEL_DIR/arch/arm/Makefile_opti -a
 
 		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/samsung/tv20_backup
 		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/samsung/tv20
+
+		mv $KERNEL_DIR/drivers/usb/host/s3c-otg $KERNEL_DIR/drivers/usb/host/s3c-otg_backup
+		mv $KERNEL_DIR/drivers/usb/host/s3c-otg_opti $KERNEL_DIR/drivers/usb/host/s3c-otg
 
 	echo "Let's restart the process"
 	./443glitch.sh gsm
@@ -237,6 +265,9 @@ else
 		mv drivers/media/samsung/tv20 drivers/media/video/samsung/tv20_opti
 		mv drivers/media/samsung/tv20_backup drivers/media/video/samsung/tv20
 
+		mv drivers/usb/host/s3c-otg drivers/usb/host/s3c-otg_opti
+		mv drivers/usb/host/s3c-otg_backup drivers/usb/host/s3c-otg
+
 	echo "Switching done. Building..."
 	echo ""
 
@@ -259,6 +290,11 @@ else
 
 		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/samsung/tv20_backup
 		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/samsung/tv20
+
+		mv $glitch443/drivers/usb/host/s3c-otg/built-in.o $MODEM_DIR/built-in.443_usbhost
+
+		mv $KERNEL_DIR/drivers/usb/host/s3c-otg $KERNEL_DIR/drivers/usb/host/s3c-otg_backup
+		mv $KERNEL_DIR/drivers/usb/host/s3c-otg_opti $KERNEL_DIR/drivers/usb/host/s3c-otg
 		}
 
 	echo "Done! now preparing for next build..." && {
@@ -279,6 +315,14 @@ then
 echo "Built-in.o tv-out file copied"
 else
 echo "***** built-in.443_tvout file is missing *****"
+echo "******** Please build old tv-out *********"
+fi
+
+if [ -f $MODEM_DIR/built-in.443_usbhost ]
+then
+echo "Built-in.o usbhost file copied"
+else
+echo "***** built-in.443_usbhost file is missing *****"
 echo "******** Please build old tv-out *********"
 fi
 	}
@@ -304,6 +348,9 @@ if test -s $KERNEL_DIR/Makefile_opti -a -s $KERNEL_DIR/arch/arm/Makefile_opti -a
 
 		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/samsung/tv20_backup
 		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/samsung/tv20
+
+		mv $KERNEL_DIR/drivers/usb/host/s3c-otg $KERNEL_DIR/drivers/usb/host/s3c-otg_backup
+		mv $KERNEL_DIR/drivers/usb/host/s3c-otg_opti $KERNEL_DIR/drivers/usb/host/s3c-otg
 
 	echo "Let's restart the process"
 	./443glitch.sh cdma

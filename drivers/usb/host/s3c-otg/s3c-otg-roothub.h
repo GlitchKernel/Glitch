@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   :s3c-otg-roothub.h
@@ -6,7 +6,7 @@
  *  [Author]      : Jang Kyu Hyeok { kyuhyeok.jang@samsung.com }
  *  [Department]  : System LSI Division/Embedded S/W Platform
  *  [Created Date]: 2008/06/13
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/13   by Jang Kyu Hyeok { kyuhyeok.jang@samsung.com }
  *          - Created this file and defines functions of RootHub
  *
@@ -42,41 +42,24 @@ extern "C"
 #include "s3c-otg-hcdi-memory.h"
 #include "s3c-otg-oci.h"
 
-typedef union _port_flags_t
-{
-	/** raw register data */
-	u32 d32;
-	/** register bits */
-	struct 
-	{
-		unsigned port_connect_status_change	: 1;
-		unsigned port_connect_status		: 1;
-		unsigned port_reset_change		: 1;
-		unsigned port_enable_change		: 1;
-		unsigned port_suspend_change		: 1;
-		unsigned port_over_current_change	: 1;
-		unsigned reserved			: 27;
-	} b;
-}port_flags_t;
+__inline__ int root_hub_feature( 
+		struct usb_hcd *hcd,
+		const u8 port,
+		const u16 type_req,
+		const u16 feature,
+		void *buf);
 
-__inline__ int root_hub_feature(const u8 port,
-				const u16 typeReq,
-				const u16 feature,
-				void	*buf
-				);
+__inline__ int get_otg_port_status(
+		struct usb_hcd *hcd, const u8 port, char *status);
 
-__inline__	int get_otg_port_status(const u8 port,	
-					char *status);
-
-int reset_and_enable_port(const u8 port);
-
+int reset_and_enable_port(struct usb_hcd *hcd, const u8 port); 
 void bus_suspend(void);
 
-int bus_resume(void);
+int bus_resume(struct sec_otghost *otghost);
 
-#ifdef __cplusplus 
-} 
-#endif 
+#ifdef __cplusplus
+}
+#endif
 #endif /* _ROOTHUB_H_ */
 
 

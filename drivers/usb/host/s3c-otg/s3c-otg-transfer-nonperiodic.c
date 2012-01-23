@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : NonPeriodicTransfer.c
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/07
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/07   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and implements some functions of NonPeriodicTransfer.
  *  	 -# Jul 15,2008 v1.2 by SeungSoo Yang (ss1.yang@samsung.com) \n
@@ -33,11 +33,11 @@
 #include "s3c-otg-transfer-transfer.h"
 
 /******************************************************************************/
-/*! 
+/*!
  * @name	int  	init_nonperio_stransfer(	bool		f_is_standard_dev_req,
  *						td_t 		*parent_td)
  *
- * @brief		this function initiates the parent_td->cur_stransfer for NonPeriodic Transfer and 
+ * @brief		this function initiates the parent_td->cur_stransfer for NonPeriodic Transfer and
  *			inserts this init_td_p to init_td_p->parent_ed_p.
  *
  * @param	[IN]	f_is_standard_dev_req	= indicates whether this transfer is Control or not.
@@ -60,11 +60,11 @@ int  	init_nonperio_stransfer(bool	f_is_standard_dev_req,
 
 	otg_mem_set(&(parent_td->cur_stransfer.hc_reg), 0, sizeof(hc_reg_t));
 
-	parent_td->cur_stransfer.hc_reg.hc_int_msk.b.chhltd = 1;	
+	parent_td->cur_stransfer.hc_reg.hc_int_msk.b.chhltd = 1;
 
 	if(f_is_standard_dev_req)
-	{			
-		parent_td->cur_stransfer.buf_size		=	USB_20_STAND_DEV_REQUEST_SIZE;	
+	{
+		parent_td->cur_stransfer.buf_size		=	USB_20_STAND_DEV_REQUEST_SIZE;
 		parent_td->cur_stransfer.start_phy_buf_addr	= 	parent_td->standard_dev_req_info.phy_standard_dev_req_addr;
 		parent_td->cur_stransfer.start_vir_buf_addr	=	parent_td->standard_dev_req_info.vir_standard_dev_req_addr;
 	}
@@ -72,21 +72,21 @@ int  	init_nonperio_stransfer(bool	f_is_standard_dev_req,
 	{
 		parent_td->cur_stransfer.buf_size		=	(parent_td->buf_size>MAX_CH_TRANSFER_SIZE)
 								?MAX_CH_TRANSFER_SIZE
-								:parent_td->buf_size;	
-		
+								:parent_td->buf_size;
+
 		parent_td->cur_stransfer.start_phy_buf_addr	= 	parent_td->phy_buf_addr;
 		parent_td->cur_stransfer.start_vir_buf_addr	=	parent_td->vir_buf_addr;
 	}
-	
+
 	parent_td->cur_stransfer.packet_cnt = calc_packet_cnt(parent_td->cur_stransfer.buf_size
 								, parent_td->parent_ed_p->ed_desc.max_packet_size);
-	
+
 	return USB_ERR_SUCCESS;
 }
 
 
 /******************************************************************************/
-/*! 
+/*!
  * @name	void	update_nonperio_stransfer(td_t *parent_td)
  *
  * @brief		this function updates the parent_td->cur_stransfer to be used by S3COCI.
@@ -99,49 +99,42 @@ int  	init_nonperio_stransfer(bool	f_is_standard_dev_req,
  /******************************************************************************/
 void  	update_nonperio_stransfer(td_t *parent_td)
 {
-	switch(parent_td->parent_ed_p->ed_desc.endpoint_type)
-	{	
-		case BULK_TRANSFER:
+	switch(parent_td->parent_ed_p->ed_desc.endpoint_type) {
+	case BULK_TRANSFER:
+		parent_td->cur_stransfer.start_phy_buf_addr	= parent_td->phy_buf_addr+parent_td->transferred_szie;
+		parent_td->cur_stransfer.start_vir_buf_addr	= parent_td->vir_buf_addr+parent_td->transferred_szie;
+		parent_td->cur_stransfer.buf_size		= ((parent_td->buf_size - parent_td->transferred_szie)>MAX_CH_TRANSFER_SIZE)
+							?MAX_CH_TRANSFER_SIZE
+							:parent_td->buf_size - parent_td->transferred_szie;
+	break;
+
+	case CONTROL_TRANSFER:
+		if(parent_td->standard_dev_req_info.conrol_transfer_stage == SETUP_STAGE)
+		{
+			// but, this case will not be occured......
+			parent_td->cur_stransfer.start_phy_buf_addr	= parent_td->standard_dev_req_info.phy_standard_dev_req_addr;
+			parent_td->cur_stransfer.start_vir_buf_addr 	= parent_td->standard_dev_req_info.vir_standard_dev_req_addr;
+			parent_td->cur_stransfer.buf_size		= 8;
+		}
+		else if(parent_td->standard_dev_req_info.conrol_transfer_stage == DATA_STAGE)
+		{
 			parent_td->cur_stransfer.start_phy_buf_addr	= parent_td->phy_buf_addr+parent_td->transferred_szie;
-			parent_td->cur_stransfer.start_vir_buf_addr	= parent_td->vir_buf_addr+parent_td->transferred_szie;
+			parent_td->cur_stransfer.start_vir_buf_addr 	= parent_td->vir_buf_addr+parent_td->transferred_szie;
 			parent_td->cur_stransfer.buf_size		= ((parent_td->buf_size - parent_td->transferred_szie)>MAX_CH_TRANSFER_SIZE)
 								?MAX_CH_TRANSFER_SIZE
-								:parent_td->buf_size - parent_td->transferred_szie;		
-		break;		
-		
-		case CONTROL_TRANSFER:
-			if(parent_td->standard_dev_req_info.conrol_transfer_stage == SETUP_STAGE)
-			{
-				// but, this case will not be occured......
-				parent_td->cur_stransfer.start_phy_buf_addr	= parent_td->standard_dev_req_info.phy_standard_dev_req_addr;
-				parent_td->cur_stransfer.start_vir_buf_addr 	= parent_td->standard_dev_req_info.vir_standard_dev_req_addr;
-				parent_td->cur_stransfer.buf_size		= 8;		
-			}
-			else if(parent_td->standard_dev_req_info.conrol_transfer_stage == DATA_STAGE)
-			{
-				parent_td->cur_stransfer.start_phy_buf_addr	= parent_td->phy_buf_addr+parent_td->transferred_szie;
-				parent_td->cur_stransfer.start_vir_buf_addr 	= parent_td->vir_buf_addr+parent_td->transferred_szie;
-				parent_td->cur_stransfer.buf_size		= ((parent_td->buf_size - parent_td->transferred_szie)>MAX_CH_TRANSFER_SIZE)
-									?MAX_CH_TRANSFER_SIZE
-									:parent_td->buf_size - parent_td->transferred_szie;				
-			}
-			else
-			{
-				parent_td->cur_stransfer.start_phy_buf_addr	= 0;
-				parent_td->cur_stransfer.start_vir_buf_addr 	= 0;
-				parent_td->cur_stransfer.buf_size		= 0;			
-			}
-			break;
-			
-
-		default:
-			break;
+								:parent_td->buf_size - parent_td->transferred_szie;
+		}
+		else
+		{
+			parent_td->cur_stransfer.start_phy_buf_addr	= 0;
+			parent_td->cur_stransfer.start_vir_buf_addr 	= 0;
+			parent_td->cur_stransfer.buf_size		= 0;
+		}
+		break;
+	default:
+		break;
 	}
-	
-	parent_td->cur_stransfer.packet_cnt = calc_packet_cnt(parent_td->cur_stransfer.buf_size, parent_td->parent_ed_p->ed_desc.max_packet_size);	
+
+	parent_td->cur_stransfer.packet_cnt = calc_packet_cnt(parent_td->cur_stransfer.buf_size, parent_td->parent_ed_p->ed_desc.max_packet_size);
 
 }
-
-
-
-

@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : s3c-otg-common-const.h
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/03
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/03   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created s3c-otg-common-const.h file and defines some constants.
  *
@@ -27,8 +27,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
 
-#ifndef  _CONST_TYPE_DEF_H_   
-#define  _CONST_TYPE_DEF_H_   
+#ifndef  _CONST_TYPE_DEF_H_
+#define  _CONST_TYPE_DEF_H_
 
 /*
 // ----------------------------------------------------------------------------
@@ -47,9 +47,9 @@ extern "C"
 
 /**
  * @def OTG_PORT_NUMBER
- * 
+ *
  * @brief write~ description
- * 
+ *
  * describe in detail
  */
 #define	OTG_PORT_NUMBER	0

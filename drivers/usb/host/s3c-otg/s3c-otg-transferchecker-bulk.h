@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : BulkTransferChecker.h
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/18
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/18   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and defines functions of BulkTransferChecker
  *
@@ -27,8 +27,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
 
-#ifndef  _BULK_TRANSFER_CHECKER_H   
-#define  _BULK_TRANSFER_CHECKER_H   
+#ifndef  _BULK_TRANSFER_CHECKER_H
+#define  _BULK_TRANSFER_CHECKER_H
 
 /*
 // ----------------------------------------------------------------------------
@@ -49,34 +49,34 @@ extern "C"
 u8	process_bulk_transfer(td_t 	*raw_td,
 				hc_info_t *hc_reg_data);
 
-u8	process_xfercompl_on_bulk(td_t 	*raw_td, 									     	
+u8	process_xfercompl_on_bulk(td_t 	*raw_td,
 					hc_info_t *hc_reg_data);
 
-u8	process_chhltd_on_bulk(td_t 	*raw_td, 									    
+u8	process_chhltd_on_bulk(td_t 	*raw_td,
 				hc_info_t *hc_reg_data);
 
-u8	process_ahb_on_bulk(td_t 	*raw_td, 										
+u8	process_ahb_on_bulk(td_t 	*raw_td,
 				hc_info_t *hc_reg_data);
 
-u8	process_stall_on_bulk(td_t 	*raw_td, 									
+u8	process_stall_on_bulk(td_t 	*raw_td,
 				hc_info_t *hc_reg_data);
 
-u8	process_nak_on_bulk(td_t 	*raw_td, 								     	
+u8	process_nak_on_bulk(td_t 	*raw_td,
 				hc_info_t *hc_reg_data);
 
-u8	process_ack_on_bulk(td_t 	*raw_td, 									
+u8	process_ack_on_bulk(td_t 	*raw_td,
 				hc_info_t *hc_reg_data);
 
-u8	process_nyet_on_bulk(td_t 	*raw_td, 									
+u8	process_nyet_on_bulk(td_t 	*raw_td,
 				hc_info_t *hc_reg_data);
 
-u8	process_xacterr_on_bulk(td_t	*raw_td, 									     
+u8	process_xacterr_on_bulk(td_t	*raw_td,
 				hc_info_t 	*hc_reg_data);
 
-u8	process_bblerr_on_bulk(td_t 	*raw_td, 									    
+u8	process_bblerr_on_bulk(td_t 	*raw_td,
 				hc_info_t *hc_reg_data);
 
-u8	process_datatgl_on_bulk(td_t	*raw_td, 									     		
+u8	process_datatgl_on_bulk(td_t	*raw_td,
 				hc_info_t		*hc_reg_data);
 
 #ifdef __cplusplus

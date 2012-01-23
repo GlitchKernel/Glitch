@@ -399,137 +399,6 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 }
 EXPORT_SYMBOL(usb_gadget_unregister_driver);
 
-#ifdef CONFIG_USB_S3C_OTG_HOST
-extern void max8998_ldo3_8_control(int enable, unsigned int flag);
-atomic_t g_OtgHostMode; // actual mode: client (0) or host (1)
-atomic_t g_OtgOperationMode; // operation mode: 'c'lient, 'h'ost, 'o'tg or 'a'uto-host
-atomic_t g_OtgLastCableState; // last cable state: detached (0), client attached (1), otg attached (2)
-extern struct platform_driver s5pc110_otg_driver;
-
-int s3c_is_otgmode(void)
-{
-	printk("otgmode = %d\n", atomic_read(&g_OtgHostMode));
-	return atomic_read(&g_OtgHostMode);
-}
-EXPORT_SYMBOL(s3c_is_otgmode);
-
-void set_otghost_mode(int mode) {
-//sztupy:
-// this function will determine what to do with the new information according to the current mode of operation
-// mode: 0: cable detached, 1: client cable attached, 2: otg cable attached, -1: operation config changed
-// modes of operation: c: always client, h: always host, g: otg mode (host if otg cable), a: automatic mode (host if cable plugged in)
-
-  struct s3c_udc *dev = the_controller;
-  int enable = 0;
-  char opmode = atomic_read(&g_OtgOperationMode);
-  if (mode==-1) mode = atomic_read(&g_OtgLastCableState);
-  atomic_set(&g_OtgLastCableState, mode);
-  switch (opmode) {
-    case 'h': enable = 1; break;
-    case 'o': enable = (mode==2); break;
-    case 'a': enable = (mode>0); break;
-    default: atomic_set(&g_OtgOperationMode,'c'); enable = 0; break;    
-  }
-
-  if (enable && !atomic_read(&g_OtgHostMode)) {
-    printk("Setting OTG host mode\n");
-//  fsa980_enable_interrupt(0);
-    free_irq(IRQ_OTG, dev);
-    // This init is no longer needed - it is done by the target mode driver
-    //max8998_ldo3_8_control(1, LDO_USB);
-    //mdelay(200); // kevinh, was 1 - but give a longer time for the LDO to power up
-    //otg_clock_enable(1);
-    if (platform_driver_register(&s5pc110_otg_driver) < 0) 
-    {		
-        printk("platform_driver_register failed...\n");
-        atomic_set(&g_OtgHostMode , 0);
-    } else {
-        printk("platform_driver_register...\n");
-        atomic_set(&g_OtgHostMode , 1);
-    }
-  } else if (!enable && atomic_read(&g_OtgHostMode)) {
-// sztupy: also handle the disabling here
-    printk("Disabling OTG host mode\n");
-    platform_driver_unregister(&s5pc110_otg_driver);
-    printk("platform_driver_unregister...\n");
-    /* irq setup after old hardware state is cleaned up */
-    if (request_irq(IRQ_OTG, s3c_udc_irq, 0, driver_name, dev)) {
-      printk("Warning: Could not request IRQ for USB gadget!\n");
-    }
-    atomic_set(&g_OtgHostMode , 0);
-  } else {
-    printk("OTG: no changes needed\n");
-  }
-}
-
-EXPORT_SYMBOL(set_otghost_mode);
-
-static ssize_t usbmode_read(struct device *dev, struct device_attribute *attr, char *buf)
-{
-  const char *msg = "client";
-  const char *msg2 = "disconnected";
-  const char *msg3 = "gadget";
-  switch(atomic_read(&g_OtgOperationMode)) {
-  case 'o': msg = "otg"; break;
-  case 'h': msg = "host"; break;
-  case 'a': msg = "auto-host"; break;
-  }
-  switch(atomic_read(&g_OtgLastCableState)) {
-  case 1: msg2 = "usb connected"; break;
-  case 2: msg2 = "otg connected"; break;
-  }
-  switch(atomic_read(&g_OtgHostMode)) {
-  case 1: msg3 = "host"; break;
-  }
-  
-  return sprintf(buf,"%s (cable: %s; state: %s)\n", msg, msg2, msg3);
-}
-
-static ssize_t usbmode_write(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
-{
-  char c;
-  printk("input data --> %s\n", buf);
-  c = buf[0];
-  switch(c) {
-  case 'a': atomic_set(&g_OtgOperationMode, 'a'); set_otghost_mode(-1);break;
-  case 'h': atomic_set(&g_OtgOperationMode, 'h'); set_otghost_mode(-1);break;
-  case 'c': atomic_set(&g_OtgOperationMode, 'c'); set_otghost_mode(-1);break;
-  case 'o': atomic_set(&g_OtgOperationMode, 'o'); set_otghost_mode(-1);break;
-  default: printk("Invalid input data\n");
-  }
-  return size;
-}
-
-// kevinh - Allow changing USB host/target modes on S3C android devices without a special cable
-static DEVICE_ATTR(opmode, S_IRUGO | S_IWUSR, usbmode_read, usbmode_write);
-
-/*
-// sztupy: simple proc based checks
-ssize_t otg_handler_write( struct file *filp, const char __user *buff, unsigned long len, void *data ) {
-	char loaddata;
-	if (len==0) return 0;
-	if (copy_from_user( &loaddata, buff, 1 )) {
-		return -EFAULT;
-	}
-
-	if (loaddata == '1') {
-		set_otghost_mode(1);
-	}
-	if (loaddata == '0') {
-		set_otghost_mode(0);
-	}
-	return len;
-}
-
-ssize_t otg_handler_read(char *page, char **start, off_t off, int count, int *eof, void *_dev) {
-	int len;
-	len = sprintf(page,"%d\n",s3c_is_otgmode());
-	return len;
-}
-*/
-#endif
-
-
 static int s3c_udc_power(struct s3c_udc *dev, char en)
 {
 	pr_debug("%s : %s\n", __func__, en ? "ON" : "OFF");
@@ -1316,6 +1185,108 @@ static struct s3c_udc memory = {
 		  },
 };
 
+#ifdef CONFIG_USB_S3C_OTG_HOST
+atomic_t g_OtgHostMode; // actual mode: client (0) or host (1)
+atomic_t g_OtgOperationMode; // operation mode: 'c'lient, 'h'ost, 'o'tg or 'a'uto-host
+atomic_t g_OtgLastCableState; // last cable state: detached (0), client attached (1), otg attached (2)
+extern struct platform_driver s5pc110_otg_driver;
+
+int s3c_is_otgmode(void)
+{
+	printk("otgmode = %d\n", atomic_read(&g_OtgHostMode));
+	return atomic_read(&g_OtgHostMode);
+}
+EXPORT_SYMBOL(s3c_is_otgmode);
+
+void set_otghost_mode(int mode) {
+//sztupy:
+// this function will determine what to do with the new information according to the current mode of operation
+// mode: 0: cable detached, 1: client cable attached, 2: otg cable attached, -1: operation config changed
+// modes of operation: c: always client, h: always host, g: otg mode (host if otg cable), a: automatic mode (host if cable plugged in)
+
+  struct s3c_udc *dev = the_controller;
+  int enable = 0;
+  char opmode = atomic_read(&g_OtgOperationMode);
+  if (mode==-1) mode = atomic_read(&g_OtgLastCableState);
+  atomic_set(&g_OtgLastCableState, mode);
+  switch (opmode) {
+    case 'h': enable = 1; break;
+    case 'o': enable = (mode==2); break;
+    case 'a': enable = (mode>0); break;
+    default: atomic_set(&g_OtgOperationMode,'c'); enable = 0; break;    
+  }
+
+  if (enable && !atomic_read(&g_OtgHostMode)) {
+    printk("Setting OTG host mode\n");
+    free_irq(IRQ_OTG, dev);
+    s3c_vbus_enable(&dev->gadget, 1);
+    
+    if (platform_driver_register(&s5pc110_otg_driver) < 0) 
+    {		
+        printk("platform_driver_register failed...\n");
+        atomic_set(&g_OtgHostMode , 0);
+    } else {
+        printk("platform_driver_register...\n");
+        atomic_set(&g_OtgHostMode , 1);
+    }
+  } else if (!enable && atomic_read(&g_OtgHostMode)) {
+// sztupy: also handle the disabling here
+    printk("Disabling OTG host mode\n");
+    s3c_vbus_enable(&dev->gadget, 0);
+    platform_driver_unregister(&s5pc110_otg_driver);
+    printk("platform_driver_unregistered\n");
+    /* irq setup after old hardware state is cleaned up */
+    if (request_irq(IRQ_OTG, s3c_udc_irq, 0, driver_name, dev)) {
+      printk("Warning: Could not request IRQ for USB gadget!\n");
+    }
+    atomic_set(&g_OtgHostMode , 0);
+  } else {
+    printk("OTG: no changes needed\n");
+  }
+}
+
+EXPORT_SYMBOL(set_otghost_mode);
+
+static ssize_t usbmode_read(struct device *dev, struct device_attribute *attr, char *buf)
+{
+  const char *msg = "client";
+  const char *msg2 = "disconnected";
+  const char *msg3 = "gadget";
+  switch(atomic_read(&g_OtgOperationMode)) {
+  case 'o': msg = "otg"; break;
+  case 'h': msg = "host"; break;
+  case 'a': msg = "auto-host"; break;
+  }
+  switch(atomic_read(&g_OtgLastCableState)) {
+  case 1: msg2 = "usb connected"; break;
+  case 2: msg2 = "otg connected"; break;
+  }
+  switch(atomic_read(&g_OtgHostMode)) {
+  case 1: msg3 = "host"; break;
+  }
+  
+  return sprintf(buf,"%s (cable: %s; state: %s)\n", msg, msg2, msg3);
+}
+
+static ssize_t usbmode_write(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+  char c;
+  printk("input data --> %s\n", buf);
+  c = buf[0];
+  switch(c) {
+  case 'a': atomic_set(&g_OtgOperationMode, 'a'); set_otghost_mode(-1);break;
+  case 'h': atomic_set(&g_OtgOperationMode, 'h'); set_otghost_mode(-1);break;
+  case 'c': atomic_set(&g_OtgOperationMode, 'c'); set_otghost_mode(-1);break;
+  case 'o': atomic_set(&g_OtgOperationMode, 'o'); set_otghost_mode(-1);break;
+  default: printk("Invalid input data\n");
+  }
+  return size;
+}
+
+// kevinh - Allow changing USB host/target modes on S3C android devices without a special cable
+static DEVICE_ATTR(opmode, S_IRUGO | S_IWUSR, usbmode_read, usbmode_write);
+#endif
+
 /*
  * probe - binds to the platform device
  */
@@ -1323,9 +1294,6 @@ static int s3c_udc_probe(struct platform_device *pdev)
 {
 	struct s3c_udc *dev = &memory;
 	int retval;
-#ifdef CONFIG_USB_S3C_OTG_HOST
-//	struct proc_dir_entry *proc_entry;
-#endif
 	DEBUG("%s: %p\n", __func__, pdev);
 
 	spin_lock_init(&dev->lock);
@@ -1377,17 +1345,6 @@ static int s3c_udc_probe(struct platform_device *pdev)
                 printk("Failed to create device file(%s)!\n", dev_attr_opmode.attr.name);
 #endif
 
-#ifdef CONFIG_USB_S3C_OTG_HOST
-/*	printk("USB_OTG: Creating proc filesystem handles\n");
-	proc_entry = create_proc_entry("otg_host_mode",0666,NULL);
-	if (proc_entry == NULL) {
-      		printk(KERN_INFO "USB_OTG: Proc filesystem creation failed\n");
-    	} else {
-      		proc_entry->write_proc = otg_handler_write;
-      		proc_entry->read_proc = otg_handler_read;
-		printk("USB_OTG: Proc fs handles created\n");
-    	}*/
-#endif
 	return retval;
 }
 

@@ -1,13 +1,13 @@
-/**************************************************************************** 
+/****************************************************************************
 *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
 *
-*  [File Name]   : S3C6400_OtgDevice.h
-*  [Description] :  
-*                  
+*  [File Name]   : s3c-otg-common-regdef.h
+*  [Description] :
+*
 *  [Author]      : Kyu Hyeok Jang { kyuhyeok.jang@samsung.com }
 *  [Department]  : System LSI Division/Embedded Software Center
 *  [Created Date]: 2007/12/15
-*  [Revision History] 	     
+*  [Revision History]
 *      (1) 2007/12/15   by Kyu Hyeok Jang { kyuhyeok.jang@samsung.com }
 *          - Created
 *
@@ -62,7 +62,7 @@ typedef struct {
 #define GHWCFG2				0x048		// User HW Config2
 #define GHWCFG3				0x04C		// User HW Config3
 #define GHWCFG4				0x050		// User HW Config4
-	                                       
+
 #define HPTXFSIZ				0x100		// Host Periodic Transmit FIFO Size
 #define DPTXFSIZ1				0x104		// Device Periodic Transmit FIFO-1 Size
 #define DPTXFSIZ2				0x108		// Device Periodic Transmit FIFO-2 Size
@@ -157,7 +157,7 @@ typedef struct {
 
 // IN_CSR2_REG Bit definitions
 #define IN_DMA_INT_DISABLE		0x10
-#define SET_MODE_IN				0x20 
+#define SET_MODE_IN				0x20
 
 #define EPTYPE						(0x3<<18)
 #define SET_TYPE_CONTROL			(0x0<<18)
@@ -205,7 +205,7 @@ typedef struct {
 #define EP14_OUT_INT				(0x1<<30)
 #define EP15_OUT_INT				(0x1<<31)
 
-// GOTGINT 
+// GOTGINT
 #define SesEndDet				(0x1<<2)
 
 // GRSTCTL
@@ -217,7 +217,7 @@ typedef struct {
 #define CSftRst					(0x1<<0)
 
 #define CLEAR_ALL_EP_INTRS        0xffffffff
-									
+
 #define  EP_INTERRUPT_DISABLE_ALL   	0x0   // Bits to write to EP_INT_EN_REG - Use CLEAR
 
 // DMA control register bit definitions
@@ -297,6 +297,6 @@ inline	void	ClearReg(
 }
 #endif
 
-#endif 
+#endif
 
 

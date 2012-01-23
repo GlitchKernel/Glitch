@@ -3,7 +3,7 @@
  *
  * @file   s3c-otg-common-common.h
  * @brief  it includes common header files for all modules \n
- * @version 
+ * @version
  *  ex)-# Jun 11,2008 v1.0 by SeungSoo Yang (ss1.yang@samsung.com) \n
  *    : Creating the initial version of this code \n
  * @see None
@@ -23,17 +23,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ****************************************************************************/
- 
+
 #ifndef _S3C_OTG_COMMON_COMMON_H_
 #define _S3C_OTG_COMMON_COMMON_H_
- 
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
- 
+
 //#include "s3c-otg-common-typedef.h"
-#include "s3c-otg-common-errorcode.h"  
+#include "s3c-otg-common-errorcode.h"
 #include <linux/errno.h>
 #include <linux/usb.h>
 
@@ -43,9 +43,7 @@ extern "C"
 //Kernel Version
 #define KERNEL_2_6_21
 
-#define CHARGER_IC_TEST		0
-
-#ifdef __cplusplus 
-} 
-#endif 
+#ifdef __cplusplus
+}
+#endif
 #endif /* _S3C_OTG_COMMON_COMMON_H_ */

@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
  *  (C) Copyright 2008 Samsung Electronics Co., Ltd., All rights reserved
  *
  *  [File Name]   : IntTransferChecker.c
@@ -6,7 +6,7 @@
  *  [Author]      : Yang Soon Yeal { syatom.yang@samsung.com }
  *  [Department]  : System LSI Division/System SW Lab
  *  [Created Date]: 2008/06/19
- *  [Revision History] 	     
+ *  [Revision History]
  *      (1) 2008/06/18   by Yang Soon Yeal { syatom.yang@samsung.com }
  *          - Created this file and implements functions of IntTransferChecker
  *
@@ -31,8 +31,8 @@
 #include "s3c-otg-transferchecker-interrupt.h"
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_intr_transfer(td_t 	*result_td, 
+/*!
+ * @name	u8	process_intr_transfer(td_t 	*result_td,
  *					hc_info_t *HCRegData)
  *
  *
@@ -50,52 +50,44 @@
  *		NO_ACTION	-if we don't need any action,
  */
 /******************************************************************************/
-u8	process_intr_transfer(td_t 	*result_td, 
-				hc_info_t *hc_reg_data)
+u8 process_intr_transfer(td_t *result_td, hc_info_t *hc_reg_data)
 {
-	hcintn_t		hc_intr_info;
-	u8		ret_val=0;
+	hcintn_t hc_intr_info;
+	u8 ret_val=0;
 
 	//we just deal with the interrupts to be unmasked.
 	hc_intr_info.d32 = hc_reg_data->hc_int.d32&result_td->cur_stransfer.hc_reg.hc_int_msk.d32;
 
-	if(result_td->parent_ed_p->ed_desc.is_ep_in)
-	{
-		if(hc_intr_info.b.chhltd)
-		{
+	if(result_td->parent_ed_p->ed_desc.is_ep_in) {
+		if(hc_intr_info.b.chhltd) {
 			ret_val = process_chhltd_on_intr(result_td, hc_reg_data);
 		}
-		
-		 else if (hc_intr_info.b.ack)
-		{
-			ret_val =process_ack_on_intr(result_td, hc_reg_data);
+
+		 else if (hc_intr_info.b.ack) {
+			ret_val = process_ack_on_intr(result_td, hc_reg_data);
 		}
 	}
-	else
-	{
-		if(hc_intr_info.b.chhltd)
-		{
+	else {
+		if(hc_intr_info.b.chhltd) {
 			ret_val = process_chhltd_on_intr(result_td,  hc_reg_data);
-		
 		}
-		
-		else if(hc_intr_info.b.ack)
-		{
-			ret_val =process_ack_on_intr( result_td, hc_reg_data);
-		}		
-	}	
-	
+
+		else if(hc_intr_info.b.ack) {
+			ret_val = process_ack_on_intr( result_td, hc_reg_data);
+		}
+	}
+
 	return ret_val;
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_chhltd_on_intr(td_t 		*result_td, 
+/*!
+ * @name	u8	process_chhltd_on_intr(td_t 		*result_td,
  *					hc_info_t 	*HCRegData)
  *
  *
  * @brief		this function processes Channel Halt event according to Synopsys OTG Spec.
- *			firstly, this function checks the reason of the Channel Halt, and according to the reason, 
+ *			firstly, this function checks the reason of the Channel Halt, and according to the reason,
  *			calls the sub-functions to process the result.
  *
  *
@@ -107,7 +99,7 @@ u8	process_intr_transfer(td_t 	*result_td,
  *		DE_ALLOCATE	-if USB Transfer is completed.
  */
 /******************************************************************************/
-u8	process_chhltd_on_intr(td_t 	*result_td, 
+u8	process_chhltd_on_intr(td_t 	*result_td,
 				hc_info_t *hc_reg_data)
 {
 	if(result_td->parent_ed_p->ed_desc.is_ep_in)
@@ -138,12 +130,12 @@ u8	process_chhltd_on_intr(td_t 	*result_td,
 		}
 		else if(hc_reg_data->hc_int.b.xacterr)
 		{
-			return process_xacterr_on_intr(result_td, hc_reg_data);	
+			return process_xacterr_on_intr(result_td, hc_reg_data);
 		}
 		else
 		{
 			clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 			//Mask ack Interrupt..
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
@@ -171,12 +163,12 @@ u8	process_chhltd_on_intr(td_t 	*result_td,
 		}
 		else if(hc_reg_data->hc_int.b.xacterr)
 		{
-			return process_xacterr_on_intr(result_td, hc_reg_data);	
+			return process_xacterr_on_intr(result_td, hc_reg_data);
 		}
 		else
 		{
 			clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 			//Mask ack Interrupt..
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 			mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
@@ -189,18 +181,18 @@ u8	process_chhltd_on_intr(td_t 	*result_td,
 				result_td->err_cnt = 0;
 				return DE_ALLOCATE;
 			}
-			
+
 			return RE_TRANSMIT;
 		}
-			
+
 	}
-	
+
 
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_xfercompl_on_intr(	td_t 	*result_td, 
+/*!
+ * @name	u8	process_xfercompl_on_intr(	td_t 	*result_td,
  *						hc_info_t *hc_reg_data)
  *
  *
@@ -220,15 +212,15 @@ u8	process_chhltd_on_intr(td_t 	*result_td,
  *		RE_TRANSMIT	-if need to retransmit the result_td.
  */
 /******************************************************************************/
-u8	process_xfercompl_on_intr(	td_t 	*result_td, 
+u8	process_xfercompl_on_intr(	td_t 	*result_td,
 					hc_info_t *hc_reg_data)
 {
 	u8	ret_val=0;
-	
-	result_td->err_cnt =0;	
+
+	result_td->err_cnt =0;
 
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 	//Mask ack Interrupt..
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
@@ -249,67 +241,67 @@ u8	process_xfercompl_on_intr(	td_t 	*result_td,
 		{
 			if(result_td->transfer_flag&USB_TRANS_FLAG_NOT_SHORT)
 			{
-				result_td->error_code	=	USB_ERR_STATUS_SHORTREAD;	
+				result_td->error_code	=	USB_ERR_STATUS_SHORTREAD;
 			}
 			else
 			{
-				result_td->error_code	=	USB_ERR_STATUS_COMPLETE;		
+				result_td->error_code	=	USB_ERR_STATUS_COMPLETE;
 			}
 			ret_val = DE_ALLOCATE;
 		}
 		else
 		{	// the Data Stage is not completed. So we need to continue Data Stage.
-			update_datatgl(hc_reg_data->hc_size.b.pid, result_td);				
+			update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
 			ret_val = RE_TRANSMIT;
 		}
-	}	
-	
-	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);				
-	
+	}
+
+	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
+
 	return ret_val;
-	
+
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_ahb_on_intr(td_t 	*result_td, 
+/*!
+ * @name	u8	process_ahb_on_intr(td_t 	*result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
  * @brief		this function deals with theAHB Errorl event according to Synopsys OTG Spec.
  *			this function stop the channel to be executed
- *			
+ *
  *
  * @param	[IN]	result_td		-indicates  the pointer of the td_t to be mapped with the uChNum.
  *		[IN]	HCRegData	-indicates the interrupt information of the Channel to be interrupted
  *
  * @return	DE_ALLOCATE
  */
-/******************************************************************************/						     	
-u8	process_ahb_on_intr(td_t 	*result_td, 
+/******************************************************************************/
+u8	process_ahb_on_intr(td_t 	*result_td,
 				hc_info_t *hc_reg_data)
 {
 	result_td->err_cnt 		= 	0;
 	result_td->error_code	=	USB_ERR_STATUS_AHBERR;
 
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_AHBErr);
-	
+
 	//Mask ack Interrupt..
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
 
 	// we just calculate the size of the transferred data on Data Stage of Int Transfer.
-	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);	
+	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
 	result_td->parent_ed_p->ed_status.is_ping_enable	=false;
-	
+
 	return DE_ALLOCATE;
 
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_stall_on_intr(td_t 	*result_td, 
+/*!
+ * @name	u8	process_stall_on_intr(td_t 	*result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
@@ -322,7 +314,7 @@ u8	process_ahb_on_intr(td_t 	*result_td,
  * @return	DE_ALLOCATE
  */
 /******************************************************************************/
-u8	process_stall_on_intr(td_t 	*result_td, 
+u8	process_stall_on_intr(td_t 	*result_td,
 			 	hc_info_t *hc_reg_data)
 {
 	result_td->err_cnt 		= 	0;
@@ -330,42 +322,42 @@ u8	process_stall_on_intr(td_t 	*result_td,
 
 	//this channel is stalled, So we don't process another interrupts.
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 	//Mask ack Interrupt..
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
-	
+
 	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
-	
-	update_datatgl(DATA0, result_td);	
-		
+
+	update_datatgl(DATA0, result_td);
+
 	return DE_ALLOCATE;
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_nak_on_intr(td_t 	*result_td, 
+/*!
+ * @name	u8	process_nak_on_intr(td_t 	*result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
  * @brief		this function deals with the nak event according to Synopsys OTG Spec.
- *			nak is occured at OUT/IN Transaction of Interrupt Transfer. 
+ *			nak is occured at OUT/IN Transaction of Interrupt Transfer.
  *			we can't use ping protocol on Interrupt Transfer. and Syonopsys OTG IP occures
- *			chhltd interrupt on nak of IN/OUT Transaction. So we should retransmit the transfer 
+ *			chhltd interrupt on nak of IN/OUT Transaction. So we should retransmit the transfer
  *			on IN Transfer.
  *			If nak is occured at IN Transaction, this function processes this interrupt as following.
  *				1. resets the result_td->err_cnt.
  *				2. masks ack/nak/DaaTglErr bit of HCINTMSK.
  *				3. clears the nak bit of HCINT
  *				4. calculates frame number to retransmit this Interrupt Transfer.
- *				
- *			If nak is occured at OUT Transaction, this function processes this interrupt as following.		
+ *
+ *			If nak is occured at OUT Transaction, this function processes this interrupt as following.
  *				1. all procedures of IN Transaction are executed.
  *				2. calculates the size of the transferred data.
  *				3. if the speed of USB Device is High-Speed, sets the ping protocol.
- *				4. update the Toggle 
- *			at OUT Transaction, this function check whether	the speed of USB Device is High-Speed or not. 
+ *				4. update the Toggle
+ *			at OUT Transaction, this function check whether	the speed of USB Device is High-Speed or not.
  *			if USB Device is High-Speed, then
  *			this function sets the ping protocol.
  *
@@ -376,33 +368,33 @@ u8	process_stall_on_intr(td_t 	*result_td,
  *		NO_ACTION	-if the direction of the Transfer is IN
  */
 /******************************************************************************/
-u8	process_nak_on_intr(td_t 	*result_td, 
+u8	process_nak_on_intr(td_t 	*result_td,
 				hc_info_t *hc_reg_data)
 {
 	result_td->err_cnt = 0;
-	
+
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
 
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_NAK);
 
-				
+
 	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
-	
+
 	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
-	
+
 	update_frame_number(result_td);
-	
+
 	return RE_SCHEDULE;
 //	return RE_TRANSMIT;
-	
+
 
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_ack_on_intr(td_t 	*result_td, 
+/*!
+ * @name	u8	process_ack_on_intr(td_t 	*result_td,
  * 					hc_info_t *hc_reg_data)
  *
  *
@@ -417,23 +409,23 @@ u8	process_nak_on_intr(td_t 	*result_td,
  * @return	NO_ACTION
  */
 /******************************************************************************/
-u8	process_ack_on_intr(td_t *result_td, 
+u8	process_ack_on_intr(td_t *result_td,
 			       hc_info_t *hc_reg_data)
 {
 	result_td->err_cnt = 0;
-	
+
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
-	
+
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ACK);
 
 	return NO_ACTION;
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_xacterr_on_intr(td_t 	*result_td, 
+/*!
+ * @name	u8	process_xacterr_on_intr(td_t 	*result_td,
  *					hc_info_t 	*hc_reg_data)
  *
  * @brief		this function deals with the xacterr event according to Synopsys OTG Spec.
@@ -441,7 +433,7 @@ u8	process_ack_on_intr(td_t *result_td,
  *			if the Error Counter is less than the RETRANSMIT_THRESHOLD.
  *			the reasons of xacterr is Timeout/CRC error/false EOP.
  *			the procedure to process xacterr is as following.
- *				1. increses the result_td->err_cnt 
+ *				1. increses the result_td->err_cnt
  *				2. check whether the result_td->err_cnt is equal to 3.
  *				2. unmasks ack/nak/datatglerr bit of HCINTMSK.
  *				3. clears the xacterr bit of HCINT
@@ -456,7 +448,7 @@ u8	process_ack_on_intr(td_t *result_td,
  *		DE_ALLOCATE		-if the error count is equal to 3
  */
 /******************************************************************************/
-u8	process_xacterr_on_intr(td_t	*result_td, 									       
+u8	process_xacterr_on_intr(td_t	*result_td,
 				hc_info_t *hc_reg_data)
 {
 	u8	ret_val = 0;
@@ -475,29 +467,29 @@ u8	process_xacterr_on_intr(td_t	*result_td,
 		ret_val = DE_ALLOCATE;
 		result_td->err_cnt = 0 ;
 	}
-	
-	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_DataTglErr);				
-	
+
+	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_DataTglErr);
+
 	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
-	
+
 	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
-	
+
 	if(ret_val == RE_SCHEDULE)
 	{	//Calculates the frame number
 		update_frame_number(result_td);
 	}
-	
+
 	return ret_val;
 }
 
 /******************************************************************************/
-/*! 
- * @name	void	process_bblerr_on_intr(td_t 	*result_td, 
+/*!
+ * @name	void	process_bblerr_on_intr(td_t 	*result_td,
  *					hc_info_t *hc_reg_data)
  *
  *
  * @brief		this function deals with the Babble event according to Synopsys OTG Spec.
- *			babble error is occured when the USB device continues to send packets 
+ *			babble error is occured when the USB device continues to send packets
  *			althrough EOP is occured. So Babble error is only occured at IN Transfer.
  *			when Babble Error is occured, we should stop the USB Transfer, and return the fact
  *			to Application.
@@ -508,7 +500,7 @@ u8	process_xacterr_on_intr(td_t	*result_td,
  * @return	DE_ALLOCATE
  */
 /******************************************************************************/
-u8	process_bblerr_on_intr(td_t 	*result_td, 									      
+u8	process_bblerr_on_intr(td_t 	*result_td,
 				hc_info_t *hc_reg_data)
 {
 
@@ -516,24 +508,24 @@ u8	process_bblerr_on_intr(td_t 	*result_td,
 	{
 		return NO_ACTION;
 	}
-	
+
 	result_td->err_cnt 	= 0;
 	result_td->error_code	=USB_ERR_STATUS_BBLERR;
 
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_ALL);
-	
+
 	//Mask ack Interrupt..
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
-	
-	result_td->transferred_szie += calc_transferred_size(false, result_td, hc_reg_data);		
+
+	result_td->transferred_szie += calc_transferred_size(false, result_td, hc_reg_data);
 	return DE_ALLOCATE;
 }
 
 /******************************************************************************/
-/*! 
- * @name	u8	process_datatgl_on_intr(	td_t 	*result_td, 
+/*!
+ * @name	u8	process_datatgl_on_intr(	td_t 	*result_td,
  *						hc_info_t *hc_reg_data)
  *
  * @brief		this function deals with the datatglerr event according to Synopsys OTG Spec.
@@ -547,34 +539,34 @@ u8	process_bblerr_on_intr(td_t 	*result_td,
  * @return	RE_SCHEDULE
  */
 /******************************************************************************/
-u8	process_datatgl_on_intr(td_t 	*result_td, 
+u8	process_datatgl_on_intr(td_t 	*result_td,
 				hc_info_t *hc_reg_data)
 {
 	result_td->err_cnt = 0;
-	
+
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_ACK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_NAK);
 	mask_channel_interrupt(result_td->cur_stransfer.alloc_chnum, CH_STATUS_DataTglErr);
 
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_NAK);
-				
+
 	result_td->transferred_szie += calc_transferred_size(false,result_td, hc_reg_data);
-	
+
 	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
-	
+
 	update_frame_number(result_td);
-	
+
 	return RE_SCHEDULE;
 }
 
-u8	process_frmovrrun_on_intr(td_t	*result_td, 								     	
+u8	process_frmovrrun_on_intr(td_t	*result_td,
 				     hc_info_t 	*hc_reg_data)
 {
 
 	clear_ch_intr(result_td->cur_stransfer.alloc_chnum,	CH_STATUS_NAK);
-	
+
 	update_datatgl(hc_reg_data->hc_size.b.pid, result_td);
-	
+
 	update_frame_number(result_td);
 
 	return RE_TRANSMIT;

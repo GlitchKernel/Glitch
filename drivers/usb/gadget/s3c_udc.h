@@ -22,6 +22,7 @@
 #ifndef __S3C_USB_GADGET
 #define __S3C_USB_GADGET
 
+#include <linux/host_notify.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/ioport.h>

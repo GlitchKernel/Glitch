@@ -34,9 +34,6 @@
 #include <linux/mfd/max8998.h>
 #include <linux/mfd/max8998-private.h>
 
-// DIRECT API ADDITION
-struct max8998_data *client_data_p = NULL;
-// DIRECT API ADDITION END
 
 
 struct max8998_data {
@@ -965,7 +962,6 @@ static __devinit int max8998_pmic_probe(struct platform_device *pdev)
 		}
 	}
 
-	client_data_p = max8998;
 	return 0;
 err:
 	for (i = 0; i < max8998->num_regulators; i++)
@@ -990,8 +986,6 @@ static int __devexit max8998_pmic_remove(struct platform_device *pdev)
 
 	kfree(max8998->rdev);
 	kfree(max8998);
-
-	client_data_p = NULL;
 
 	return 0;
 }
@@ -1030,109 +1024,3 @@ MODULE_AUTHOR("Kyungmin Park <kyungmin.park@samsung.com>");
 MODULE_LICENSE("GPL");
 
 
-
-
-// DIRECT API ADDITION
-int max8998_ldo_enable_direct(int ldo)
-{
-	struct max8998_data *max8998;
-	int shift, ret;
-	u8 value;
-	struct i2c_client *i2c;
-
-	if(!client_data_p) {
-		printk(KERN_ERR "%s(%d) client_data_p is null!!\n", __func__, __LINE__);
-		return -1;
-	}
-	max8998 = client_data_p;
-
-	i2c = max8998->iodev->i2c;
-	if((ldo < MAX8998_LDO2) || (ldo > MAX8998_LDO13))
-	{
-		printk("ERROR: Invalid argument passed\n");
-		return -EINVAL;
-	}
-
-	if (ldo <= MAX8998_LDO5) {
-		ret = max8998_read_reg(i2c, MAX8998_REG_ONOFF1, &value);
-		if (!ret) {
-			shift = 5 - ldo;
-			value |= (1 << shift);
-			max8998_write_reg(i2c, value, MAX8998_REG_ONOFF1);
-		}
-	} else if (ldo <= MAX8998_LDO13) {
-		ret = max8998_read_reg(i2c, MAX8998_REG_ONOFF2, &value);
-		if (!ret) {
-			shift = 13 - ldo;
-			value |= (1 << shift);
-			max8998_write_reg(i2c, value, MAX8998_REG_ONOFF2);
-		}
-	}
-	return 0;
-}
-
-int max8998_ldo_disable_direct(int ldo)
-{
-	struct max8998_data *max8998;
-	int shift, ret;
-	u8 value;
-	struct i2c_client *i2c;
-
-	if(!client_data_p) {
-		printk(KERN_ERR "%s(%d) client_data_p is null!!\n", __func__, __LINE__);
-		return -1;
-	}
-	max8998 = client_data_p;
-
-	i2c = max8998->iodev->i2c;
-	if((ldo < MAX8998_LDO2) || (ldo > MAX8998_LDO13))
-	{
-		printk("ERROR: Invalid argument passed\n");
-		return -EINVAL;
-	}
-
-	if (ldo <= MAX8998_LDO5) {
-		ret = max8998_read_reg(i2c, MAX8998_REG_ONOFF1, &value);
-		if (!ret) {
-			shift = 5 - ldo;
-			value &= ~(1 << shift);
-			max8998_write_reg(i2c, value, MAX8998_REG_ONOFF1);
-		}
-	} else if (ldo <= MAX8998_LDO13) {
-		ret = max8998_read_reg(i2c, MAX8998_REG_ONOFF2, &value);
-		if (!ret) {
-			shift = 13 - ldo;
-			value &= ~(1 << shift);
-			max8998_write_reg(i2c, value, MAX8998_REG_ONOFF2);
-		}
-	}
-	return 0;
-}
-
-static unsigned int ldo8_status = 0;
-void max8998_ldo3_8_control(int enable, unsigned int flag)
-{
-	if(enable)
-	{
-		ldo8_status |= flag;
-		max8998_ldo_enable_direct(MAX8998_LDO3);
-		max8998_ldo_enable_direct(MAX8998_LDO8);
-		
-		printk("%s: LDO3_8 is enabled!! (status: 0x%x)\n", __func__, ldo8_status);
-	}
-	else
-	{
-		ldo8_status &= ~(flag);
-		if(!ldo8_status)  // Not used now.
-		{
-			max8998_ldo_disable_direct(MAX8998_LDO8);
-			max8998_ldo_disable_direct(MAX8998_LDO3);
-			printk("%s: LDO3_8 is disabled!! (status: 0x%x)\n", __func__, ldo8_status);
-		}
-		else
-			printk("%s: LDO3_8 is not disabled!! (status: 0x%x)\n", __func__, ldo8_status);
-	}
-}
-EXPORT_SYMBOL(max8998_ldo3_8_control);
-
-// DIRECT API ADDITION END
