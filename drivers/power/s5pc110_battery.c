@@ -86,7 +86,7 @@
 #define ATTACH_USB	1
 #define ATTACH_TA	2
 
-#if defined (CONFIG_SAMSUNG_GALAXYS) || defined (CONFIG_SAMSUNG_GALAXYSB)
+#if defined (CONFIG_SAMSUNG_GALAXYS) || defined (CONFIG_SAMSUNG_GALAXYSB) || defined(CONFIG_SAMSUNG_CAPTIVATE)
   #define HIGH_BLOCK_TEMP               630
   #define HIGH_RECOVER_TEMP             580
   #define LOW_BLOCK_TEMP               (-40)

@@ -811,6 +811,89 @@ static struct max8998_regulator_data aries_regulators[] = {
 };
 
 static struct max8998_adc_table_data temper_table[] =  {
+#if defined (CONFIG_SAMSUNG_CAPTIVATE)
+	{  206,  700 },
+	{  220,  690 },
+	{  234,  680 },
+	{  248,  670 },
+	{  262,  660 },
+	{  276,  650 },
+	{  290,  640 },
+	{  304,  630 },
+	{  314,  620 },
+	{  323,  610 },
+	{  337,  600 },
+	{  351,  590 },
+	{  364,  580 },
+	{  379,  570 },
+	{  395,  560 },
+	{  408,  550 },
+	{  423,  540 },
+	{  438,  530 },
+	{  453,  520 },
+	{  465,  510 },
+	{  478,  500 },
+	{  495,  490 },
+	{  513,  480 },
+	{  528,  470 },
+	{  544,  460 },
+	{  564,  450 },
+	{  584,  440 },
+	{  602,  430 },
+	{  621,  420 },
+	{  643,  410 },
+	{  665,  400 },
+	{  682,  390 },
+	{  702,  380 },
+	{  729,  370 },
+	{  752,  360 },
+	{  775,  350 },
+	{  798,  340 },
+	{  821,  330 },
+	{  844,  320 },
+	{  867,  310 },
+	{  890,  300 },
+	{  913,  290 },
+	{  936,  280 },
+	{  959,  270 },
+	{  982,  260 },
+	{  1005,  250 },
+	{  1028,  240 },
+	{  1051,  230 },
+	{  1074,  220 },
+	{  1097,  210 },
+	{  1120,  200 },
+	{  1143,  190 },
+	{  1166,  180 },
+	{  1189,  170 },
+	{  1212,  160 },
+	{  1235,  150 },
+	{  1258,  140 },
+	{  1281,  130 },
+	{  1304,  120 },
+	{  1327,  110 },
+	{  1350,  100 },
+	{  1373,  90 },
+	{  1396,  80 },
+	{  1419,  70 },
+	{  1442,  60 },
+	{  1465,  50 },
+	{  1484,  40 },
+	{  1504,  30 },
+	{  1526,  20 },
+	{  1543,  10 }, // +10
+	{  1567,  0 }, // 10
+	{  1569,  -10 },
+	{  1592,  -20 },
+	{  1613,  -30 },
+	{  1633,  -40 },
+	{  1653,  -50 },
+	{  1654,  -60 },
+	{  1671,  -70 },
+	{  1691,  -80 },
+	{  1711,  -90 },
+	{  1731,  -100}, // 0
+#else
 	{  264,  650 },
 	{  275,  640 },
 	{  286,  630 },
@@ -884,6 +967,7 @@ static struct max8998_adc_table_data temper_table[] =  {
 	{ 1632,  -50 },
 	{ 1658,  -60 },
 	{ 1667,  -70 }, 
+#endif
 };
 struct max8998_charger_callbacks *charger_callbacks;
 static enum cable_type_t set_cable_status;
@@ -2516,13 +2600,20 @@ static void max17040_power_supply_unregister(struct power_supply *psy)
 static struct max17040_platform_data max17040_pdata = {
 	.power_supply_register = max17040_power_supply_register,
 	.power_supply_unregister = max17040_power_supply_unregister,
+#if defined (CONFIG_SAMSUNG_CAPTIVATE)
+	.rcomp_value = 0xD000,
+#else
 	.rcomp_value = 0xB000,
+#endif
 };
 
 static struct i2c_board_info i2c_devs9[] __initdata = {
 	{
 		I2C_BOARD_INFO("max17040", (0x6D >> 1)),
 		.platform_data = &max17040_pdata,
+#if defined (CONFIG_SAMSUNG_CAPTIVATE)
+		.irq = IRQ_EINT(27),
+#endif
 	},
 };
 
@@ -5130,6 +5221,14 @@ static void __init fsa9480_gpio_init(void)
 	s3c_gpio_setpull(GPIO_JACK_nINT, S3C_GPIO_PULL_NONE);
 }
 
+#if defined (CONFIG_SAMSUNG_CAPTIVATE)
+static void __init fuelgauge_gpio_init(void)
+{
+	 s3c_gpio_cfgpin(GPIO_KBR3, S5PV210_GPH3_3_EXT_INT33_3);
+	 s3c_gpio_setpull(GPIO_KBR3, S3C_GPIO_PULL_NONE);
+}
+#endif
+
 static void __init setup_ram_console_mem(void)
 {
 	ram_console_resource[0].start = ram_console_start;
@@ -5308,6 +5407,10 @@ static void __init aries_machine_init(void)
 #if defined (CONFIG_SAMSUNG_GALAXYS) || defined (CONFIG_SAMSUNG_GALAXYSB)
 	/* fm radio */
 	i2c_register_board_info(8, i2c_devs8, ARRAY_SIZE(i2c_devs8));
+#endif
+
+#if defined (CONFIG_SAMSUNG_CAPTIVATE)
+	fuelgauge_gpio_init();
 #endif
 
 	/* max17040 */

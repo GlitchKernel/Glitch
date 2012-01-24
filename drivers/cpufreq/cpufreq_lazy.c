@@ -300,6 +300,7 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
     if (ret != 1)
 	return -EINVAL;
     dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
+    dbs_tuners_ins.min_timeinstate = max(dbs_tuners_ins.min_timeinstate, dbs_tuners_ins.sampling_rate);
     return count;
 }
 
@@ -391,7 +392,7 @@ static ssize_t store_min_timeinstate(struct kobject *a, struct attribute *b,
     ret = sscanf(buf, "%u", &input);
     if (ret != 1)
 	return -EINVAL;
-    dbs_tuners_ins.min_timeinstate = max(input, min_sampling_rate);
+    dbs_tuners_ins.min_timeinstate = max(input, dbs_tuners_ins.sampling_rate);
     return count;
 }
 
@@ -735,6 +736,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	    dbs_tuners_ins.sampling_rate = max(min_sampling_rate, DEF_SAMPLE_RATE);
 	    current_sampling_rate = dbs_tuners_ins.sampling_rate;
 	    dbs_tuners_ins.min_timeinstate = latency * LATENCY_MULTIPLIER;
+	    dbs_tuners_ins.min_timeinstate = max(dbs_tuners_ins.sampling_rate, dbs_tuners_ins.min_timeinstate);
 	    dbs_tuners_ins.io_is_busy = should_io_be_busy();
 	}
 	mutex_unlock(&dbs_mutex);

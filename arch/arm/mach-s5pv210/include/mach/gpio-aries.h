@@ -406,6 +406,9 @@
 
 #define GPIO_KBR3				S5PV210_GPH3(3)
 #define GPIO_KBR3_AF			3
+#if defined (CONFIG_SAMSUNG_CAPTIVATE)
+#define S5PV210_GPH3_3_EXT_INT33_3	(0xf << 12)
+#endif
 
 #define GPIO_T_FLASH_DETECT		S5PV210_GPH3(4)
 
