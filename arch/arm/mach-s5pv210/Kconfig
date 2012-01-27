@@ -21,9 +21,17 @@ config CPU_S5PV210
 config CPU_DIDLE
         bool "Enable DEEP IDLE support for S5PV210 CPU"
         depends on CPU_IDLE
-        default n
+        default y
         help
           Enable DEEP IDLE support for S5PV210 CPU.
+
+config BT_SLEEP_ENABLER
+	bool "Enable BT SLEEP while in Deep Idle support for S5PV210 CPU"
+	depends on CPU_IDLE
+	default  y
+	help
+	  Enable BT SLEEP while in Deep Idle support for S5PV210 CPU.
+	  This is to Avoid BT Staying in Sleep Mode or Not Enter Sleep at all.
 
 config S5PV210_BIGMEM
 	bool "Enable Bigmem (more free RAM)"
@@ -366,11 +374,6 @@ config S5PV210_SETUP_FIMC2
 config DVFS_LIMIT
 	bool "DVFS limit"
 	depends on CPU_FREQ
-	default n
-
-config CPU_DIDLE
-	bool "DEEP Idle"
-	depends on CPU_IDLE
 	default n
 
 config WIFI_CONTROL_FUNC

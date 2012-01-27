@@ -18,12 +18,8 @@
 #include <linux/backing-dev.h>
 #include "internal.h"
 
-static int fsync_disabled = 1;
-module_param(fsync_disabled, int, 0600);
-MODULE_PARM_DESC(delay, "Change fsync() to work as a no-op: this is DANGEROUS");
-
 #define VALID_FLAGS (SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE| \
-			SYNC_FILE_RANGE_WAIT_AFTER)
+SYNC_FILE_RANGE_WAIT_AFTER)
 
 /*
  * Do the filesystem syncing work. For simple filesystems
@@ -47,7 +43,7 @@ static int __sync_filesystem(struct super_block *sb, int wait)
 	if (wait)
 		sync_inodes_sb(sb);
 	else
-		writeback_inodes_sb(sb);
+		writeback_inodes_sb(sb, WB_REASON_SYNC);
 
 	if (sb->s_op->sync_fs)
 		sb->s_op->sync_fs(sb, wait);
@@ -62,19 +58,19 @@ static int __sync_filesystem(struct super_block *sb, int wait)
 int sync_filesystem(struct super_block *sb)
 {
 	int ret;
-
+	
 	/*
 	 * We need to be protected against the filesystem going from
 	 * r/o to r/w or vice versa.
 	 */
 	WARN_ON(!rwsem_is_locked(&sb->s_umount));
-
+	
 	/*
 	 * No point in syncing out anything if the filesystem is read-only.
 	 */
 	if (sb->s_flags & MS_RDONLY)
 		return 0;
-
+	
 	ret = __sync_filesystem(sb, 0);
 	if (ret < 0)
 		return ret;
@@ -102,7 +98,7 @@ static void sync_filesystems(int wait)
  */
 SYSCALL_DEFINE0(sync)
 {
-	wakeup_flusher_threads(0);
+	wakeup_flusher_threads(0, WB_REASON_SYNC);
 	sync_filesystems(0);
 	sync_filesystems(1);
 	if (unlikely(laptop_mode))
@@ -125,7 +121,7 @@ static void do_sync_work(struct work_struct *work)
 void emergency_sync(void)
 {
 	struct work_struct *work;
-
+	
 	work = kmalloc(sizeof(*work), GFP_ATOMIC);
 	if (work) {
 		INIT_WORK(work, do_sync_work);
@@ -142,19 +138,16 @@ SYSCALL_DEFINE1(syncfs, int, fd)
 	struct super_block *sb;
 	int ret;
 	int fput_needed;
-
-	if (unlikely(fsync_disabled))
-    		return 0;
-
+	
 	file = fget_light(fd, &fput_needed);
 	if (!file)
 		return -EBADF;
 	sb = file->f_dentry->d_sb;
-
+	
 	down_read(&sb->s_umount);
 	ret = sync_filesystem(sb);
 	up_read(&sb->s_umount);
-
+	
 	fput_light(file, fput_needed);
 	return ret;
 }
@@ -174,17 +167,14 @@ int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
 {
 	struct address_space *mapping = file->f_mapping;
 	int err, ret;
-
-	if (unlikely(fsync_disabled))
-    		return 0;
-
+	
 	if (!file->f_op || !file->f_op->fsync) {
 		ret = -EINVAL;
 		goto out;
 	}
-
+	
 	ret = filemap_write_and_wait_range(mapping, start, end);
-
+	
 	/*
 	 * We need to protect against concurrent writers, which could cause
 	 * livelocks in fsync_buffers_list().
@@ -194,7 +184,7 @@ int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
 	if (!ret)
 		ret = err;
 	mutex_unlock(&mapping->host->i_mutex);
-
+	
 out:
 	return ret;
 }
@@ -218,10 +208,7 @@ static int do_fsync(unsigned int fd, int datasync)
 {
 	struct file *file;
 	int ret = -EBADF;
-
-	if (unlikely(fsync_disabled))
-    		return 0;
-
+	
 	file = fget(fd);
 	if (file) {
 		ret = vfs_fsync(file, datasync);
@@ -232,12 +219,12 @@ static int do_fsync(unsigned int fd, int datasync)
 
 SYSCALL_DEFINE1(fsync, unsigned int, fd)
 {
-	return do_fsync(fd, 0);
+	return 0;
 }
 
 SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
 {
-	return do_fsync(fd, 1);
+	return 0;
 }
 
 /**
@@ -253,7 +240,7 @@ int generic_write_sync(struct file *file, loff_t pos, loff_t count)
 	if (!(file->f_flags & O_DSYNC) && !IS_SYNC(file->f_mapping->host))
 		return 0;
 	return vfs_fsync_range(file, pos, pos + count - 1,
-			       (file->f_flags & __O_SYNC) ? 0 : 1);
+						   (file->f_flags & __O_SYNC) ? 0 : 1);
 }
 EXPORT_SYMBOL(generic_write_sync);
 
@@ -305,31 +292,29 @@ EXPORT_SYMBOL(generic_write_sync);
  * will be available after a crash.
  */
 SYSCALL_DEFINE(sync_file_range)(int fd, loff_t offset, loff_t nbytes,
-				unsigned int flags)
+								unsigned int flags)
 {
+#ifdef WEWANTSYNC
 	int ret;
 	struct file *file;
 	struct address_space *mapping;
 	loff_t endbyte;			/* inclusive */
 	int fput_needed;
 	umode_t i_mode;
-
-	if (unlikely(fsync_disabled))
-    		return 0;
-
+	
 	ret = -EINVAL;
 	if (flags & ~VALID_FLAGS)
 		goto out;
-
+	
 	endbyte = offset + nbytes;
-
+	
 	if ((s64)offset < 0)
 		goto out;
 	if ((s64)endbyte < 0)
 		goto out;
 	if (endbyte < offset)
 		goto out;
-
+	
 	if (sizeof(pgoff_t) == 4) {
 		if (offset >= (0x100000000ULL << PAGE_CACHE_SHIFT)) {
 			/*
@@ -346,73 +331,76 @@ SYSCALL_DEFINE(sync_file_range)(int fd, loff_t offset, loff_t nbytes,
 			nbytes = 0;
 		}
 	}
-
+	
 	if (nbytes == 0)
 		endbyte = LLONG_MAX;
-	else
-		endbyte--;		/* inclusive */
-
+		else
+			endbyte--;		/* inclusive */
+	
 	ret = -EBADF;
 	file = fget_light(fd, &fput_needed);
 	if (!file)
 		goto out;
-
+	
 	i_mode = file->f_path.dentry->d_inode->i_mode;
 	ret = -ESPIPE;
 	if (!S_ISREG(i_mode) && !S_ISBLK(i_mode) && !S_ISDIR(i_mode) &&
-			!S_ISLNK(i_mode))
+		!S_ISLNK(i_mode))
 		goto out_put;
-
+	
 	mapping = file->f_mapping;
 	if (!mapping) {
 		ret = -EINVAL;
 		goto out_put;
 	}
-
+	
 	ret = 0;
 	if (flags & SYNC_FILE_RANGE_WAIT_BEFORE) {
 		ret = filemap_fdatawait_range(mapping, offset, endbyte);
 		if (ret < 0)
 			goto out_put;
 	}
-
+	
 	if (flags & SYNC_FILE_RANGE_WRITE) {
 		ret = filemap_fdatawrite_range(mapping, offset, endbyte);
 		if (ret < 0)
 			goto out_put;
 	}
-
+	
 	if (flags & SYNC_FILE_RANGE_WAIT_AFTER)
 		ret = filemap_fdatawait_range(mapping, offset, endbyte);
-
-out_put:
-	fput_light(file, fput_needed);
-out:
-	return ret;
+		
+		out_put:
+		fput_light(file, fput_needed);
+		out:
+		return ret;
+#endif
+	return 0;
 }
+
 #ifdef CONFIG_HAVE_SYSCALL_WRAPPERS
 asmlinkage long SyS_sync_file_range(long fd, loff_t offset, loff_t nbytes,
-				    long flags)
+									long flags)
 {
 	return SYSC_sync_file_range((int) fd, offset, nbytes,
-				    (unsigned int) flags);
+								(unsigned int) flags);
 }
 SYSCALL_ALIAS(sys_sync_file_range, SyS_sync_file_range);
 #endif
 
 /* It would be nice if people remember that not all the world's an i386
-   when they introduce new system calls */
+ when they introduce new system calls */
 SYSCALL_DEFINE(sync_file_range2)(int fd, unsigned int flags,
-				 loff_t offset, loff_t nbytes)
+								 loff_t offset, loff_t nbytes)
 {
-	return sys_sync_file_range(fd, offset, nbytes, flags);
+	return 0;
 }
 #ifdef CONFIG_HAVE_SYSCALL_WRAPPERS
 asmlinkage long SyS_sync_file_range2(long fd, long flags,
-				     loff_t offset, loff_t nbytes)
+									 loff_t offset, loff_t nbytes)
 {
 	return SYSC_sync_file_range2((int) fd, (unsigned int) flags,
-				     offset, nbytes);
+								 offset, nbytes);
 }
 SYSCALL_ALIAS(sys_sync_file_range2, SyS_sync_file_range2);
 #endif

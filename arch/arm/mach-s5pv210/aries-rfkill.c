@@ -37,9 +37,14 @@
 #include <plat/irqs.h>
 #include "aries.h"
 
+#define BT_SLEEP_ENABLER
+
 #define IRQ_BT_HOST_WAKE      IRQ_EINT(21)
 
 static struct wake_lock rfkill_wake_lock;
+#ifdef BT_SLEEP_ENABLER
+static struct wake_lock bt_wake_lock;
+#endif 
 
 #ifndef	GPIO_LEVEL_LOW
 #define GPIO_LEVEL_LOW		0
@@ -49,15 +54,7 @@ static struct wake_lock rfkill_wake_lock;
 static struct rfkill *bt_rfk;
 static const char bt_name[] = "bcm4329";
 
-#ifdef CONFIG_CPU_DIDLE
-static bool bt_running = false;
-
-bool bt_is_running(void)
-{
-    return bt_running;
-}
-EXPORT_SYMBOL(bt_is_running);
-#endif
+extern void s3c_setup_uart_cfg_gpio(unsigned char port);
 
 static int bluetooth_set_power(void *data, enum rfkill_user_states state)
 {
@@ -128,10 +125,6 @@ static int bluetooth_set_power(void *data, enum rfkill_user_states state)
 	case RFKILL_USER_STATE_SOFT_BLOCKED:
 		pr_debug("[BT] Device Powering OFF\n");
 
-#ifdef CONFIG_CPU_DIDLE
-		bt_running = false;
-#endif
-
 		ret = disable_irq_wake(irq);
 		if (ret < 0)
 			pr_err("[BT] unset wakeup src failed\n");
@@ -173,10 +166,6 @@ irqreturn_t bt_host_wake_irq_handler(int irq, void *dev_id)
 {
 	pr_debug("[BT] bt_host_wake_irq_handler start\n");
 
-#ifdef CONFIG_CPU_DIDLE
-	bt_running = true;
-#endif
-
 	if (gpio_get_value(GPIO_BT_HOST_WAKE))
 		wake_lock(&rfkill_wake_lock);
 	else
@@ -207,7 +196,9 @@ static int __init aries_rfkill_probe(struct platform_device *pdev)
 
 	/* Initialize wake locks */
 	wake_lock_init(&rfkill_wake_lock, WAKE_LOCK_SUSPEND, "bt_host_wake");
-
+#ifdef BT_SLEEP_ENABLER
+	wake_lock_init(&bt_wake_lock, WAKE_LOCK_SUSPEND, "bt-rfkill");
+#endif
 	ret = gpio_request(GPIO_WLAN_BT_EN, "GPB");
 	if (ret < 0) {
 		pr_err("[BT] Failed to request GPIO_WLAN_BT_EN!\n");
@@ -282,11 +273,112 @@ static struct platform_driver aries_device_rfkill = {
 	},
 };
 
+#ifdef BT_SLEEP_ENABLER
+static struct rfkill *bt_sleep;
+
+static int bluetooth_set_sleep(void *data, enum rfkill_user_states state)
+{	
+	unsigned int ret =0;
+	switch (state) {
+
+		case RFKILL_USER_STATE_UNBLOCKED:
+			printk ("[BT] In the unblocked state of the sleep\n");
+			if (gpio_is_valid(GPIO_BT_WAKE))
+			{
+				ret = gpio_request(GPIO_BT_WAKE, "GPG3");
+				if(ret < 0) {
+					printk(KERN_ERR "[BT] Failed to request GPIO_BT_WAKE!\n");
+					return ret;
+				}
+				gpio_direction_output(GPIO_BT_WAKE, GPIO_LEVEL_LOW);
+			}
+
+			s3c_gpio_setpull(GPIO_BT_WAKE, S3C_GPIO_PULL_NONE);
+			gpio_set_value(GPIO_BT_WAKE, GPIO_LEVEL_LOW);
+
+			printk(KERN_DEBUG "[BT] GPIO_BT_WAKE = %d\n", gpio_get_value(GPIO_BT_WAKE) );
+			gpio_free(GPIO_BT_WAKE);
+
+			printk("[BT] wake_unlock(bt_wake_lock)\n");
+			wake_unlock(&bt_wake_lock);
+			break;
+
+		case RFKILL_USER_STATE_SOFT_BLOCKED:
+			printk ("[BT] In the soft blocked state of the sleep\n");
+			if (gpio_is_valid(GPIO_BT_WAKE))
+			{
+				ret = gpio_request(GPIO_BT_WAKE, "GPG3");
+				if(ret < 0) {
+					printk(KERN_ERR "[BT] Failed to request GPIO_BT_WAKE!\n");
+					return ret;
+				}
+				gpio_direction_output(GPIO_BT_WAKE, GPIO_LEVEL_HIGH);
+			}
+
+			s3c_gpio_setpull(GPIO_BT_WAKE, S3C_GPIO_PULL_NONE);
+			gpio_set_value(GPIO_BT_WAKE, GPIO_LEVEL_HIGH);
+
+			printk(KERN_DEBUG "[BT] GPIO_BT_WAKE = %d\n", gpio_get_value(GPIO_BT_WAKE) );
+			gpio_free(GPIO_BT_WAKE);
+			printk("[BT] wake_lock(bt_wake_lock)\n");
+			wake_lock(&bt_wake_lock);
+			break;
+
+		default:
+			printk(KERN_ERR "[BT] bad bluetooth rfkill state %d\n", state);
+	}
+	return 0;
+}
+
+static int btsleep_rfkill_set_block(void *data, bool blocked)
+{
+	unsigned int ret =0;
+
+	ret = bluetooth_set_sleep(data, blocked? RFKILL_USER_STATE_SOFT_BLOCKED : RFKILL_USER_STATE_UNBLOCKED);
+
+	return ret;
+}
+
+static const struct rfkill_ops btsleep_rfkill_ops = {
+	.set_block = btsleep_rfkill_set_block,
+};
+
+static int __init aries_btsleep_probe(struct platform_device *pdev)
+{
+	int rc = 0;
+
+	bt_sleep = rfkill_alloc(bt_name, &pdev->dev, RFKILL_TYPE_BLUETOOTH, &btsleep_rfkill_ops, NULL);
+	if (!bt_sleep)
+		return -ENOMEM;
+
+	rfkill_set_sw_state(bt_sleep, 1);
+
+	rc = rfkill_register(bt_sleep);
+	if (rc)
+		rfkill_destroy(bt_sleep);
+
+	bluetooth_set_sleep(NULL, RFKILL_USER_STATE_UNBLOCKED);
+
+	return rc;
+}
+
+static struct platform_driver aries_device_btsleep = {
+	.probe = aries_btsleep_probe,
+	.driver = {
+		.name = "bt_sleep",
+		.owner = THIS_MODULE,
+	},
+};
+#endif
+
 static int __init aries_rfkill_init(void)
 {
 	int rc = 0;
 	rc = platform_driver_register(&aries_device_rfkill);
 
+#ifdef BT_SLEEP_ENABLER
+	platform_driver_register(&aries_device_btsleep);
+#endif
 	return rc;
 }
 

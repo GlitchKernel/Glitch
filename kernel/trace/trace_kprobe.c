@@ -2001,6 +2001,21 @@ static __init int kprobe_trace_self_tests_init(void)
 	} else
 		disable_trace_probe(tp, TP_FLAG_TRACE);
 
+	/* Disable trace points before removing it */
+	tp = find_trace_probe("testprobe", KPROBE_EVENT_SYSTEM);
+	if (WARN_ON_ONCE(tp == NULL)) {
+		pr_warning("error on getting test probe.\n");
+		warn++;
+	} else
+		disable_trace_probe(tp, TP_FLAG_TRACE);
+
+	tp = find_trace_probe("testprobe2", KPROBE_EVENT_SYSTEM);
+	if (WARN_ON_ONCE(tp == NULL)) {
+		pr_warning("error on getting 2nd test probe.\n");
+		warn++;
+	} else
+		disable_trace_probe(tp, TP_FLAG_TRACE);
+
 	ret = command_trace_probe("-:testprobe");
 	if (WARN_ON_ONCE(ret)) {
 		pr_warning("error on deleting a probe.\n");

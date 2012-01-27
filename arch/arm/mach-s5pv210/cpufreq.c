@@ -34,9 +34,9 @@ static struct cpufreq_freqs freqs;
 static DEFINE_MUTEX(set_freq_lock);
 
 /* APLL M,P,S values for 1.4GHz/1.3GHz/1.2GHz/1.0GHz/800MHz */
-#define APLL_VAL_1440	((1 << 31) | (360 << 16) | (6 << 8) | 1)
+#define APLL_VAL_1480	((1 << 31) | (370 << 16) | (6 << 8) | 1)
 #define APLL_VAL_1304	((1 << 31) | (326 << 16) | (6 << 8) | 1)
-#define APLL_VAL_1152	((1 << 31) | (288 << 16) | (6 << 8) | 1)
+#define APLL_VAL_1160	((1 << 31) | (290 << 16) | (6 << 8) | 1)
 #define APLL_VAL_1000	((1 << 31) | (125 << 16) | (3 << 8) | 1)
 #define APLL_VAL_800	((1 << 31) | (100 << 16) | (3 << 8) | 1)
 
@@ -77,9 +77,9 @@ enum s5pv210_dmc_port {
 };
 
 static struct cpufreq_frequency_table s5pv210_freq_table[] = {
-	{L0, 1440*1000},
+	{L0, 1480*1000},
 	{L1, 1304*1000},
-	{L2, 1152*1000},
+	{L2, 1160*1000},
 	{L3, 1000*1000},
 	{L4, 800*1000},
 	{L5, 400*1000},
@@ -153,12 +153,12 @@ static u32 clkdiv_val[8][11] = {
 	 *   HCLK_DSYS, PCLK_DSYS, HCLK_PSYS, PCLK_PSYS,
 	 *   ONEDRAM, MFC, G3D }
 	 */
-	/* L0 : [1440/200/200/100][166/83][133/66][200/200] */
-	{0, 6, 6, 1, 3, 1, 4, 1, 3, 0, 0},
+	/* L0 : [1480/200/200/100][166/83][133/66][200/200] */
+	{0, 5.8, 5.8, 1, 3, 1, 4, 1, 3, 0, 0},
 	/* L1 : [1304/200/200/100][166/83][133/66][200/200] */
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
-	/* L2 : [1152/200/200/100][166/83][133/66][200/200] */
-	{0, 4.5, 4.5, 1, 3, 1, 4, 1, 3, 0, 0},
+	/* L2 : [1160/200/200/100][166/83][133/66][200/200] */
+	{0, 4.8, 4.8, 1, 3, 1, 4, 1, 3, 0, 0},
 	/* L3 : [1000/200/200/100][166/83][133/66][200/200] */
 	{0, 4, 4, 1, 3, 1, 4, 1, 3, 0, 0},
 	/* L4 : [800/200/200/100][166/83][133/66][200/200] */
@@ -179,7 +179,7 @@ static bool pllbus_changing = false;
 static int oc_value = 100;
 
 static unsigned long sleep_freq;
-static unsigned long original_fclk[] = {1440000, 1304000, 1152000, 1000000, 800000, 800000, 800000, 800000};
+static unsigned long original_fclk[] = {1480000, 1304000, 1160000, 1000000, 800000, 800000, 800000, 800000};
 
 static u32 apll_values[sizeof(original_fclk) / sizeof(unsigned long)];
 #endif
@@ -496,13 +496,13 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 #else
 		switch (index) {
 		case L0:
-			__raw_writel(APLL_VAL_1440, S5P_APLL_CON);
+			__raw_writel(APLL_VAL_1480, S5P_APLL_CON);
 			break;
 		case L1:
 			__raw_writel(APLL_VAL_1304, S5P_APLL_CON);
 			break;
 		case L2:
-			__raw_writel(APLL_VAL_1152, S5P_APLL_CON);
+			__raw_writel(APLL_VAL_1160, S5P_APLL_CON);
 			break;
 		case L3:
 			__raw_writel(APLL_VAL_1000, S5P_APLL_CON);

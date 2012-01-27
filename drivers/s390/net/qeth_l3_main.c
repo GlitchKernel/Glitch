@@ -2905,6 +2905,7 @@ static void qeth_tso_fill_header(struct qeth_card *card,
 		iph->tot_len = 0;
 		iph->check = 0;
 	}
+	rcu_read_unlock();
 }
 
 static inline int qeth_l3_tso_elements(struct sk_buff *skb)

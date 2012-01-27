@@ -421,7 +421,7 @@ static struct s5p_media_device aries_media_devs[] = {
 #ifdef CONFIG_CPU_FREQ
 static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 	{
-		.freq	= 1440000,
+		.freq	= 1480000,
 		.varm	= DVSARM1,
 		.vint	= DVSINT1,
 	}, {
@@ -429,7 +429,7 @@ static struct s5pv210_cpufreq_voltage smdkc110_cpufreq_volt[] = {
 		.varm	= DVSARM2,
 		.vint	= DVSINT2,
 	}, {
-		.freq	= 1152000,
+		.freq	= 1160000,
 		.varm	= DVSARM3,
 		.vint	= DVSINT3,
 	}, {

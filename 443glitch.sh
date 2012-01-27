@@ -262,8 +262,8 @@ else
 		mv drivers/misc/samsung_modemctl drivers/misc/samsung_modemctl_opti
 		mv drivers/misc/samsung_modemctl_backup drivers/misc/samsung_modemctl
 
-		mv drivers/media/samsung/tv20 drivers/media/video/samsung/tv20_opti
-		mv drivers/media/samsung/tv20_backup drivers/media/video/samsung/tv20
+		mv drivers/media/video/samsung/tv20 drivers/media/video/samsung/tv20_opti
+		mv drivers/media/video/samsung/tv20_backup drivers/media/video/samsung/tv20
 
 		mv drivers/usb/host/s3c-otg drivers/usb/host/s3c-otg_opti
 		mv drivers/usb/host/s3c-otg_backup drivers/usb/host/s3c-otg
@@ -288,8 +288,8 @@ else
 
 		mv $glitch443/drivers/media/video/samsung/tv20/built-in.o $MODEM_DIR/built-in.443_tvout
 
-		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/samsung/tv20_backup
-		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/samsung/tv20
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/video/samsung/tv20_backup
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/video/samsung/tv20
 
 		mv $glitch443/drivers/usb/host/s3c-otg/built-in.o $MODEM_DIR/built-in.443_usbhost
 
@@ -346,8 +346,8 @@ if test -s $KERNEL_DIR/Makefile_opti -a -s $KERNEL_DIR/arch/arm/Makefile_opti -a
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl $KERNEL_DIR/drivers/misc/samsung_modemctl_backup
 		mv $KERNEL_DIR/drivers/misc/samsung_modemctl_opti $KERNEL_DIR/drivers/misc/samsung_modemctl
 
-		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/samsung/tv20_backup
-		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/samsung/tv20
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20 $KERNEL_DIR/drivers/media/video/samsung/tv20_backup
+		mv $KERNEL_DIR/drivers/media/video/samsung/tv20_opti $KERNEL_DIR/drivers/media/video/samsung/tv20
 
 		mv $KERNEL_DIR/drivers/usb/host/s3c-otg $KERNEL_DIR/drivers/usb/host/s3c-otg_backup
 		mv $KERNEL_DIR/drivers/usb/host/s3c-otg_opti $KERNEL_DIR/drivers/usb/host/s3c-otg

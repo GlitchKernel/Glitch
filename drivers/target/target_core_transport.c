@@ -1562,6 +1562,15 @@ EXPORT_SYMBOL(transport_set_vpd_ident);
 
 static void core_setup_task_attr_emulation(struct se_device *dev)
 {
+	unsigned long flags;
+
+	spin_lock_irqsave(&cmd->t_state_lock, flags);
+	if (cmd->se_cmd_flags & SCF_SENT_CHECK_CONDITION) {
+		spin_unlock_irqrestore(&cmd->t_state_lock, flags);
+		return;
+	}
+	spin_unlock_irqrestore(&cmd->t_state_lock, flags);
+
 	/*
 	 * If this device is from Target_Core_Mod/pSCSI, disable the
 	 * SAM Task Attribute emulation.

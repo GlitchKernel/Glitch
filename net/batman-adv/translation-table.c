@@ -540,6 +540,9 @@ int tt_global_seq_print_text(struct seq_file *seq, void *offset)
 	if (!hash)
 		return;
 
+	if (!hash)
+		return;
+
 	for (i = 0; i < hash->size; i++) {
 		head = &hash->table[i];
 
@@ -640,6 +643,10 @@ struct orig_node *transtable_search(struct bat_priv *bat_priv, uint8_t *addr)
 		goto out;
 
 	orig_node = tt_global_entry->orig_node;
+
+	/* store in the message the number of entries we have successfully
+	 * copied */
+	tt_response->tt_data = htons(tt_count);
 
 	/* store in the message the number of entries we have successfully
 	 * copied */

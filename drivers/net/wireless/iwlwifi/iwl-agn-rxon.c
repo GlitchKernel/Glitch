@@ -483,6 +483,24 @@ void iwlagn_config_ht40(struct ieee80211_conf *conf,
 	}
 }
 
+void iwlagn_config_ht40(struct ieee80211_conf *conf,
+	struct iwl_rxon_context *ctx)
+{
+	if (conf_is_ht40_minus(conf)) {
+		ctx->ht.extension_chan_offset =
+			IEEE80211_HT_PARAM_CHA_SEC_BELOW;
+		ctx->ht.is_40mhz = true;
+	} else if (conf_is_ht40_plus(conf)) {
+		ctx->ht.extension_chan_offset =
+			IEEE80211_HT_PARAM_CHA_SEC_ABOVE;
+		ctx->ht.is_40mhz = true;
+	} else {
+		ctx->ht.extension_chan_offset =
+			IEEE80211_HT_PARAM_CHA_SEC_NONE;
+		ctx->ht.is_40mhz = false;
+	}
+}
+
 int iwlagn_mac_config(struct ieee80211_hw *hw, u32 changed)
 {
 	struct iwl_priv *priv = hw->priv;
