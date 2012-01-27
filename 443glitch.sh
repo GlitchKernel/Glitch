@@ -92,14 +92,19 @@ REL=CM9-$target-443-Glitch-$(date +%Y%m%d.%H%M).zip
 	# Copying modules
 	cp logger.module system/lib/modules/logger.ko
 	cp $formodules/crypto/ansi_cprng.ko system/lib/modules/ansi_cprng.ko
-	cp $formodules/crypto/md4.ko system/lib/modules/md4.ko
+	#cp $formodules/crypto/md4.ko system/lib/modules/md4.ko
 	cp $formodules/drivers/media/video/gspca/gspca_main.ko system/lib/modules/gspca_main.ko
-	cp $formodules/fs/cifs/cifs.ko system/lib/modules/cifs.ko
+	#cp $formodules/fs/cifs/cifs.ko system/lib/modules/cifs.ko
 	cp $formodules/fs/fuse/fuse.ko system/lib/modules/fuse.ko
 	cp $formodules/fs/nls/nls_utf8.ko system/lib/modules/nls_utf8.ko
 
 	cp S99screenstate_scaling system/etc/init.d/ || exit 1
+
+if [ "$target" = fascinatemtd ] ; then
+	cp 90call_vol_fascinate system/etc/init.d/ || exit 1
+else
 	cp 90call_vol system/etc/init.d/ || exit 1
+fi
 	cp logcat_module system/etc/init.d/ || exit 1
 	mkdir -p system/bin
 	cp bin/* system/bin/
