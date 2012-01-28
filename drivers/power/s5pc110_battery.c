@@ -149,6 +149,7 @@ struct chg_data {
 };
 
 static bool lpm_charging_mode;
+static bool disable_charger;
 
 static char *supply_list[] = {
 	"battery",
@@ -186,6 +187,7 @@ static struct device_attribute s3c_battery_attrs[] = {
 	SEC_BATTERY_ATTR(charging_mode_booting),
 	SEC_BATTERY_ATTR(batt_temp_check),
 	SEC_BATTERY_ATTR(batt_full_check),
+	SEC_BATTERY_ATTR(disable_charger)
 };
 
 static bool max8998_check_vdcin(struct chg_data *chg)
@@ -578,7 +580,7 @@ static int s3c_cable_status_update(struct chg_data *chg)
 	/* if max8998 has detected vdcin */
 	if (max8998_check_vdcin(chg)) {
 		vdc_status = 1;
-		if (chg->bat_info.dis_reason) {
+		if (chg->bat_info.dis_reason || disable_charger) {
 			pr_info("%s : battery status discharging : %d\n",
 				__func__, chg->bat_info.dis_reason);
 			/* have vdcin, but cannot charge */
@@ -718,6 +720,9 @@ static ssize_t s3c_bat_show_attrs(struct device *dev,
 	case BATT_FULL_CHECK:
 		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", chg->bat_info.batt_is_full);
 		break;
+	case DISABLE_CHARGER:
+		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", disable_charger);
+		break;
 	default:
 		i = -EINVAL;
 	}
@@ -741,6 +746,13 @@ static ssize_t s3c_bat_store_attrs(struct device *dev, struct device_attribute *
 			ret = count;
 		}
 		break;
+	case DISABLE_CHARGER:
+		if (sscanf(buf, "%d\n", &x) == 1) {
+			disable_charger = x;
+			ret = count;
+		}
+		break;
+
 	default:
 		ret = -EINVAL;
 	}
@@ -919,6 +931,8 @@ static __devinit int max8998_charger_probe(struct platform_device *pdev)
 		s3c_battery_alarm);
 
 	check_lpm_charging_mode(chg);
+
+	disable_charger = 0;
 
 	/* init power supplier framework */
 	ret = power_supply_register(&pdev->dev, &chg->psy_bat);

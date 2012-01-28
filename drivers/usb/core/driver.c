@@ -1614,7 +1614,7 @@ static int autosuspend_check(struct usb_device *udev)
 	int			w, i;
 	struct usb_interface	*intf;
 
-#ifdef CONFIG_USB_S3C_OTG_HOST
+#if defined CONFIG_USB_S3C_OTG_HOST || defined CONFIG_USB_DWC_OTG
         /* temporarily disabled autosuspend for otg host */
         if (udev->bus->busnum == 2)
                 return -EOPNOTSUPP;
