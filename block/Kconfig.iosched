@@ -25,7 +25,7 @@ config IOSCHED_CFQ
 	tristate "CFQ I/O scheduler"
 	# If BLK_CGROUP is a module, CFQ has to be built as module.
 	depends on (BLK_CGROUP=m && m) || !BLK_CGROUP || BLK_CGROUP=y
-	default y
+	default n
 	---help---
 	  The CFQ I/O scheduler tries to distribute bandwidth equally
 	  among all processes in the system. It should provide a fair
@@ -43,6 +43,14 @@ config CFQ_GROUP_IOSCHED
 	---help---
 	  Enable group IO scheduling in CFQ.
 
+config IOSCHED_FIOPS
+	tristate "IOPS based I/O scheduler"
+	default y
+	---help---
+	  This is an IOPS based I/O scheduler. It will try to distribute
+          IOPS equally among all processes in the system. It's mainly for
+          Flash based storage.
+
 config IOSCHED_SIO
 	tristate "Simple I/O scheduler"
 	default y
@@ -53,38 +61,9 @@ config IOSCHED_SIO
 	  basic merging, trying to keep a minimum overhead. It is aimed
 	  mainly for aleatory access devices (eg: flash devices).
 
-config IOSCHED_VR
-	tristate "V(R) I/O scheduler"
-	default y
-	---help---
-	  Requests are chosen according to SSTF with a penalty of rev_penalty
-	  for switching head direction.
-
-config IOSCHED_BFQ
-	tristate "BFQ I/O scheduler"
-	depends on EXPERIMENTAL
-	default y
-	---help---
-	  The BFQ I/O scheduler tries to distribute bandwidth among
-	  all processes according to their weights.
-	  It aims at distributing the bandwidth as desired, independently of
-	  the disk parameters and with any workload. It also tries to
-	  guarantee low latency to interactive and soft real-time
-	  applications.  If compiled built-in (saying Y here), BFQ can
-	  be configured to support hierarchical scheduling.
-
-config CGROUP_BFQIO
-	bool "BFQ hierarchical scheduling support"
-	depends on CGROUPS && IOSCHED_BFQ=y
-	default y
-	---help---
-	  Enable hierarchical scheduling in BFQ, using the cgroups
-	  filesystem interface.  The name of the subsystem will be
-	  bfqio.
-
 choice
 	prompt "Default I/O scheduler"
-	default DEFAULT_DEADLINE
+	default DEFAULT_FIOPS
 	help
 	  Select the I/O scheduler which will be used by default for all
 	  block devices.
@@ -95,8 +74,8 @@ choice
 	config DEFAULT_CFQ
 		bool "CFQ" if IOSCHED_CFQ=y
 
-	config DEFAULT_BFQ
-    		bool "BFQ" if IOSCHED_BFQ=y
+	config DEFAULT_FIOPS
+		bool "FIOPS" if IOSCHED_FIOPS=y
 
 	config DEFAULT_NOOP
 		bool "No-op"
@@ -104,19 +83,15 @@ choice
 	config DEFAULT_SIO
 		bool "SIO" if IOSCHED_SIO=y
 
-	config DEFAULT_VR
-        	bool "V(R)" if IOSCHED_VR=y
-
 endchoice
 
 config DEFAULT_IOSCHED
 	string
 	default "deadline" if DEFAULT_DEADLINE
 	default "cfq" if DEFAULT_CFQ
-	default "bfq" if DEFAULT_BFQ
+	default "fiops" if DEFAULT_FIOPS
 	default "noop" if DEFAULT_NOOP
 	default "sio" if DEFAULT_SIO
-	default "vr" if DEFAULT_VR
 
 endmenu
 

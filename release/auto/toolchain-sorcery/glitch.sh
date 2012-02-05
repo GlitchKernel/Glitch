@@ -38,7 +38,7 @@ setup ()
         CCACHE=""
     fi
 
-CROSS_PREFIX=$CROSS_PREFIX_443
+CROSS_PREFIX=$CROSS_PREFIX_GLITCH
 
 }
 
@@ -46,6 +46,10 @@ build ()
 {
 
 formodules=$repo/kernel/samsung/glitch-build/kernel/$target
+tempmodem=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/misc/samsung_modemctl
+temptvout=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/media/video/samsung/tv20
+tempusbhost=$repo/kernel/samsung/glitch-build/kernel/$target/drivers/usb/host/s3c-otg
+MODEM_DIR=$repo/kernel/samsung/glitch-build/modem
 
     local target=$target
     echo "Building for $target"
@@ -54,6 +58,19 @@ formodules=$repo/kernel/samsung/glitch-build/kernel/$target
     rm -fr "$target_dir"
     mkdir -p "$target_dir/usr"
     cp "$KERNEL_DIR/usr/"*.list "$target_dir/usr"
+    mkdir -p "$tempmodem/modemctl"
+    mkdir -p "$temptvout"
+    mkdir -p "$tempusbhost"
+
+echo "Copying 443 built-in files ..."
+if [ "$target" = fascinate ] ; then
+    cp $MODEM_DIR/built-in.443cdma_samsung_modemctl $tempmodem/built-in.o
+else
+    cp $MODEM_DIR/built-in.443gsm_samsung_modemctl $tempmodem/built-in.o
+    cp $MODEM_DIR/built-in.443gsm_modemctl $tempmodem/modemctl/built-in.o
+fi
+    cp $MODEM_DIR/built-in.443_tvout $temptvout/built-in.o
+    cp $MODEM_DIR/built-in.443_usbhost $tempusbhost/built-in.o
 
     sed "s|usr/|$KERNEL_DIR/usr/|g" -i "$target_dir/usr/"*.list
     mka -C "$KERNEL_DIR" O="$target_dir" aries_${target}_defconfig HOSTCC="$CCACHE gcc"
@@ -132,6 +149,7 @@ rm boot.img
 rm system/lib/modules/*
 rm system/etc/init.d/*
 echo ${REL}
+
 }
     
 setup
@@ -148,13 +166,17 @@ echo "Building ALL variants of all kernels!"
 echo "Building initramfs"
 ./initramfs.sh
 
+echo "Building 443 versions .."
+./443glitch.sh cdma
+./443glitch.sh gsm
+
 echo "Building CDMA variant(s) .. "
-./Glitch.sh fascinate
+./glitch.sh fascinate
 
 echo "Building GSM variants .. "
-./Glitch.sh captivate
-./Glitch.sh galaxys
-./Glitch.sh vibrant
+./glitch.sh captivate
+./glitch.sh galaxys
+./glitch.sh vibrant
     exit 0
 fi
 
@@ -176,4 +198,3 @@ E_SEC=$((ELAPSED - E_MIN * 60))
 printf "Elapsed: "
 [ $E_MIN != 0 ] && printf "%d min(s) " $E_MIN
 printf "%d sec(s)\n" $E_SEC
-

@@ -53,4 +53,9 @@ obj-$(CONFIG_INPUT_WISTRON_BTNS)	+= wistron_btns.o
 obj-$(CONFIG_INPUT_WM831X_ON)		+= wm831x-on.o
 obj-$(CONFIG_INPUT_XEN_KBDDEV_FRONTEND)	+= xen-kbdfront.o
 obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
+ifeq ($(CONFIG_SAMSUNG_FASCINATE),y)
+obj-$(CONFIG_OPTICAL_GP2A)		+= gp2a_atlas.o
+else
 obj-$(CONFIG_OPTICAL_GP2A)		+= gp2a.o
+endif
+

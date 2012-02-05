@@ -266,44 +266,44 @@
 #define S5P_HDCP_RX_SHA1_4_2		S5P_HDMI_BASE(0x0648) /* SHA-1 value from Repeater 0x00 */
 #define S5P_HDCP_RX_SHA1_4_3		S5P_HDMI_BASE(0x064C) /* SHA-1 value from Repeater 0x00 */
 			
-#define S5P_HDCP_RX_KSV_0_0		S5P_HDMI_BASE(0x0650) /* Receiver¡¯s KSV 0 0x00 */
-#define S5P_HDCP_RX_KSV_0_1		S5P_HDMI_BASE(0x0654) /* Receiver¡¯s KSV 0 0x00 */
-#define S5P_HDCP_RX_KSV_0_2		S5P_HDMI_BASE(0x0658) /* Receiver¡¯s KSV 0 0x00 */
-#define S5P_HDCP_RX_KSV_0_3		S5P_HDMI_BASE(0x065C) /* Receiver¡¯s KSV 0 0x00 */
-#define S5P_HDCP_RX_KSV_0_4		S5P_HDMI_BASE(0x0660) /* Receiver¡¯s KSV 1 0x00 */
+#define S5P_HDCP_RX_KSV_0_0		S5P_HDMI_BASE(0x0650) /* ReceiverÂ¡Â¯s KSV 0 0x00 */
+#define S5P_HDCP_RX_KSV_0_1		S5P_HDMI_BASE(0x0654) /* ReceiverÂ¡Â¯s KSV 0 0x00 */
+#define S5P_HDCP_RX_KSV_0_2		S5P_HDMI_BASE(0x0658) /* ReceiverÂ¡Â¯s KSV 0 0x00 */
+#define S5P_HDCP_RX_KSV_0_3		S5P_HDMI_BASE(0x065C) /* ReceiverÂ¡Â¯s KSV 0 0x00 */
+#define S5P_HDCP_RX_KSV_0_4		S5P_HDMI_BASE(0x0660) /* ReceiverÂ¡Â¯s KSV 1 0x00 */
 			
-#define S5P_HDCP_RX_KSV_LIST_CTRL	S5P_HDMI_BASE(0x0664) /* Receiver¡¯s KSV 1 0x00 */
+#define S5P_HDCP_RX_KSV_LIST_CTRL	S5P_HDMI_BASE(0x0664) /* ReceiverÂ¡Â¯s KSV 1 0x00 */
 #define S5P_HDCP_AUTH_STATUS		S5P_HDMI_BASE(0x0670) /* 2nd authentication status 0x00 */
 #define S5P_HDCP_CTRL1			S5P_HDMI_BASE(0x0680) /* HDCP Control 0x00 */
 #define S5P_HDCP_CTRL2			S5P_HDMI_BASE(0x0684) /* HDCP Control 0x00 */
 #define S5P_HDCP_CHECK_RESULT		S5P_HDMI_BASE(0x0690) /* HDCP Ri, Pj, V result 0x00 */
 			
-#define S5P_HDCP_BKSV_0_0		S5P_HDMI_BASE(0x06A0) /* Receiver¡¯s BKSV 0x00 */
-#define S5P_HDCP_BKSV_0_1		S5P_HDMI_BASE(0x06A4) /* Receiver¡¯s BKSV 0x00 */
-#define S5P_HDCP_BKSV_0_2		S5P_HDMI_BASE(0x06A8) /* Receiver¡¯s BKSV 0x00 */
-#define S5P_HDCP_BKSV_0_3		S5P_HDMI_BASE(0x06AC) /* Receiver¡¯s BKSV 0x00 */
-#define S5P_HDCP_BKSV_1			S5P_HDMI_BASE(0x06B0) /* Receiver¡¯s BKSV 0x00 */
+#define S5P_HDCP_BKSV_0_0		S5P_HDMI_BASE(0x06A0) /* ReceiverÂ¡Â¯s BKSV 0x00 */
+#define S5P_HDCP_BKSV_0_1		S5P_HDMI_BASE(0x06A4) /* ReceiverÂ¡Â¯s BKSV 0x00 */
+#define S5P_HDCP_BKSV_0_2		S5P_HDMI_BASE(0x06A8) /* ReceiverÂ¡Â¯s BKSV 0x00 */
+#define S5P_HDCP_BKSV_0_3		S5P_HDMI_BASE(0x06AC) /* ReceiverÂ¡Â¯s BKSV 0x00 */
+#define S5P_HDCP_BKSV_1			S5P_HDMI_BASE(0x06B0) /* ReceiverÂ¡Â¯s BKSV 0x00 */
 			
-#define S5P_HDCP_AKSV_0_0		S5P_HDMI_BASE(0x06C0) /* Transmitter¡¯s AKSV 0x00 */
-#define S5P_HDCP_AKSV_0_1		S5P_HDMI_BASE(0x06C4) /* Transmitter¡¯s AKSV 0x00 */
-#define S5P_HDCP_AKSV_0_2		S5P_HDMI_BASE(0x06C8) /* Transmitter¡¯s AKSV 0x00 */
-#define S5P_HDCP_AKSV_0_3		S5P_HDMI_BASE(0x06CC) /* Transmitter¡¯s AKSV 0x00 */
-#define S5P_HDCP_AKSV_1			S5P_HDMI_BASE(0x06D0) /* Transmitter¡¯s AKSV 0x00 */
+#define S5P_HDCP_AKSV_0_0		S5P_HDMI_BASE(0x06C0) /* TransmitterÂ¡Â¯s AKSV 0x00 */
+#define S5P_HDCP_AKSV_0_1		S5P_HDMI_BASE(0x06C4) /* TransmitterÂ¡Â¯s AKSV 0x00 */
+#define S5P_HDCP_AKSV_0_2		S5P_HDMI_BASE(0x06C8) /* TransmitterÂ¡Â¯s AKSV 0x00 */
+#define S5P_HDCP_AKSV_0_3		S5P_HDMI_BASE(0x06CC) /* TransmitterÂ¡Â¯s AKSV 0x00 */
+#define S5P_HDCP_AKSV_1			S5P_HDMI_BASE(0x06D0) /* TransmitterÂ¡Â¯s AKSV 0x00 */
 			
-#define S5P_HDCP_An_0_0			S5P_HDMI_BASE(0x06E0) /* Transmitter¡¯s An 0x00 */
-#define S5P_HDCP_An_0_1			S5P_HDMI_BASE(0x06E4) /* Transmitter¡¯s An 0x00 */
-#define S5P_HDCP_An_0_2			S5P_HDMI_BASE(0x06E8) /* Transmitter¡¯s An 0x00 */
-#define S5P_HDCP_An_0_3			S5P_HDMI_BASE(0x06EC) /* Transmitter¡¯s An 0x00 */
-#define S5P_HDCP_An_1_0			S5P_HDMI_BASE(0x06F0) /* Transmitter¡¯s An 0x00 */
-#define S5P_HDCP_An_1_1			S5P_HDMI_BASE(0x06F4) /* Transmitter¡¯s An 0x00 */
-#define S5P_HDCP_An_1_2			S5P_HDMI_BASE(0x06F8) /* Transmitter¡¯s An 0x00 */
-#define S5P_HDCP_An_1_3			S5P_HDMI_BASE(0x06FC) /* Transmitter¡¯s An 0x00 */
+#define S5P_HDCP_An_0_0			S5P_HDMI_BASE(0x06E0) /* TransmitterÂ¡Â¯s An 0x00 */
+#define S5P_HDCP_An_0_1			S5P_HDMI_BASE(0x06E4) /* TransmitterÂ¡Â¯s An 0x00 */
+#define S5P_HDCP_An_0_2			S5P_HDMI_BASE(0x06E8) /* TransmitterÂ¡Â¯s An 0x00 */
+#define S5P_HDCP_An_0_3			S5P_HDMI_BASE(0x06EC) /* TransmitterÂ¡Â¯s An 0x00 */
+#define S5P_HDCP_An_1_0			S5P_HDMI_BASE(0x06F0) /* TransmitterÂ¡Â¯s An 0x00 */
+#define S5P_HDCP_An_1_1			S5P_HDMI_BASE(0x06F4) /* TransmitterÂ¡Â¯s An 0x00 */
+#define S5P_HDCP_An_1_2			S5P_HDMI_BASE(0x06F8) /* TransmitterÂ¡Â¯s An 0x00 */
+#define S5P_HDCP_An_1_3			S5P_HDMI_BASE(0x06FC) /* TransmitterÂ¡Â¯s An 0x00 */
 			
-#define S5P_HDCP_BCAPS			S5P_HDMI_BASE(0x0700) /* Receiver¡¯s BCAPS 0x00 */
-#define S5P_HDCP_BSTATUS_0		S5P_HDMI_BASE(0x0710) /* Receiver¡¯s BSTATUS 0x00 */
-#define S5P_HDCP_BSTATUS_1		S5P_HDMI_BASE(0x0714) /* Receiver¡¯s BSTATUS 0x00 */
-#define S5P_HDCP_Ri_0			S5P_HDMI_BASE(0x0740) /* Transmitter¡¯s Ri 0x00 */
-#define S5P_HDCP_Ri_1			S5P_HDMI_BASE(0x0744) /* Transmitter¡¯s Ri 0x00 */
+#define S5P_HDCP_BCAPS			S5P_HDMI_BASE(0x0700) /* ReceiverÂ¡Â¯s BCAPS 0x00 */
+#define S5P_HDCP_BSTATUS_0		S5P_HDMI_BASE(0x0710) /* ReceiverÂ¡Â¯s BSTATUS 0x00 */
+#define S5P_HDCP_BSTATUS_1		S5P_HDMI_BASE(0x0714) /* ReceiverÂ¡Â¯s BSTATUS 0x00 */
+#define S5P_HDCP_Ri_0			S5P_HDMI_BASE(0x0740) /* TransmitterÂ¡Â¯s Ri 0x00 */
+#define S5P_HDCP_Ri_1			S5P_HDMI_BASE(0x0744) /* TransmitterÂ¡Â¯s Ri 0x00 */
 			
 #define S5P_HDCP_I2C_INT		S5P_HDMI_BASE(0x0780) /* HDCP I2C interrupt status */
 #define S5P_HDCP_AN_INT			S5P_HDMI_BASE(0x0790) /* HDCP An interrupt status */

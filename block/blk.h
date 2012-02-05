@@ -186,4 +186,59 @@ static inline int blk_do_io_stat(struct request *rq)
 	        (rq->cmd_flags & REQ_DISCARD));
 }
 
+#if defined(CONFIG_IOSCHED_CFQ) || defined(CONFIG_IOSCHED_FIOPS)
+struct queue_data;
+struct ioc_builder {
+	struct dev_io_context *(*alloc_ioc)(struct ioc_builder *builder,
+		struct queue_data *qdata, gfp_t gfp_mask);
+	void (*free_ioc)(struct ioc_builder *builder,
+		struct dev_io_context *dev_ioc);
+
+	void (*changed_ioprio)(struct io_context *ioc,
+		struct dev_io_context *cic);
+	void (*changed_cgroup)(struct io_context *ioc,
+		struct dev_io_context *cic);
+	void (*cic_exit)(struct queue_data *qdata,
+		struct dev_io_context *gen_cic);
+	void (*cic_init)(struct queue_data *qdata,
+		struct dev_io_context *gen_cic);
+
+	unsigned long __percpu *ioc_count;
+	struct completion *ioc_gone;
+	spinlock_t ioc_gone_lock;
+};
+
+struct queue_data {
+	struct request_queue *queue;
+
+	unsigned int cic_index;
+	struct list_head cic_list;
+};
+
+#define CIC_DEAD_KEY	1ul
+static inline struct queue_data *cic_to_queue_data(struct dev_io_context *cic)
+{
+	struct queue_data *qdata = cic->key;
+
+	if (unlikely((unsigned long) qdata & CIC_DEAD_KEY))
+		return NULL;
+
+	return qdata;
+}
+
+int ioc_builder_init(struct ioc_builder *builder);
+void io_context_builder_exit(struct ioc_builder *builder);
+
+int ioc_builder_init_queue(struct ioc_builder *builder,
+	struct queue_data *qdata, struct request_queue *q);
+void ioc_builder_exit_queue(struct ioc_builder *builder,
+	struct queue_data *qdata);
+
+struct dev_io_context *queue_data_get_io_context(struct ioc_builder *builder,
+	struct queue_data *qdata, gfp_t gfp_mask);
+struct dev_io_context *queue_data_cic_lookup(struct queue_data *qdata,
+	struct io_context *ioc);
+void queue_data_free_io_context(struct io_context *ioc);
+#endif
+
 #endif
