@@ -5838,7 +5838,7 @@ static int tigon3_dma_hwbug_workaround(struct tg3_napi *tnapi,
 	}
 
 	dev_kfree_skb(skb);
-	*pskb = new_skb;
+
 	return ret;
 }
 

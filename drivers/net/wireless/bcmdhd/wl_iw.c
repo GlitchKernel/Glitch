@@ -777,7 +777,7 @@ wl_iw_set_power_mode(
 {
 	int error = 0;
 	char *p = extra;
-	static int  pm = PM_FAST;
+	static int  pm = PM_MAX;
 	int  pm_local = PM_OFF;
 	char powermode_val = 0;
 
@@ -1626,7 +1626,7 @@ wl_iw_send_priv_event(
 	strcpy(extra, flag);
 	wrqu.data.length = strlen(extra);
 	wireless_send_event(dev, cmd, &wrqu, extra);
-	net_os_wake_lock_timeout_enable(dev, DHD_EVENT_TIMEOUT);
+	net_os_wake_lock_timeout_enable(dev, DHD_EVENT_TIMEOUT_MS);
 	WL_TRACE(("Send IWEVCUSTOM Event as %s\n", extra));
 
 	return 0;
@@ -5081,11 +5081,7 @@ wl_iw_set_power(
 
 	WL_TRACE(("%s: SIOCSIWPOWER\n", dev->name));
 
-#ifdef CONFIG_BCMDHD_PMFAST
 	pm = vwrq->disabled ? PM_OFF : PM_FAST;
-#else
-	pm = vwrq->disabled ? PM_OFF : PM_MAX;
-#endif
 
 	pm = htod32(pm);
 	if ((error = dev_wlc_ioctl(dev, WLC_SET_PM, &pm, sizeof(pm))))

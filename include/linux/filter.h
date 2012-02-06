@@ -10,6 +10,7 @@
 
 #ifdef __KERNEL__
 #include <asm/atomic.h>
+#include <linux/rcupdate.h>
 #endif
 
 /*
