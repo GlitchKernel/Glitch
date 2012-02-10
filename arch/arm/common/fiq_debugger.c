@@ -427,7 +427,7 @@ static struct frame_tail *user_backtrace(struct fiq_debugger_state *state,
 void dump_stacktrace(struct fiq_debugger_state *state,
 		struct pt_regs * const regs, unsigned int depth, void *ssp)
 {
-	struct frame_tail *tail;
+/*	struct frame_tail *tail;
 	struct thread_info *real_thread_info = THREAD_INFO(ssp);
 	struct stacktrace_state sts;
 
@@ -452,13 +452,13 @@ void dump_stacktrace(struct fiq_debugger_state *state,
 			"  pc: %p (%pF), lr %p (%pF), sp %p, fp %p\n",
 			regs->ARM_pc, regs->ARM_pc, regs->ARM_lr, regs->ARM_lr,
 			regs->ARM_sp, regs->ARM_fp);
-		walk_stackframe(&frame, report_trace, &sts);
+		walk_stackframe(&frame, report_trace, &sts); */
 		return;
-	}
+/*	}
 
 	tail = ((struct frame_tail *) regs->ARM_fp) - 1;
 	while (depth-- && tail && !((unsigned long) tail & 3))
-		tail = user_backtrace(state, tail);
+		tail = user_backtrace(state, tail);*/
 }
 
 static void do_ps(struct fiq_debugger_state *state)

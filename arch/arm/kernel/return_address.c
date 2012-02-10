@@ -11,7 +11,7 @@
 #include <linux/module.h>
 #include <linux/ftrace.h>
 
-#if defined(CONFIG_FRAME_POINTER) && !defined(CONFIG_ARM_UNWIND)
+#if defined(SHIT)
 #include <linux/sched.h>
 
 #include <asm/stacktrace.h>
