@@ -66,7 +66,7 @@ ssize_t customvoltage_armvolt_write(struct device * dev, struct device_attribute
 			    next_freq++;
 			}
 
-		    if (buf[i] == '\0' || next_freq > num_freqs)
+		    if (buf[i] == '\0' || next_freq >= num_freqs)
 			{
 			    break;
 			}
@@ -118,7 +118,7 @@ static ssize_t customvoltage_intvolt_write(struct device * dev, struct device_at
 			    next_freq++;
 			}
 
-		    if (buf[i] == '\0' || next_freq > num_freqs)
+		    if (buf[i] == '\0' || next_freq >= num_freqs)
 			{
 			    break;
 			}
