@@ -77,8 +77,10 @@ static void
 deadline_add_rq_rb(struct deadline_data *dd, struct request *rq)
 {
 	struct rb_root *root = deadline_rb_root(dd, rq);
-	
-	elv_rb_add(root, rq);
+	struct request *__alias;
+
+	while (unlikely(__alias = elv_rb_add(root, rq)))
+		deadline_move_request(dd, __alias);
 }
 
 static inline void

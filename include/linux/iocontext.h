@@ -23,6 +23,8 @@ struct dev_io_context {
 struct cfq_queue;
 struct cfq_io_context {
 	struct dev_io_context dev_ioc;
+	struct cfq_queue *cfqq[2];
+//	struct cfq_ttime ttime;
 };
 
 /*

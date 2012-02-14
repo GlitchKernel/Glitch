@@ -286,7 +286,7 @@ static void queue_data_cic_free_rcu(struct rcu_head *head)
 
 	if (builder->ioc_gone) {
 		/*
-		 * CFQ scheduler is exiting, grab exit lock and check
+		 * IO scheduler is exiting, grab exit lock and check
 		 * the pending io context count. If it hits zero,
 		 * complete ioc_gone and set it back to NULL
 		 */
@@ -310,7 +310,12 @@ static void cic_free_func(struct io_context *ioc, struct dev_io_context *cic)
 	unsigned long flags;
 	unsigned long dead_key = (unsigned long) cic->key;
 
-	BUG_ON(!(dead_key & CIC_DEAD_KEY));
+	/*
+	 * We might find the cic isn't dead when multiple ioschedulers have cic
+	 * in this ioc, skip living cic
+	 */
+	if (!(dead_key & CIC_DEAD_KEY))
+		return;
 
 	spin_lock_irqsave(&ioc->lock, flags);
 	radix_tree_delete(&ioc->radix_root, dead_key >> CIC_DEAD_INDEX_SHIFT);

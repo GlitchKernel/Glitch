@@ -3335,6 +3335,8 @@ static int cfq_may_queue(struct request_queue *q, int rw)
 	 * so just lookup a possibly existing queue, or return 'may queue'
 	 * if that fails
 	 */
+	cic = cfq_cic_lookup(cfqd, tsk->io_context);
+	if (!cic)
 	gen_cic = queue_data_cic_lookup(&cfqd->qdata, tsk->io_context);
 	if (!gen_cic)
 		return ELV_MQUEUE_MAY;
@@ -3343,6 +3345,7 @@ static int cfq_may_queue(struct request_queue *q, int rw)
 	cfqq = cic_to_cfqq(cic, rw_is_sync(rw));
 	if (cfqq) {
 		cfq_init_prio_data(cfqq, cic->dev_ioc.ioc);
+		cfq_prio_boost(cfqq);
 
 		return __cfq_may_queue(cfqq);
 	}
@@ -3960,7 +3963,7 @@ static void __exit cfq_exit(void)
 {
 	blkio_policy_unregister(&blkio_policy_cfq);
 	elv_unregister(&iosched_cfq);
-	io_context_builder_exit(&ioc_builder);
+	ioc_builder_exit(&ioc_builder);
 	cfq_slab_kill();
 }
 
