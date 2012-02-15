@@ -378,7 +378,7 @@ menu "RCU Subsystem"
 
 choice
 	prompt "RCU Implementation"
-	default TREE_RCU
+	default JRCU
 
 config TREE_RCU
 	bool "Tree-based hierarchical RCU"

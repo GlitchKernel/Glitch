@@ -24,8 +24,6 @@ static struct task_struct *pick_next_task_idle(struct rq *rq)
 {
 	schedstat_inc(rq, sched_goidle);
 	calc_load_account_idle(rq);
-	reset_first_second_pick_cpu(cpu_of(rq));
-
 	return rq->idle;
 }
 
