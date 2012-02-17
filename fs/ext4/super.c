@@ -2627,10 +2627,11 @@ static int ext4_feature_set_ok(struct super_block *sb, int readonly)
 
 	/* Check that feature set is OK for a read-write mount */
 	if (EXT4_HAS_RO_COMPAT_FEATURE(sb, ~EXT4_FEATURE_RO_COMPAT_SUPP)) {
-		ext4_msg(sb, KERN_ERR, "couldn't mount RDWR because of "
-			 "unsupported optional features (%x)",
+		ext4_msg(sb, KERN_ERR, 
+            "couldn't mount RDWR because of "
+            "unsupported optional features (%x)",
 			 (le32_to_cpu(EXT4_SB(sb)->s_es->s_feature_ro_compat) &
-				~EXT4_FEATURE_RO_COMPAT_SUPP));
+              ~EXT4_FEATURE_RO_COMPAT_SUPP));
 		return 0;
 	}
 	/*
@@ -3720,6 +3721,9 @@ cantfind_ext4:
 	if (!silent)
 		ext4_msg(sb, KERN_ERR, "VFS: Can't find ext4 filesystem");
 	goto failed_mount;
+    
+failed_mount7:
+    ext4_unregister_li_request(sb);
 
 failed_mount4:
 	iput(root);

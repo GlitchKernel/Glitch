@@ -32,6 +32,8 @@
 
 static struct kmem_cache *io_page_cachep, *io_end_cachep;
 
+
+
 int __init ext4_init_pageio(void)
 {
 	io_page_cachep = KMEM_CACHE(ext4_io_page, SLAB_RECLAIM_ACCOUNT);
@@ -117,16 +119,15 @@ int ext4_end_io_nolock(ext4_io_end_t *io)
 
 	if (io->iocb)
 		aio_complete(io->iocb, io->result, 0);
-	/* clear the DIO AIO unwritten flag */
-	if (io->flag & EXT4_IO_END_UNWRITTEN) {
-		io->flag &= ~EXT4_IO_END_UNWRITTEN;
+	if (io->flag & EXT4_IO_END_DIRECT)
+        //inode_dio_done(inode);
 		/* Wake up anyone waiting on unwritten extent conversion */
 		wq = ext4_ioend_wq(io->inode);
 		if (atomic_dec_and_test(&EXT4_I(inode)->i_aiodio_unwritten) &&
 		    waitqueue_active(wq)) {
 			wake_up_all(wq);
 		}
-	}
+	
 
 	return ret;
 }

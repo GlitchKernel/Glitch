@@ -394,6 +394,7 @@ struct inodes_stat_t {
 #include <linux/rculist_bl.h>
 
 #include <asm/atomic.h>
+#include <linux/lockdep.h>
 #include <asm/byteorder.h>
 
 struct export_operations;
@@ -1349,6 +1350,28 @@ extern pid_t f_getown(struct file *filp);
 extern int send_sigurg(struct fown_struct *fown);
 
 /*
+ * Snapshotting support.
+ */
+enum {
+	SB_UNFROZEN = 0,
+	SB_FREEZE_WRITE	= 1,
+	SB_FREEZE_TRANS = 2,
+	SB_FREEZE_LEVELS	/* Number of freezing states */
+};
+
+#define vfs_check_frozen(sb, level) \
+	wait_event((sb)->s_wait_unfrozen, ((sb)->s_frozen < (level)))
+
+#define get_fs_excl() atomic_inc(&current->fs_excl)
+#define put_fs_excl() atomic_dec(&current->fs_excl)
+#define has_fs_excl() atomic_read(&current->fs_excl)
+
+void sb_end_write(struct super_block *sb, int level);
+void sb_start_write(struct super_block *sb, int level);
+void sb_dup_write(struct super_block *sb, int level);
+void sb_wait_write(struct super_block *sb, int level);
+
+/*
  *	Umount options
  */
 
@@ -1360,6 +1383,15 @@ extern int send_sigurg(struct fown_struct *fown);
 
 extern struct list_head super_blocks;
 extern spinlock_t sb_lock;
+
+struct sb_writers_level {
+	struct percpu_counter	counter;	/* counter of running writes */
+	wait_queue_head_t	wait;		/* queue for waiting for
+						   writers to finish */
+#ifdef CONFIG_DEBUG_LOCK_ALLOC
+	struct lockdep_map	lock_map;
+#endif
+};
 
 struct super_block {
 	struct list_head	s_list;		/* Keep this first */
@@ -1404,6 +1436,7 @@ struct super_block {
 
 	int			s_frozen;
 	wait_queue_head_t	s_wait_unfrozen;
+	struct sb_writers_level	s_writers[SB_FREEZE_LEVELS - 1];
 
 	char s_id[32];				/* Informational name */
 	u8 s_uuid[16];				/* UUID */
@@ -1441,22 +1474,6 @@ struct super_block {
 };
 
 extern struct timespec current_fs_time(struct super_block *sb);
-
-/*
- * Snapshotting support.
- */
-enum {
-	SB_UNFROZEN = 0,
-	SB_FREEZE_WRITE	= 1,
-	SB_FREEZE_TRANS = 2,
-};
-
-#define vfs_check_frozen(sb, level) \
-	wait_event((sb)->s_wait_unfrozen, ((sb)->s_frozen < (level)))
-
-#define get_fs_excl() atomic_inc(&current->fs_excl)
-#define put_fs_excl() atomic_dec(&current->fs_excl)
-#define has_fs_excl() atomic_read(&current->fs_excl)
 
 /*
  * until VFS tracks user namespaces for inodes, just make all files
@@ -2369,6 +2386,7 @@ enum {
 };
 
 void dio_end_io(struct bio *bio, int error);
+void inode_dio_done(struct inode *inode);
 
 ssize_t __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
 	struct block_device *bdev, const struct iovec *iov, loff_t offset,

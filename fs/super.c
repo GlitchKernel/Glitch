@@ -32,11 +32,32 @@
 #include <linux/backing-dev.h>
 #include <linux/rculist_bl.h>
 #include <linux/cleancache.h>
+#include <linux/lockdep.h>
 #include "internal.h"
 
 
 LIST_HEAD(super_blocks);
 DEFINE_SPINLOCK(sb_lock);
+
+static struct lock_class_key sb_writers_key[SB_FREEZE_LEVELS-1];
+
+static int init_sb_writers(struct super_block *s, int level, char *lockname)
+{
+	struct sb_writers_level *sl = &s->s_writers[level-1];
+	int err;
+    
+	err = percpu_counter_init(&sl->counter, 0);
+	if (err < 0)
+		return err;
+	init_waitqueue_head(&sl->wait);
+	lockdep_init_map(&sl->lock_map, lockname, &sb_writers_key[level-1], 0);
+	return 0;
+}
+
+static void destroy_sb_writers(struct super_block *s, int level)
+{
+	percpu_counter_destroy(&s->s_writers[level-1].counter);
+}
 
 /**
  *	alloc_super	-	create new superblock
@@ -52,19 +73,21 @@ static struct super_block *alloc_super(struct file_system_type *type)
 
 	if (s) {
 		if (security_sb_alloc(s)) {
+            /*
+             * We cannot call security_sb_free() without
+             * security_sb_alloc() succeeding. So bail out manually
+             */
 			kfree(s);
 			s = NULL;
 			goto out;
 		}
 #ifdef CONFIG_SMP
-		s->s_files = alloc_percpu(struct list_head);
-		if (!s->s_files) {
-			security_sb_free(s);
-			kfree(s);
-			s = NULL;
-			goto out;
-		} else {
-			int i;
+        s->s_files = alloc_percpu(struct list_head);
+        if (!s->s_files)
+            goto err_out;
+        else {
+        
+            int i;
 
 			for_each_possible_cpu(i)
 				INIT_LIST_HEAD(per_cpu_ptr(s->s_files, i));
@@ -72,7 +95,12 @@ static struct super_block *alloc_super(struct file_system_type *type)
 #else
 		INIT_LIST_HEAD(&s->s_files);
 #endif
-		s->s_bdi = &default_backing_dev_info;
+		
+        if (init_sb_writers(s, SB_FREEZE_WRITE, "sb_writers_write"))
+            goto err_out;
+        if (init_sb_writers(s, SB_FREEZE_TRANS, "sb_writers_trans"))
+            goto err_out;
+        s->s_bdi = &default_backing_dev_info;
 		INIT_LIST_HEAD(&s->s_instances);
 		INIT_HLIST_BL_HEAD(&s->s_anon);
 		INIT_LIST_HEAD(&s->s_inodes);
@@ -117,7 +145,19 @@ static struct super_block *alloc_super(struct file_system_type *type)
 	}
 out:
 	return s;
+err_out:
+	security_sb_free(s);
+#ifdef CONFIG_SMP
+    if (s->s_files)
+        free_percpu(s->s_files);
+#endif
+    destroy_sb_writers(s, SB_FREEZE_WRITE);
+    destroy_sb_writers(s, SB_FREEZE_TRANS);
+    kfree(s);
+    s = NULL;
+    goto out;
 }
+
 
 /**
  *	destroy_super	-	frees a superblock
@@ -1000,6 +1040,148 @@ out:
 }
 
 /**
+ * sb_end_write - drop write access to a superblock
+ * @sb: the super we wrote to
+ * @level: the lowest level of freezing which we blocked
+ *
+ * Decrement number of writers to the filesystem preventing freezing of
+ * given level. Wake up possible waiters wanting to freeze the filesystem.
+ */
+void sb_end_write(struct super_block *sb, int level)
+{
+	struct sb_writers_level *sl = &sb->s_writers[level-1];
+
+	percpu_counter_dec(&sl->counter);
+	/*
+	 * Make sure s_writers are updated before we wake up waiters in
+	 * freeze_super().
+	 */
+	smp_mb();
+	if (waitqueue_active(&sl->wait))
+		wake_up(&sl->wait);
+	rwsem_release(&sl->lock_map, 1, _RET_IP_);
+}
+EXPORT_SYMBOL(sb_end_write);
+
+/**
+ * sb_start_write - get write access to a superblock
+ * @sb: the super we write to
+ * @level: the lowest level of freezing which we block
+ *
+ * When a process wants to write data to a filesystem (i.e. dirty a page), it
+ * should embed the operation in a sb_start_write() - sb_end_write() pair to
+ * get exclusion against filesystem freezing. This function increments number
+ * of writers preventing freezing of given level to proceed.  If the file
+ * system is already frozen it waits until it is thawed.
+ *
+ * The lock orderding constraints of sb_start_write() for level SB_FREEZE_WRITE
+ * are following:
+ * mmap_sem			(page-fault)
+ *   -> s_writers		(block_page_mkwrite or equivalent)
+ *
+ * i_mutex			(do_truncate, __generic_file_aio_write)
+ *   -> s_writers
+ *
+ * s_umount			(freeze_super)
+ *   -> s_writers
+ *
+ * For level SB_FREEZE_TRANS lock constraints are rather file system dependent,
+ * in most cases equivalent to constraints for starting a fs transaction.
+ */
+void sb_start_write(struct super_block *sb, int level)
+{
+retry:
+	rwsem_acquire_read(&sb->s_writers[level-1].lock_map, 0, 0, _RET_IP_);
+	vfs_check_frozen(sb, level);
+	percpu_counter_inc(&sb->s_writers[level-1].counter);
+	/*
+	 * Make sure s_writers are updated before we check s_frozen.
+	 * freeze_super() first sets s_frozen and then checks s_writers.
+	 */
+	smp_mb();
+	if (sb->s_frozen >= level) {
+		sb_end_write(sb, level);
+		goto retry;
+	}
+}
+EXPORT_SYMBOL(sb_start_write);
+
+/**
+ * sb_dup_write - get write access to a superblock without blocking
+ * @sb: the super we write to
+ * @level: the lowest level of freezing which we block
+ *
+ * This function is like sb_start_write() only that it does not check s_frozen
+ * in the superblock. The caller can call this function only when it already
+ * holds write access to the superblock at this level (i.e., called
+ * sb_start_write(sb, level) previously).
+ */
+void sb_dup_write(struct super_block *sb, int level)
+{
+	/*
+	 * Trick lockdep into acquiring read lock again without complaining
+	 * about lock recursion
+	 */
+	rwsem_acquire_read(&sb->s_writers[level-1].lock_map, 0, 1, _RET_IP_);
+	percpu_counter_inc(&sb->s_writers[level-1].counter);
+}
+EXPORT_SYMBOL(sb_dup_write);
+
+/**
+ * sb_wait_write - wait until all writers at given level finish
+ * @sb: the super for which we wait
+ * @level: the level at which we wait for writers
+ *
+ * This function waits until there are no writers at given level. Caller
+ * of this function should make sure there can be no new writers at required
+ * level before calling this function. Otherwise this function can livelock.
+ */
+void sb_wait_write(struct super_block *sb, int level)
+{
+	s64 writers;
+	struct sb_writers_level *sl = &sb->s_writers[level-1];
+
+	do {
+		DEFINE_WAIT(wait);
+
+		/*
+		 * We use a barrier in prepare_to_wait() to separate setting
+		 * of s_frozen and checking of s_writers
+		 */
+		prepare_to_wait(&sl->wait, &wait, TASK_UNINTERRUPTIBLE);
+
+		writers = percpu_counter_sum(&sl->counter);
+		if (writers)
+			schedule();
+
+		finish_wait(&sl->wait, &wait);
+	} while (writers);
+}
+EXPORT_SYMBOL(sb_wait_write);
+
+/*
+ * Freeze superblock to given level, wait for writers at given level
+ * to finish.
+ */
+static void sb_freeze_to_level(struct super_block *sb, int level)
+{
+	sb->s_frozen = level;
+
+	/*
+	 * We just cycle-through lockdep here so that it does not complain
+	 * about returning with lock to userspace
+	 */
+	rwsem_acquire(&sb->s_writers[level-1].lock_map, 0, 0, _THIS_IP_);
+	rwsem_release(&sb->s_writers[level-1].lock_map, 1, _THIS_IP_);
+
+	/*
+	 * Now wait for writers to finish. As s_frozen is already set to
+	 * 'level' we are guaranteed there are no new writers at given level.
+	 */
+	sb_wait_write(sb, level);
+}
+
+/**
  * freeze_super - lock the filesystem and force it into a consistent state
  * @sb: the super to lock
  *
@@ -1025,21 +1207,19 @@ int freeze_super(struct super_block *sb)
 		return 0;
 	}
 
-	sb->s_frozen = SB_FREEZE_WRITE;
-	smp_wmb();
-
+	sb_freeze_to_level(sb, SB_FREEZE_WRITE);
 	sync_filesystem(sb);
-
-	sb->s_frozen = SB_FREEZE_TRANS;
-	smp_wmb();
-
+	sb_freeze_to_level(sb, SB_FREEZE_TRANS);
 	sync_blockdev(sb->s_bdev);
+
 	if (sb->s_op->freeze_fs) {
 		ret = sb->s_op->freeze_fs(sb);
 		if (ret) {
 			printk(KERN_ERR
 				"VFS:Filesystem freeze failed\n");
 			sb->s_frozen = SB_UNFROZEN;
+			smp_wmb();
+			wake_up(&sb->s_wait_unfrozen);
 			deactivate_locked_super(sb);
 			return ret;
 		}

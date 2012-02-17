@@ -3762,9 +3762,12 @@ static ssize_t ext4_ext_direct_IO(int rw, struct kiocb *iocb,
 		iocb->private = NULL;
 		EXT4_I(inode)->cur_aio_dio = NULL;
 		if (!is_sync_kiocb(iocb)) {
-			iocb->private = ext4_init_io_end(inode, GFP_NOFS);
-			if (!iocb->private)
+			ext4_io_end_t *io_end =
+				ext4_init_io_end(inode, GFP_NOFS);
+			if (!io_end)
 				return -ENOMEM;
+			io_end->flag |= EXT4_IO_END_DIRECT;
+			iocb->private = io_end;
 			/*
 			 * we save the io structure for current async
 			 * direct IO, so that later ext4_map_blocks()
@@ -5473,7 +5476,8 @@ int ext4_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	 * will return the blocks that include the delayed allocation
 	 * blocks for this file.
 	 */
-	delalloc_blocks = EXT4_I(inode)->i_reserved_data_blocks;
+	delalloc_blocks = EXT4_C2B(EXT4_SB(inode->i_sb),
+                              EXT4_I(inode)->i_reserved_data_blocks);
 
 	stat->blocks += (delalloc_blocks << inode->i_sb->s_blocksize_bits)>>9;
 	return 0;

@@ -2,6 +2,7 @@
 #include <linux/highmem.h>
 #include <linux/sched.h>
 #include <linux/hugetlb.h>
+#include <linux/mmdebug.h>
 
 static int walk_pte_range(pmd_t *pmd, unsigned long addr, unsigned long end,
 			  struct mm_walk *walk)
@@ -159,6 +160,8 @@ int walk_page_range(unsigned long addr, unsigned long end,
 
 	if (addr >= end)
 		return err;
+    
+    VM_BUG_ON((addr & ~PAGE_MASK) || (end & ~PAGE_MASK));
 
 	if (!walk->mm)
 		return -EINVAL;
