@@ -63,7 +63,7 @@ config IOSCHED_SIO
 
 choice
 	prompt "Default I/O scheduler"
-	default DEFAULT_DEADLINE
+	default DEFAULT_FIOPS
 	help
 	  Select the I/O scheduler which will be used by default for all
 	  block devices.

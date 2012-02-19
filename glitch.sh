@@ -32,7 +32,7 @@ setup ()
         CCACHE=ccache
         CCACHE_BASEDIR="$KERNEL_DIR"
         CCACHE_COMPRESS=1
-        CCACHE_DIR="$BUILD_DIR/.ccache"
+        CCACHE_DIR="$CM9_REPO/kernel/samsung/.ccache"
         export CCACHE_DIR CCACHE_COMPRESS CCACHE_BASEDIR
     else
         CCACHE=""
