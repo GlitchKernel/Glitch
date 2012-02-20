@@ -5,6 +5,13 @@
 # To build for one device only, use ./initramfs.sh "phone name" (without quote)
 # Example : ./initramfs.sh captivate
 
+export USE_CCACHE=1
+
+        CCACHE=ccache
+        CCACHE_COMPRESS=1
+        CCACHE_DIR=~/CM9/kernel/samsung/.ramdisks-ccache
+        export CCACHE_DIR CCACHE_COMPRESS
+
 declare -A phone
 
 if [[ $# -gt 0 ]]; then
