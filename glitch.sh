@@ -90,6 +90,7 @@ REL=CM9-${target}-Glitch-$(date +%Y%m%d.%H%M).zip
 	mkdir  -p system/lib/modules || exit 1
 	mkdir  -p system/etc/init.d || exit 1
 	mkdir  -p system/etc/glitch-config || exit 1
+	mkdir  -p system/lib/hw || exit 1
 	echo "inactive" > system/etc/glitch-config/screenstate_scaling || exit 1
 	echo "conservative" > system/etc/glitch-config/sleep_governor || exit 1
 
@@ -111,6 +112,7 @@ else
 	cp 90call_vol system/etc/init.d/ || exit 1
 fi
 	cp logcat_module system/etc/init.d/ || exit 1
+	cp lights.aries.so.BLN system/lib/hw/lights.aries.so
 	mkdir -p system/bin
 	cp bin/* system/bin/
 	
@@ -136,6 +138,7 @@ fi
 rm boot.img
 rm system/lib/modules/*
 rm system/etc/init.d/*
+rm system/lib/hw/*
 echo ${REL}
 }
     

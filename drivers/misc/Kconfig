@@ -608,4 +608,10 @@ config BLX
        help
          Say Y here to enable Battery Life eXtender
 
+config GENERIC_BLN
+       bool "Generic BLN support for backlight notification"
+       default y
+       help
+         Say Y here to enable the backlight notification for android led-notification (modified liblight needed)
+
 endif # MISC_DEVICES

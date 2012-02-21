@@ -32,6 +32,10 @@
 #include <linux/miscdevice.h>
 #include <linux/input/cypress-touchkey.h>
 
+#ifdef CONFIG_GENERIC_BLN
+#include <linux/bln.h>
+#endif
+
 #define SCANCODE_MASK		0x07
 #define UPDOWN_EVENT_MASK	0x08
 #define ESD_STATE_MASK		0x10
@@ -43,6 +47,11 @@
 #define OLD_BACKLIGHT_OFF	0x2
 
 #define DEVICE_NAME "cypress-touchkey"
+
+#ifdef CONFIG_GENERIC_BLN
+  /* FIXME: keep a reference to the devdata, reason: i2c_touchkey_write_byte()*/
+  struct cypress_touchkey_devdata *bln_devdata;
+#endif
 
 int bl_on = 0;
 static DEFINE_SEMAPHORE(enable_sem);
@@ -240,7 +249,9 @@ static irqreturn_t touchkey_interrupt_thread(int irq, void *touchkey_devdata)
 	}
 
 	input_sync(devdata->input_dev);
-	bl_set_timeout();
+
+	if (!bln_is_ongoing())
+		bl_set_timeout();
 err:
 	return IRQ_HANDLED;
 }
@@ -309,17 +320,26 @@ static void cypress_touchkey_early_suspend(struct early_suspend *h)
 
 	devdata->is_powering_on = true;
 
-	if (unlikely(devdata->is_dead)) {
+	if (unlikely(devdata->is_dead))
 		goto out;
-	}
 
 	disable_irq(devdata->client->irq);
 
-	if (!bl_on)
-		devdata->pdata->touchkey_onoff(TOUCHKEY_OFF);
-
-	all_keys_up(devdata);
+#ifdef CONFIG_GENERIC_BLN
+	/*
+	 * Disallow powering off the touchkey controller
+	 * while a led notification is ongoing
+	 */
+	if(!bln_is_ongoing())
+	{ //remove?
+#endif
+	devdata->pdata->touchkey_onoff(TOUCHKEY_OFF);
+	devdata->pdata->touchkey_sleep_onoff(TOUCHKEY_OFF);
 	devdata->is_sleeping = true;
+#ifdef CONFIG_GENERIC_BLN
+	} //remove?
+#endif
+	all_keys_up(devdata);
 
 out:
 	up(&enable_sem);
@@ -350,7 +370,8 @@ static void cypress_touchkey_early_resume(struct early_suspend *h)
 
 	up(&enable_sem);
 
-	bl_set_timeout();
+	if (!bln_is_ongoing())
+		bl_set_timeout();
 }
 #endif
 
@@ -360,6 +381,9 @@ static ssize_t led_status_read(struct device *dev, struct device_attribute *attr
 
 static ssize_t led_status_write(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
+	if (bln_is_ongoing())
+		return size;
+
 	unsigned int data;
 
 	if (sscanf(buf, "%u\n", &data)) {
@@ -398,6 +422,48 @@ static struct miscdevice bl_led_device = {
 		.minor = MISC_DYNAMIC_MINOR,
 		.name = "notification",
 };
+
+
+
+
+
+
+#ifdef CONFIG_GENERIC_BLN
+static int cypress_enable_touchkey_backlights(int led_mask)
+{
+return i2c_touchkey_write_byte(bln_devdata, bln_devdata->backlight_on);
+}
+static int cypress_disable_touchkey_backlights(int led_mask)
+{
+return i2c_touchkey_write_byte(bln_devdata, bln_devdata->backlight_off);
+}
+static int cypress_power_on_touchkey_controller(void)
+{
+if(bln_devdata->is_powering_on) {
+    bln_devdata->pdata->touchkey_onoff(TOUCHKEY_ON);
+    return 0;
+  } else {
+    return -EBUSY;
+  }
+}
+static int cypress_power_off_touchkey_controller(void)
+{
+  if(bln_devdata->is_powering_on) {
+    bln_devdata->pdata->touchkey_onoff(TOUCHKEY_OFF);
+    return 0;
+  } else {
+    return -EBUSY;
+  }
+}
+
+static struct bln_implementation cypress_touchkey_bln = {
+  .enable = cypress_enable_touchkey_backlights,
+  .disable = cypress_disable_touchkey_backlights,
+  .power_on = cypress_power_on_touchkey_controller,
+  .power_off = cypress_power_off_touchkey_controller,
+  .led_count = 1
+};
+#endif
 
 static int cypress_touchkey_probe(struct i2c_client *client,
 		const struct i2c_device_id *id)
@@ -519,6 +585,12 @@ static int cypress_touchkey_probe(struct i2c_client *client,
 
     bl_devdata = devdata;
 	setup_timer(&bl_timer, bl_timer_callback, 0);
+#ifdef CONFIG_GENERIC_BLN
+  bln_devdata = devdata;
+#endif
+
+
+
 
 	return 0;
 
@@ -542,6 +614,7 @@ static int __devexit i2c_touchkey_remove(struct i2c_client *client)
 {
 	struct cypress_touchkey_devdata *devdata = i2c_get_clientdata(client);
 
+       
 	dev_err(&client->dev, "%s: i2c_touchkey_remove\n", __func__);
 
 	misc_deregister(&bl_led_device);
@@ -557,7 +630,7 @@ static int __devexit i2c_touchkey_remove(struct i2c_client *client)
 	free_irq(client->irq, devdata);
 	all_keys_up(devdata);
 	input_unregister_device(devdata->input_dev);
-    del_timer(&bl_timer);
+	del_timer(&bl_timer);
 	kfree(devdata);
 	return 0;
 }
@@ -586,6 +659,9 @@ static int __init touchkey_init(void)
 		pr_err("%s: cypress touch keypad registration failed. (%d)\n",
 				__func__, ret);
 
+#ifdef CONFIG_GENERIC_BLN
+  register_bln_implementation(&cypress_touchkey_bln);
+#endif
 	return ret;
 }
 
