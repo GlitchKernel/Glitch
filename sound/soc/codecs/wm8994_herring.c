@@ -3504,7 +3504,7 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 
 void wm8994_set_voicecall_dock_speaker(struct snd_soc_codec *codec)
 {
-	struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);;
+	struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
 
         int val;
 
