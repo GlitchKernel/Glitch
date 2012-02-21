@@ -340,7 +340,6 @@ static int s3c_pm_enter(suspend_state_t state)
 	s3c_pm_save_uarts();
 	s3c_pm_save_core();
 
-	s3c_config_sleep_gpio();
 
 	/* set the irq configuration for wake */
 
