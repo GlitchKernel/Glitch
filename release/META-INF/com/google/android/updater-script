@@ -38,6 +38,7 @@ delete("/system/etc/init.d/S98edt_tweaks");
 delete("/system/etc/init.d/s99acidext4tweak");
 delete("/system/etc/init.d/00remount");
 delete("/system/etc/init.d/02Transform");
+delete("/system/etc/init.d/S98rfkill_didle");
 delete("/system/etc/init.d/01acid_sysctl");
 package_extract_dir("script", "/tmp/script");
 set_perm(0, 0, 755, "/tmp/script/cleaningmodules");
@@ -71,7 +72,7 @@ package_extract_dir("system/", "/system/");
 set_perm(0, 1000, 0777, "/system/bin/logcat-on");
 set_perm(0, 1000, 0777, "/system/bin/logcat-off");
 set_perm(0, 0, 0777, "/system/bin/sysinit");
-set_perm_recursive(0, 2000, 0755, 0750, "/system/etc/init.d");
+set_perm_recursive(0, 2000, 0777, 0777, "/system/etc/init.d");
 show_progress(0.200000, 10);
 assert(package_extract_file("boot.img", "/tmp/boot.img"),
        write_raw_image("/tmp/boot.img", "boot"),
