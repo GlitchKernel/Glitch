@@ -103,6 +103,7 @@ REL=CM9-${target}-Glitch-$(date +%Y%m%d.%H%M).zip
 	cp $formodules/fs/nls/nls_utf8.ko system/lib/modules/nls_utf8.ko
 
 	cp S99screenstate_scaling system/etc/init.d/ || exit 1
+	cp S98rfkill_didle system/etc/init.d/ || exit 1
 
 if [ "$target" = fascinatemtd ] ; then
 	cp 90call_vol_fascinate system/etc/init.d/ || exit 1
