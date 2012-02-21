@@ -84,6 +84,7 @@ Codec Output Path BIT
 #define VOICECALL_TTY_VCO	(0x01 << 6)
 #define VOICECALL_TTY_HCO	(0x01 << 7)
 #define VOICECALL_TTY_FULL	(0x01 << 8)
+#define VOICECALL_EXTRA_DOCK    (0x01 << 9)
 
 #define RECORDING_MAIN		(0x01 << 1)
 #define RECORDING_HP		(0x01 << 2)
@@ -130,7 +131,7 @@ enum audio_path	{
 enum call_path		{
 	CALL_OFF, CALL_RCV, CALL_SPK, CALL_HP,
 	CALL_HP_NO_MIC, CALL_BT, CALL_TTY_VCO,
-	CALL_TTY_HCO, CALL_TTY_FULL
+	CALL_TTY_HCO, CALL_TTY_FULL, CALL_DOCK_SPEAKER
 };
 enum mic_path		{MAIN, SUB, BT_REC, MIC_OFF};
 enum fmradio_path		{FMR_OFF, FMR_SPK, FMR_HP, FMR_DUAL_MIX};
@@ -229,6 +230,7 @@ void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_tty_vco(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_tty_hco(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_tty_full(struct snd_soc_codec *codec);
+void wm8994_set_voicecall_dock_speaker(struct snd_soc_codec *codec);
 void wm8994_disable_fmradio_path(struct snd_soc_codec *codec,
 	enum fmradio_path path);
 void wm8994_set_fmradio_input_active(struct snd_soc_codec *codec, int on);
