@@ -1,20 +1,20 @@
 #!/system/bin/sh
 
-# RFKILL for DIDLE script
+# DIDLE Enabler script
 
 (while [ 1 ];
 do
+
     AWAKE=`cat /sys/power/wait_for_fb_wake`;
     if [ $AWAKE = "awake" ]; then
+	sleep 2 && echo 0 > /sys/devices/platform/bt_rfkill/rfkill/rfkill0/soft
 
-echo 0 > /sys/devices/platform/bt_rfkill/rfkill/rfkill0/soft
         AWAKE=;
     fi;
 
     SLEEPING=`cat /sys/power/wait_for_fb_sleep`;
     if [ $SLEEPING = "sleeping" ]; then
-
-echo 1 > /sys/devices/platform/bt_rfkill/rfkill/rfkill0/soft
+        sleep 2 && echo 1 > /sys/devices/platform/bt_rfkill/rfkill/rfkill0/soft
 
         SLEEPING=;
     fi;    
