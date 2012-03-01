@@ -73,6 +73,7 @@ extern int		s3c_gpio_setpin(unsigned int pin, s3c_gpio_pull_t level);
 #define S3C_GPIO_INPUT	(S3C_GPIO_SPECIAL(0))
 #define S3C_GPIO_OUTPUT	(S3C_GPIO_SPECIAL(1))
 #define S3C_GPIO_SFN(x)	(S3C_GPIO_SPECIAL(x))
+#define S3C_GPIO_EINT 	(S3C_GPIO_SPECIAL(0xF))
 
 #define s3c_gpio_is_cfg_special(_cfg) \
 	(((_cfg) & S3C_GPIO_SPECIAL_MARK) == S3C_GPIO_SPECIAL_MARK)

@@ -3133,7 +3133,7 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.pud	= S3C_GPIO_PULL_NONE,
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, 
-	
+
 	// GPE0 ----------------------------
 	{
 		.num	= S5PV210_GPE0(0), // GPIO_CAM_PCLK
@@ -4226,6 +4226,12 @@ static unsigned int aries_sleep_gpio_table[][3] = {
   	{ S5PV210_GPA0(7), S3C_GPIO_SLP_OUT1,   S3C_GPIO_PULL_NONE},
 #endif
 
+
+
+
+
+
+
 	// GPA1 ---------------------------------------------------
 	{ S5PV210_GPA1(0), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_DOWN},
 	{ S5PV210_GPA1(1), S3C_GPIO_SLP_OUT0,	S3C_GPIO_PULL_NONE},
@@ -4267,6 +4273,14 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 	{ S5PV210_GPC0(2), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},
 	{ S5PV210_GPC0(3), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_NONE},
 	{ S5PV210_GPC0(4), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},
+
+
+
+
+
+
+
+
 
 	// GPC1 ---------------------------------------------------
 #if defined (CONFIG_SAMSUNG_CAPTIVATE)
@@ -4390,6 +4404,15 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 	{ S5PV210_GPG1(5), S3C_GPIO_SLP_OUT1,   S3C_GPIO_PULL_NONE},	//GPIO_WLAN_SDIO_D2
 	{ S5PV210_GPG1(6), S3C_GPIO_SLP_OUT1,   S3C_GPIO_PULL_NONE},	//GPIO_WLAN_SDIO_D3
 
+
+
+
+
+
+
+
+
+
 	// GPG2 ---------------------------------------------------
 	{ S5PV210_GPG2(0), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_T_FLASH_CLK
 	{ S5PV210_GPG2(1), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_T_FLASH_CMD
@@ -4402,6 +4425,15 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 	{ S5PV210_GPG2(4), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_T_FLASH_D1
 	{ S5PV210_GPG2(5), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_T_FLASH_D2
 	{ S5PV210_GPG2(6), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_T_FLASH_D3
+
+
+
+
+
+
+
+
+
 
 	// GPG3 ---------------------------------------------------
 #if defined (CONFIG_SAMSUNG_VIBRANT)
@@ -4431,6 +4463,23 @@ static unsigned int aries_sleep_gpio_table[][3] = {
   	{ S5PV210_GPG3(6), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_GPG36
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/* Alive part ending and off part start*/
 	// GPI ----------------------------------------------------
 	{ S5PV210_GPI(0),  S3C_GPIO_SLP_PREV,   S3C_GPIO_PULL_NONE},	//GPIO_CODEC_I2S_CLK
@@ -4449,6 +4498,15 @@ static unsigned int aries_sleep_gpio_table[][3] = {
   	{ S5PV210_GPI(5),  S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_GPI5
   	{ S5PV210_GPI(6),  S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_GPI6
 #endif
+
+
+
+
+
+
+
+
+
 
 	// GPJ0 ---------------------------------------------------
 	{ S5PV210_GPJ0(0), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_DOWN},
@@ -4472,8 +4530,10 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 #else
   	{ S5PV210_GPJ1(0), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},
 #endif
+
 	{ S5PV210_GPJ1(1), S3C_GPIO_SLP_OUT0,	S3C_GPIO_PULL_NONE},
 	{ S5PV210_GPJ1(2), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_GPJ12
+
 	{ S5PV210_GPJ1(3), S3C_GPIO_SLP_OUT0,	S3C_GPIO_PULL_NONE},
 	{ S5PV210_GPJ1(4), S3C_GPIO_SLP_PREV,	S3C_GPIO_PULL_NONE},
 	{ S5PV210_GPJ1(5), S3C_GPIO_SLP_OUT0,	S3C_GPIO_PULL_NONE},
@@ -4508,11 +4568,27 @@ static unsigned int aries_sleep_gpio_table[][3] = {
   	{ S5PV210_GPJ2(5), S3C_GPIO_SLP_PREV,   S3C_GPIO_PULL_NONE},	//GPIO_SUB_MICBIAS_EN
 #endif
 	{ S5PV210_GPJ2(6), S3C_GPIO_SLP_PREV,   S3C_GPIO_PULL_NONE},	//GPIO_EARPATH_SEL
+
+
 #if defined (CONFIG_SAMSUNG_GALAXYS) || defined (CONFIG_SAMSUNG_GALAXYSB)
+
+
+
+
+
+
+
+
 	{ S5PV210_GPJ2(7), S3C_GPIO_SLP_OUT1,   S3C_GPIO_PULL_NONE},	//GPIO_MASSMEMORY_EN
 #else
+
 	{ S5PV210_GPJ2(7), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_MASSMEMORY_EN
 #endif
+
+
+
+
+
 
 	// GPJ3 ---------------------------------------------------
 	{ S5PV210_GPJ3(0), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//_3_TOUCH_SDA_28V
@@ -4522,11 +4598,14 @@ static unsigned int aries_sleep_gpio_table[][3] = {
   	{ S5PV210_GPJ3(3), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_GPJ33
 #else
   	{ S5PV210_GPJ3(3), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_GPJ33
+
 #endif
 	{ S5PV210_GPJ3(4), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_NONE},	//GPIO_USB_SDA_28V
 	{ S5PV210_GPJ3(5), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_NONE},	//GPIO_USB_SCL_28V
 	{ S5PV210_GPJ3(6), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_NONE},	//GPIO_AP_SDA_28V
+
 	{ S5PV210_GPJ3(7), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_NONE},	//GPIO_AP_SCL_28V
+
 
 	// GPJ4 ---------------------------------------------------
 	{ S5PV210_GPJ4(0), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_NONE},
@@ -4537,6 +4616,7 @@ static unsigned int aries_sleep_gpio_table[][3] = {
   	{ S5PV210_GPJ4(4), S3C_GPIO_SLP_PREV,   S3C_GPIO_PULL_NONE},	//GPIO_EARMICBIAS_EN
 #else
   	{ S5PV210_GPJ4(4), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_GPJ44
+
 #endif
 
 	/* memory part */
@@ -4580,7 +4660,9 @@ static unsigned int aries_sleep_gpio_table[][3] = {
   	{ S5PV210_MP04(5), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_NONE},	//GPIO_MP045
 #else 
   	{ S5PV210_MP04(4), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_MP044
+
   	{ S5PV210_MP04(5), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_MP045
+
 #endif
 	{ S5PV210_MP04(6), S3C_GPIO_SLP_OUT0,	S3C_GPIO_PULL_NONE},
 	{ S5PV210_MP04(7), S3C_GPIO_SLP_INPUT,	S3C_GPIO_PULL_DOWN},
@@ -5312,7 +5394,6 @@ static void aries_pm_restart(char mode, const char *cmd)
 // Ugly hack to inject parameters (e.g. device serial, bootmode) into /proc/cmdline
 static void __init aries_inject_cmdline(void) {
 	char *new_command_line;
-	int bootmode = __raw_readl(S5P_INFORM6);
 	int size;
 
 	size = strlen(boot_command_line);
@@ -5320,13 +5401,7 @@ static void __init aries_inject_cmdline(void) {
 	strcpy(new_command_line, saved_command_line);
 	size += sprintf(new_command_line + size, " androidboot.serialno=%08X%08X",
 				system_serial_high, system_serial_low);
-
-	// Only write bootmode when less than 10 to prevent confusion with watchdog
-	// reboot (0xee = 238)
-	if (bootmode < 10) {
-		size += sprintf(new_command_line + size, " bootmode=%d", bootmode);
-	}
-
+	size += sprintf(new_command_line + size, " bootmode=%d", __raw_readl(S5P_INFORM6));
 	saved_command_line = new_command_line;
 }
 
@@ -5335,6 +5410,7 @@ static void __init aries_machine_init(void)
 	arm_pm_restart = aries_pm_restart;
 
 	setup_ram_console_mem();
+
 	aries_inject_cmdline();
 	platform_add_devices(aries_devices, ARRAY_SIZE(aries_devices));
 
@@ -5422,7 +5498,7 @@ static void __init aries_machine_init(void)
 	/* optical sensor */
 	gp2a_gpio_init();
 	i2c_register_board_info(11, i2c_devs11, ARRAY_SIZE(i2c_devs11));
-	
+
 	/* yamaha magnetic sensor */
 	i2c_register_board_info(12, i2c_devs12, ARRAY_SIZE(i2c_devs12));
 
@@ -5519,10 +5595,10 @@ void otg_phy_init(void)
 	writel(readl(S3C_USBOTG_PHYTUNE) | (0x1<<20),
 			S3C_USBOTG_PHYTUNE);
 
-	/* set DC level as 6 (6%) */
-	writel((readl(S3C_USBOTG_PHYTUNE) & ~(0xf)) | (0x1<<2) | (0x1<<1),
-			S3C_USBOTG_PHYTUNE);
+	/* set DC level as 0xf (24%) */
+  writel(readl(S3C_USBOTG_PHYTUNE) | 0xf, S3C_USBOTG_PHYTUNE);
 }
+
 EXPORT_SYMBOL(otg_phy_init);
 
 /* USB Control request data struct must be located here for DMA transfer */

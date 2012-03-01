@@ -185,6 +185,9 @@ static const struct attribute_group modemctl_group = {
 	.attrs = modemctl_attributes,
 };
 
+/* declare mailbox init function for xmm */
+extern void onedram_init_mailbox(void);
+
 static void xmm_on(struct modemctl *mc)
 {
 	dev_dbg(mc->dev, "%s\n", __func__);
@@ -193,6 +196,8 @@ static void xmm_on(struct modemctl *mc)
 
 	/* ensure pda active pin set to low */
 	gpio_set_value(mc->gpio_pda_active, 0);
+	/* call mailbox init : BA goes to high, AB goes to low */
+	onedram_init_mailbox();
 	/* ensure cp_reset pin set to low */
 	gpio_set_value(mc->gpio_cp_reset, 0);
 	if(mc->gpio_reset_req_n)

@@ -2321,6 +2321,7 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
 		mnt_flags |= MNT_NOEXEC;
 
 		mnt_flags |= MNT_NOATIME;
+	if (flags & MS_NODIRATIME)
 		mnt_flags |= MNT_NODIRATIME;
 
 	if (flags & MS_RDONLY)
