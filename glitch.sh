@@ -157,12 +157,12 @@ echo "Building initramfs"
 ./initramfs.sh
 
 echo "Building CDMA variant(s) .. "
-./Glitch.sh fascinate
+./glitch.sh fascinate
 
 echo "Building GSM variants .. "
-./Glitch.sh captivate
-./Glitch.sh galaxys
-./Glitch.sh vibrant
+./glitch.sh captivate
+./glitch.sh galaxys
+./glitch.sh vibrant
     exit 0
 fi
 
