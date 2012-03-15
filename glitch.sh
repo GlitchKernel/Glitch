@@ -153,6 +153,7 @@ fi
 if [ "$1" = full ] ; then
 echo "Building ALL variants of all kernels!"
 
+
 echo "Building initramfs"
 ./initramfs.sh
 
@@ -163,6 +164,7 @@ echo "Building GSM variants .. "
 ./glitch.sh captivate
 ./glitch.sh galaxys
 ./glitch.sh vibrant
+
     exit 0
 fi
 
@@ -171,17 +173,10 @@ if [ 0 = "${#targets[@]}" ] ; then
     targets=(captivate fascinate galaxys vibrant)
 fi
 
-START=$(date +%s)
+time {
 
 for target in "${targets[@]}" ; do 
     build $target
 done
 
-END=$(date +%s)
-ELAPSED=$((END - START))
-E_MIN=$((ELAPSED / 60))
-E_SEC=$((ELAPSED - E_MIN * 60))
-printf "Elapsed: "
-[ $E_MIN != 0 ] && printf "%d min(s) " $E_MIN
-printf "%d sec(s)\n" $E_SEC
-
+}
