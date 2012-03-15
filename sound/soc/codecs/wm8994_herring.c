@@ -129,7 +129,7 @@ struct gain_info_t cdma_playback_gain_table[PLAYBACK_GAIN_CDMA_NUM] = {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_CLASSD,			/* 25h */
 		.mask = WM8994_SPKOUTL_BOOST_MASK,
-		.gain = 0x05 << WM8994_SPKOUTL_BOOST_SHIFT  /* +7.5dB */
+		.gain = 0x06 << WM8994_SPKOUTL_BOOST_SHIFT  /* +7.5dB */
 	}, {
 		.mode = PLAYBACK_SPK,
 		.reg  = WM8994_AIF1_DAC1_LEFT_VOLUME,	/* 402h */
@@ -144,12 +144,12 @@ struct gain_info_t cdma_playback_gain_table[PLAYBACK_GAIN_CDMA_NUM] = {
 		.mode = PLAYBACK_HP,
 		.reg  = WM8994_LEFT_OUTPUT_VOLUME,	/* 1Ch */
 		.mask = WM8994_HPOUT1L_VOL_MASK,
-		.gain = WM8994_HPOUT1_VU | 0x31 /* -8dB */
+		.gain = WM8994_HPOUT1_VU | 0x32 /* -8dB */
 	}, {
 		.mode = PLAYBACK_HP,
 		.reg  = WM8994_RIGHT_OUTPUT_VOLUME,	/* 1Dh */
 		.mask = WM8994_HPOUT1R_VOL_MASK,
-		.gain = WM8994_HPOUT1_VU | 0x31 /* -8dB */
+		.gain = WM8994_HPOUT1_VU | 0x32 /* -8dB */
 	}, {
 		.mode = PLAYBACK_HP,
 		.reg  = WM8994_LEFT_OPGA_VOLUME,	/* 20h */
@@ -377,7 +377,7 @@ struct gain_info_t cdma_voicecall_gain_table[VOICECALL_GAIN_NUM] = {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_INPUT_MIXER_3,		/* 29h */
 		.mask = WM8994_IN1L_MIXINL_VOL_MASK | WM8994_MIXOUTL_MIXINL_VOL_MASK,
-		.gain = 0x10     /* Mic +7.5dB */
+		.gain = 0x12     /* Mic +7.5dB */
 	}, {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_LEFT_LINE_INPUT_1_2_VOLUME,	/* 18h */
@@ -4494,9 +4494,9 @@ void wm8994_set_fmradio_common(struct snd_soc_codec *codec)
 	wm8994_write(codec, WM8994_AIF2_CONTROL_2, val);
 
 	/* DRC for Noise-gate (AIF2) */
-	wm8994_write(codec, WM8994_AIF2_ADC_FILTERS, 0xF800);
-	wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_1, 0x0036);
-	wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_2, 0x0010);
+	//wm8994_write(codec, WM8994_AIF2_ADC_FILTERS, 0xF800);
+	//wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_1, 0x0036);
+	//wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_2, 0x0010);
 	wm8994_write(codec, WM8994_AIF2_DRC_2, 0x0840);
 	wm8994_write(codec, WM8994_AIF2_DRC_3, 0x2400);
 	wm8994_write(codec, WM8994_AIF2_DRC_4, 0x0000);
