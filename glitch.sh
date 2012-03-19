@@ -24,7 +24,18 @@ setup ()
     fi
     . "$CM9_REPO"/build/envsetup.sh
 
-    KERNEL_DIR="$(dirname "$(readlink -f "$0")")"
+#   Arch-dependent definitions
+    case `uname -s` in
+        Darwin)
+            KERNEL_DIR="$(dirname "$(greadlink -f "$0")")"
+            CROSS_PREFIX="$ANDROID_BUILD_TOP/prebuilt/darwin-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-"
+            ;;
+        *)
+            KERNEL_DIR="$(dirname "$(readlink -f "$0")")"
+            CROSS_PREFIX=$CROSS_PREFIX_443
+            ;;
+    esac
+
     BUILD_DIR="../glitch-build/kernel"
     MODULES=("crypto/ansi_cprng.ko" "crypto/md4.ko" "drivers/media/video/gspca/gspca_main.ko" "fs/cifs/cifs.ko" "fs/fuse/fuse.ko" "fs/nls/nls_utf8.ko")
 
@@ -37,8 +48,6 @@ setup ()
     else
         CCACHE=""
     fi
-
-CROSS_PREFIX=$CROSS_PREFIX_443
 
 }
 
@@ -153,16 +162,18 @@ fi
 if [ "$1" = full ] ; then
 echo "Building ALL variants of all kernels!"
 
+
 echo "Building initramfs"
 ./initramfs.sh
 
 echo "Building CDMA variant(s) .. "
-./Glitch.sh fascinate
+./glitch.sh fascinate
 
 echo "Building GSM variants .. "
-./Glitch.sh captivate
-./Glitch.sh galaxys
-./Glitch.sh vibrant
+./glitch.sh captivate
+./glitch.sh galaxys
+./glitch.sh vibrant
+
     exit 0
 fi
 
@@ -171,17 +182,10 @@ if [ 0 = "${#targets[@]}" ] ; then
     targets=(captivate fascinate galaxys vibrant)
 fi
 
-START=$(date +%s)
+time {
 
 for target in "${targets[@]}" ; do 
     build $target
 done
 
-END=$(date +%s)
-ELAPSED=$((END - START))
-E_MIN=$((ELAPSED / 60))
-E_SEC=$((ELAPSED - E_MIN * 60))
-printf "Elapsed: "
-[ $E_MIN != 0 ] && printf "%d min(s) " $E_MIN
-printf "%d sec(s)\n" $E_SEC
-
+}

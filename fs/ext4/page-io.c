@@ -105,7 +105,7 @@ int ext4_end_io_nolock(ext4_io_end_t *io)
 	if (list_empty(&io->list))
 		return ret;
 
-	if (!(io->flag & EXT4_IO_END_UNWRITTEN))
+	if (!(io->flag & (EXT4_IO_END_UNWRITTEN|EXT4_IO_END_DIRECT)))
 		return ret;
 
 	ret = ext4_convert_unwritten_extents(inode, offset, size);
@@ -119,15 +119,18 @@ int ext4_end_io_nolock(ext4_io_end_t *io)
 
 	if (io->iocb)
 		aio_complete(io->iocb, io->result, 0);
-	if (io->flag & EXT4_IO_END_DIRECT)
-        //inode_dio_done(inode);
+	
+	if (io->flag & (EXT4_IO_END_DIRECT|EXT4_IO_END_UNWRITTEN))
+	{
+    io->flag &= ~(EXT4_IO_END_DIRECT|EXT4_IO_END_UNWRITTEN);
 		/* Wake up anyone waiting on unwritten extent conversion */
 		wq = ext4_ioend_wq(io->inode);
 		if (atomic_dec_and_test(&EXT4_I(inode)->i_aiodio_unwritten) &&
-		    waitqueue_active(wq)) {
+		    waitqueue_active(wq))
+		{
 			wake_up_all(wq);
 		}
-	
+	}
 
 	return ret;
 }

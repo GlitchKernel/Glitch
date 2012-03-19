@@ -182,6 +182,7 @@ struct wm8994_priv {
 	select_clock_control universal_clock_control;
 	struct wm8994_platform_data *pdata;
 	struct clk *codec_clk;
+	int testmode_config_flag;
 	int gain_code;
 	u16 dc_servo[3];
 };

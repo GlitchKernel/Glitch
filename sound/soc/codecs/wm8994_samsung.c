@@ -302,6 +302,9 @@ static const char *fmradio_path[] = {
 };
 static const char *mic_path[] = { "Main Mic", "Hands Free Mic",
 					"BT Sco Mic", "MIC OFF" };
+static const char *codec_tuning_control[] = {
+  "OFF", "ON"
+};					
 static const char *codec_status_control[] = {
 	"FMR_VOL_0", "FMR_VOL_1", "FMR_FLAG_CLEAR", "FMR_END",
 	"CALL_FLAG_CLEAR", "CALL_END"
@@ -507,7 +510,31 @@ static int wm8994_set_fmradio_path(struct snd_kcontrol *kcontrol,
 
 	return 0;
 }
+static int wm8994_get_codec_tuning(struct snd_kcontrol *kcontrol,
+  struct snd_ctl_elem_value *ucontrol)
+{
+  struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+  struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
 
+  DEBUG_LOG("testmode_config_flag = [%d]", wm8994->testmode_config_flag);
+
+  return wm8994->testmode_config_flag;
+}
+
+static int wm8994_set_codec_tuning(struct snd_kcontrol *kcontrol,
+  struct snd_ctl_elem_value *ucontrol)
+{
+  struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+  struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
+
+  int control_flag = ucontrol->value.integer.value[0];
+
+  DEBUG_LOG("control flag =[%d]", control_flag);
+
+  wm8994->testmode_config_flag = control_flag;
+ 
+  return 0;
+}
 static int wm8994_get_codec_status(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
@@ -728,6 +755,7 @@ static const struct soc_enum path_control_enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(mic_path), mic_path),
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(input_source_state), input_source_state),
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(fmradio_path), fmradio_path),
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(codec_tuning_control), codec_tuning_control),
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(codec_status_control), codec_status_control),
 };
 
@@ -766,7 +794,10 @@ static const struct snd_kcontrol_new wm8994_snd_controls[] = {
 
 	SOC_ENUM_EXT("FM Radio Path", path_control_enum[4],
 			wm8994_get_fmradio_path, wm8994_set_fmradio_path),
-
+  
+  SOC_ENUM_EXT("Codec Tuning", path_control_enum[5],
+ 	    wm8994_get_codec_tuning, wm8994_set_codec_tuning),
+	
 	SOC_ENUM_EXT("Codec Status", path_control_enum[5],
 			wm8994_get_codec_status, wm8994_set_codec_status),
 };

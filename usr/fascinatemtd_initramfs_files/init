@@ -19,8 +19,7 @@ load_len=$boot_len
 busybox mount -t yaffs2 /dev/block/mtdblock2 /system
 busybox mount -t yaffs2 /dev/block/mtdblock3 /cache
 
-if busybox test -e /cache/.startrecovery || \
-	busybox grep -q bootmode=2 /proc/cmdline ; then
+if busybox test -e /cache/.startrecovery || busybox grep -q bootmode=2 /proc/cmdline ; then
 	# recovery boot
 	busybox rm -fr /cache/.startrecovery
 
@@ -46,6 +45,7 @@ elif ! busybox test -e /system/build.prop ; then
 
 	load_offset=$recovery_offset
 	load_len=$recovery_len
+
 
 	# disable lpm
 	busybox echo 0 > /sys/class/power_supply/battery/charging_mode_booting
