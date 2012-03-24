@@ -699,7 +699,7 @@ static void liveoc_init(void)
     return;
 }
 
-void liveoc_update(unsigned int oc_value, unsigned int low_freq, unsigned int oc_high_freq)
+void liveoc_update(unsigned int oc_value, unsigned int oc_low_freq, unsigned int oc_high_freq)
 {
     int i, index, index_min = L0, index_max = L0, divider;
 
