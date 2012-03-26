@@ -304,7 +304,12 @@ static int kr3dh_measure(struct kr3dh_data *kr3dh, struct acceleration *accel)
 			value += kr3dh_position_map[pos][i][j] * (int)raw[j]; 
 		}
 		/* normalisation*/
-		g = (long long)value * GRAVITY_EARTH / KR3DH_RESOLUTION;
+		// here we want to report a range of -512 .. 512, corresponding to -2g .. 2g		
+		// 'value' is between -32768 .. 32768, corresponding also to -2g .. 2g
+		// so .. trim off the 6 lower bits and we should be good.
+		g = value >> 6;	
+		
+		//g = (long long)value * GRAVITY_EARTH / KR3DH_RESOLUTION;
 		accel->axis[i] = g;	 
 	}
 	 
@@ -407,7 +412,8 @@ static ssize_t kr3dh_enable_store(struct device *dev,
 static ssize_t kr3dh_delay_show(struct device *dev,
                                  struct device_attribute *attr, char *buf)
 {
-        return sprintf(buf, "%d\n", kr3dh_get_delay(dev));
+        /* delay is "displayed" here as ms, but we have stored it as ns */
+        return sprintf(buf, "%d\n", kr3dh_get_delay(dev) / 1000000 );
 }
 
 static ssize_t kr3dh_delay_store(struct device *dev,
@@ -415,6 +421,9 @@ static ssize_t kr3dh_delay_store(struct device *dev,
                                   const char *buf, size_t count)
 {
         unsigned long delay = simple_strtoul(buf, NULL, 10);
+
+        /* delay comes in here as miliseconds, but the system wants it as nanoseconds */
+        delay *= 1000000;
         
         kr3dh_set_delay(dev, delay);
 
