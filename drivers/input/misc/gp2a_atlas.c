@@ -527,7 +527,7 @@ static int gp2a_i2c_probe(struct i2c_client *client,
 	}
 	gp2a->proximity_input_dev = input_dev;
 	input_set_drvdata(input_dev, gp2a);
-	input_dev->name = "proximity_sensor";
+	input_dev->name = "proximity";
 	input_set_capability(input_dev, EV_ABS, ABS_DISTANCE);
 	input_set_abs_params(input_dev, ABS_DISTANCE, 0, 1, 0, 0);
 
@@ -569,7 +569,7 @@ static int gp2a_i2c_probe(struct i2c_client *client,
 		goto err_input_allocate_device_light;
 	}
 	input_set_drvdata(input_dev, gp2a);
-	input_dev->name = "light_sensor";
+	input_dev->name = "lightsensor-level";
 	input_set_capability(input_dev, EV_ABS, ABS_MISC);
 	input_set_abs_params(input_dev, ABS_MISC, 0, 1, 0, 0);
 
