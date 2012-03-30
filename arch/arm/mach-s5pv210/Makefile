@@ -47,6 +47,7 @@ obj-$(CONFIG_PHONE_ARIES_CDMA)	+= dev-s1-phone.o
 obj-$(CONFIG_PHONE_ARIES_CDMA)	+= level.o
 obj-$(CONFIG_PHONE_CRESPO)	+= dev-aries-phone.o
 
+obj-$(CONFIG_FORCE_FAST_CHARGE)         += fastchg.o
 # device support
 
 obj-y				+= dev-audio.o
