@@ -19,13 +19,12 @@ obj-$(CONFIG_INPUT_ATI_REMOTE2)		+= ati_remote2.o
 obj-$(CONFIG_INPUT_ATLAS_BTNS)		+= atlas_btns.o
 obj-$(CONFIG_INPUT_BFIN_ROTARY)		+= bfin_rotary.o
 obj-$(CONFIG_INPUT_BMA023)		+= bma023.o
+obj-$(CONFIG_INPUT_YAS529)              += yas529.o
 
 ifeq ($(CONFIG_SAMSUNG_FASCINATE),y)
-obj-$(CONFIG_INPUT_YAS529)		+= yas529_atlas.o
 obj-$(CONFIG_INPUT_KR3DH)		+= kr3dh_cdma.o
 obj-$(CONFIG_OPTICAL_GP2A)		+= gp2a_atlas.o
 else
-obj-$(CONFIG_INPUT_YAS529)		+= yas529.o
 obj-$(CONFIG_INPUT_KR3DH)		+= kr3dh.o
 obj-$(CONFIG_OPTICAL_GP2A)		+= gp2a.o
 endif
