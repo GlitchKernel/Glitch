@@ -1467,8 +1467,8 @@ EXPORT_SYMBOL(HWREV);
 /* in revisions before 0.9, there is a common mic bias gpio */
 
 static DEFINE_SPINLOCK(mic_bias_lock);
-static bool wm8994_mic_bias;
-static bool jack_mic_bias;
+static bool wm8994_mic_bias = false;
+static bool jack_mic_bias = false;
 static void set_shared_mic_bias(void)
 {
 #if defined(CONFIG_SAMSUNG_CAPTIVATE)
@@ -1485,7 +1485,7 @@ static void set_shared_mic_bias(void)
     gpio_set_value(GPIO_EARPATH_SEL, jack_mic_bias);
 #else
 	gpio_set_value(GPIO_MICBIAS_EN, wm8994_mic_bias || jack_mic_bias);
-    gpio_set_value(GPIO_EARPATH_SEL, wm8994_mic_bias || jack_mic_bias);
+    gpio_set_value(GPIO_EARPATH_SEL, jack_mic_bias);
 #endif
 }
 
