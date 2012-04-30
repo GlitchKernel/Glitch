@@ -12,6 +12,8 @@ export USE_CCACHE=1
         CCACHE_DIR=~/CM9/kernel/samsung/.ramdisks-ccache
         export CCACHE_DIR CCACHE_COMPRESS
 
+THREADS=`cat /proc/cpuinfo | grep processor | wc -l`
+
 declare -A phone
 
 if [[ $# -gt 0 ]]; then
@@ -28,12 +30,14 @@ fi
 
 cd ../../../
 
+time {
 for i in ${!phones[@]}; do
 	phone=${phones[$i]}
 
 echo "========Building ramdisk.img and recovery.img for ${phone}========"
 echo ""
-. build/envsetup.sh && lunch full_${phone}mtd-eng && make bootimage
+. build/envsetup.sh && lunch full_${phone}mtd-eng && mka -j${THREADS} bootimage
 done
+}
 
 echo "Done!"

@@ -54,6 +54,7 @@ setup ()
 build ()
 {
 
+THREADS=`cat /proc/cpuinfo | grep processor | wc -l`
 formodules=$repo/kernel/samsung/glitch-build/kernel/$target
 
     local target=$target
@@ -65,8 +66,8 @@ formodules=$repo/kernel/samsung/glitch-build/kernel/$target
     cp "$KERNEL_DIR/usr/"*.list "$target_dir/usr"
 
     sed "s|usr/|$KERNEL_DIR/usr/|g" -i "$target_dir/usr/"*.list
-    mka -C "$KERNEL_DIR" O="$target_dir" aries_${target}_defconfig HOSTCC="$CCACHE gcc"
-    mka -C "$KERNEL_DIR" O="$target_dir" HOSTCC="$CCACHE gcc" CROSS_COMPILE="$CCACHE $CROSS_PREFIX" zImage modules
+    mka -j${THREADS} -C "$KERNEL_DIR" O="$target_dir" aries_${target}_defconfig HOSTCC="$CCACHE gcc"
+    mka -j${THREADS} -C "$KERNEL_DIR" O="$target_dir" HOSTCC="$CCACHE gcc" CROSS_COMPILE="$CCACHE $CROSS_PREFIX" zImage modules
 
 [[ -d release ]] || {
 	echo "must be in kernel root dir"
