@@ -777,7 +777,7 @@ wl_iw_set_power_mode(
 {
 	int error = 0;
 	char *p = extra;
-	static int  pm = PM_MAX;
+	static int  pm = PM_FAST;
 	int  pm_local = PM_OFF;
 	char powermode_val = 0;
 
@@ -5081,7 +5081,7 @@ wl_iw_set_power(
 
 	WL_TRACE(("%s: SIOCSIWPOWER\n", dev->name));
 
-	pm = vwrq->disabled ? PM_OFF : PM_FAST;
+	pm = vwrq->disabled ? PM_OFF : PM_MAX;
 
 	pm = htod32(pm);
 	if ((error = dev_wlc_ioctl(dev, WLC_SET_PM, &pm, sizeof(pm))))

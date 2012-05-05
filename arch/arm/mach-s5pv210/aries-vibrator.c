@@ -22,6 +22,7 @@
 #include <linux/mutex.h>
 #include <linux/clk.h>
 #include <linux/workqueue.h>
+#include <linux/moduleparam.h>
 
 #include <asm/mach-types.h>
 
@@ -34,6 +35,19 @@
 #define PWM_PERIOD		(89284 / 2)
 #define PWM_DUTY		(87280 / 2)
 #define MAX_TIMEOUT		10000 /* 10s */
+
+/*
+ * Adjustable vibration intensity:
+ * 
+ * PWM_DUTY_MAX = stock intensity (80280 / 2)
+ * PWM_DUTY_MIN = not noticable intensity (20000)
+ * 
+ * pwm_duty = used intensity, adjustable via sysfs, e.g.:
+ * echo 25000 > /sys/class/timed_output/vibrator/duty
+ */
+#define PWM_DUTY_MAX  (87280 / 2)
+#define PWM_DUTY_MIN  (20000)
+static unsigned int pwm_duty = (80280 / 2);
 
 static struct vibrator {
 	struct wake_lock wklock;
@@ -85,9 +99,8 @@ static void aries_vibrator_enable(struct timed_output_dev *dev, int value)
 #ifdef CONFIG_CPU_DIDLE
 		vibrator_running = true;
 #endif
-
 		wake_lock(&vibdata.wklock);
-		pwm_config(vibdata.pwm_dev, PWM_DUTY, PWM_PERIOD);
+		pwm_config(vibdata.pwm_dev, pwm_duty, PWM_PERIOD);
 		pwm_enable(vibdata.pwm_dev);
 		gpio_direction_output(GPIO_VIBTONE_EN1, GPIO_LEVEL_HIGH);
 
@@ -105,10 +118,26 @@ static void aries_vibrator_enable(struct timed_output_dev *dev, int value)
 	mutex_unlock(&vibdata.lock);
 }
 
+static void aries_vibrator_set_duty(struct timed_output_dev *dev, int value)
+{
+	if (value){
+		if(value >= PWM_DUTY_MIN && value <= PWM_DUTY_MAX){
+			pwm_duty = value;
+		}
+	}
+}
+
+static int aries_vibrator_show_duty(struct timed_output_dev *dev)
+{
+	return(pwm_duty);
+}
+
 static struct timed_output_dev to_dev = {
 	.name		= "vibrator",
 	.get_time	= aries_vibrator_get_time,
 	.enable		= aries_vibrator_enable,
+	.set_duty   = aries_vibrator_set_duty,
+	.show_duty  = aries_vibrator_show_duty,
 };
 
 static enum hrtimer_restart aries_vibrator_timer_func(struct hrtimer *timer)
